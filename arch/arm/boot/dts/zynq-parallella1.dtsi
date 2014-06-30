@@ -47,6 +47,18 @@
 			default-state = "on";
 		};
 	};
+
+	usb_phy0: phy0 {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		status = "disabled";
+	};
+
+	usb_phy1: phy1 {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &clkc {
@@ -208,6 +220,54 @@
 			bias-disable = <0>;
 		};
 	};
+
+	pinctrl_usb0_default: usb0-default {
+		mux {
+			function = "usb0";
+			groups = "usb0_0_grp";
+		};
+
+		conf {
+			groups = "usb0_0_grp";
+			slew-rate = <0>;
+			io-standard = <1>;
+		};
+
+		conf-rx {
+			pins = "MIO29", "MIO31", "MIO36";
+			bias-high-impedance;
+		};
+
+		conf-tx {
+			pins = "MIO28", "MIO30", "MIO32", "MIO33", "MIO34",
+			       "MIO35", "MIO37", "MIO38", "MIO39";
+			bias-disable;
+		};
+	};
+
+	pinctrl_usb1_default: usb1-default {
+		mux {
+			function = "usb1";
+			groups = "usb1_0_grp";
+		};
+
+		conf {
+			groups = "usb1_0_grp";
+			slew-rate = <0>;
+			io-standard = <1>;
+		};
+
+		conf-rx {
+			pins = "MIO41", "MIO43", "MIO48";
+			bias-high-impedance;
+		};
+
+		conf-tx {
+			pins = "MIO40", "MIO42", "MIO44", "MIO45", "MIO46",
+			       "MIO47", "MIO49", "MIO50", "MIO51";
+			bias-disable;
+		};
+	};
 };
 
 &sdhci1 {
@@ -220,4 +280,18 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart1_default>;
+};
+
+&usb0 {
+	dr_mode = "host";
+	usb-phy = <&usb_phy0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usb0_default>;
+};
+
+&usb1 {
+	dr_mode = "peripheral";
+	usb-phy = <&usb_phy1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usb1_default>;
 };
