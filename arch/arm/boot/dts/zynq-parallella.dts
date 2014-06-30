@@ -26,6 +26,26 @@
 	status = "okay";
 };
 
+&fpga {
+	axi_vdma: axi-vdma@43000000 {
+		compatible = "xlnx,axi-vdma-1.00.a";
+		reg = <0x43000000 0x1000>;
+		#dma-cells = <1>;
+		xlnx,num-fstores = <3>;
+		xlnx,include-sg = <0>;
+		xlnx,flush-fsync = <2>;
+
+		dma-channel@43000000 {
+			compatible = "xlnx,axi-vdma-mm2s-channel";
+			interrupt-parent = <&intc>;
+			interrupts = <0 59 4>;
+			xlnx,datawidth = <64>;
+			xlnx,include-dre = <0>;
+			xlnx,genlock-mode = <0>;
+		};
+	};
+};
+
 &usb0 {
 	status = "okay";
 };
