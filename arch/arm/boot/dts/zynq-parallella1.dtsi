@@ -270,6 +270,10 @@
 	};
 };
 
+&qspi {
+	status = "okay";
+};
+
 &sdhci1 {
 	status = "okay";
 	pinctrl-names = "default";
