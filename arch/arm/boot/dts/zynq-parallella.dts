@@ -44,6 +44,21 @@
 			xlnx,genlock-mode = <0>;
 		};
 	};
+
+	audio_clock: audio-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <12288000>;
+	};
+
+	axi-spdif-tx@75c00000 {
+		compatible = "adi,axi-spdif-tx-1.00.a";
+		reg = <0x75c00000 0x1000>;
+		clocks = <&clkc 15>, <&audio_clock>;
+		clock-names = "axi", "ref";
+		dmas = <&dmac_s 0>;
+		dma-names = "tx";
+	};
 };
 
 &usb0 {
