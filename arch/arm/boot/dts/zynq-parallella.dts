@@ -45,6 +45,13 @@
 		};
 	};
 
+	axi_clkgen: axi-clkgen@66000000 {
+		compatible = "adi,axi-clkgen-1.00.a";
+		reg = <0x66000000 0x10000>;
+		#clock-cells = <0>;
+		clocks = <&clkc 17>;
+	};
+
 	audio_clock: audio-clock {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
