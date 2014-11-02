@@ -525,6 +525,12 @@ config VEXPRESS_SYSCFG
 	  bus. System Configuration interface is one of the possible means
 	  of generating transactions on this bus.
 
+config EPIPHANY
+	tristate "Adapteva Epiphany driver"
+	default n
+	help
+	  Epiphany...
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
