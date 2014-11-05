@@ -171,6 +171,18 @@
 		};
 	};
 
+	pinctrl_qspi0_default: qspi0-default {
+		mux {
+			function = "qspi0";
+			groups = "qspi0_0_grp";
+		};
+
+		conf {
+			groups = "qspi0_0_grp";
+			io-standard = <3>;
+		};
+	};
+
 	pinctrl_sdhci1_default: sdhci1-default {
 		mux {
 			function = "sdio1";
@@ -272,6 +284,8 @@
 
 &qspi {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_qspi0_default>;
 
 	flash@0 {
 		compatible = "micron,n25q128a13";
