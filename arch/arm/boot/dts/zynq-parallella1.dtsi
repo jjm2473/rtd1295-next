@@ -47,6 +47,8 @@
 	status = "okay";
 	phy-mode = "rgmii-id";
 	phy-handle = <&ethernet_phy>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gem0_default>;
 
 	ethernet_phy: ethernet-phy@0 {
 		/* Marvell 88E1318 */
@@ -56,6 +58,11 @@
 		marvell,reg-init = <0x3 0x10 0xff00 0x1e>,
 		                   <0x3 0x11 0xfff0 0xa>;
 	};
+};
+
+&gpio0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio0_default>;
 };
 
 &i2c0 {
@@ -85,10 +92,121 @@
 	};
 };
 
+&pinctrl0 {
+	pinctrl_gem0_default: gem0-default {
+		mux {
+			function = "ethernet0";
+			groups = "ethernet0_0_grp";
+		};
+
+		conf {
+			groups = "ethernet0_0_grp";
+			slew-rate = <0>;
+			io-standard = <1>;
+		};
+
+		conf-rx {
+			pins = "MIO22", "MIO23", "MIO24", "MIO25", "MIO26", "MIO27";
+			bias-high-impedance;
+			low-power-disable;
+		};
+
+		conf-tx {
+			pins = "MIO16", "MIO17", "MIO18", "MIO19", "MIO20", "MIO21";
+			bias-disable;
+			low-power-enable;
+		};
+
+		mux-mdio {
+			function = "mdio0";
+			groups = "mdio0_0_grp";
+		};
+
+		conf-mdio {
+			groups = "mdio0_0_grp";
+			slew-rate = <0>;
+			io-standard = <1>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_gpio0_default: gpio0-default {
+		mux {
+			function = "gpio0";
+			groups = "gpio0_7_grp";
+		};
+
+		conf {
+			groups = "gpio0_7_grp";
+			slew-rate = <0>;
+			io-standard = <3>;
+		};
+
+		conf-pull-up {
+			pins = "MIO7";
+			bias-pull-up;
+		};
+	};
+
+	pinctrl_sdhci1_default: sdhci1-default {
+		mux {
+			function = "sdio1";
+			groups = "sdio1_0_grp";
+		};
+
+		conf {
+			groups = "sdio1_0_grp";
+			slew-rate = <0>;
+			io-standard = <1>;
+			bias-disable;
+		};
+
+		mux-cd {
+			function = "sdio1_cd";
+			groups = "gpio0_0_grp";
+		};
+
+		conf-cd {
+			groups = "gpio0_0_grp";
+			bias-high-impedance;
+			bias-pull-up;
+			slew-rate = <0>;
+			io-standard = <3>;
+		};
+	};
+
+	pinctrl_uart1_default: uart1-default {
+		mux {
+			function = "uart1";
+			groups = "uart1_0_grp";
+		};
+
+		conf {
+			groups = "uart1_0_grp";
+			slew-rate = <0>;
+			io-standard = <3>;
+		};
+
+		conf-rx {
+			pins = "MIO9";
+			bias-high-impedance;
+		};
+
+		conf-tx {
+			pins = "MIO8";
+			bias-disable = <0>;
+		};
+	};
+};
+
 &sdhci1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sdhci1_default>;
 };
 
 &uart1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1_default>;
 };
