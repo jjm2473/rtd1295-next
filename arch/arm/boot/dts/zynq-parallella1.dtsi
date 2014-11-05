@@ -18,6 +18,7 @@
  * GNU General Public License for more details.
  */
 /include/ "zynq-7000.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	compatible = "adapteva,parallella", "xlnx,zynq-7000";
@@ -35,6 +36,16 @@
 	chosen {
 		bootargs = "earlyprintk root=/dev/mmcblk0p2 rootfstype=ext4 rw rootwait";
 		stdout-path = "serial0:115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		cr10 {
+			label = "parallella:cr10:usr";
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
 	};
 };
 
