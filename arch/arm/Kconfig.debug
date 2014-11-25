@@ -1289,6 +1289,23 @@ choice
 		    0x4000e000 | UART0
 		    0x4000e400 | UART1
 
+	config DEBUG_LL_UART_STM32
+		bool "Kernel low-level debugging via stm32 UART"
+		depends on ARCH_STM32
+		help
+		  Say Y here if you want the debug print routines to direct
+		  their output to an UART or USART port on stm32 based
+		  machines. Use the following addresses for DEBUG_UART_PHYS:
+
+		    0x40004400 | USART2
+		    0x40004800 | USART3
+		    0x40004c00 | UART4
+		    0x40005000 | UART5
+		    0x40007800 | UART7
+		    0x40007c00 | UART8
+		    0x40011000 | USART1
+		    0x40011400 | USART6
+
 	config DEBUG_LL_UART_PL01X
 		bool "Kernel low-level debugging via ARM Ltd PL01x Primecell UART"
 		help
@@ -1408,6 +1425,7 @@ config DEBUG_LL_INCLUDE
 	default "debug/s5pv210.S" if DEBUG_S5PV210_UART
 	default "debug/sirf.S" if DEBUG_SIRFSOC_UART
 	default "debug/sti.S" if DEBUG_STI_UART
+	default "debug/stm32.S" if DEBUG_LL_UART_STM32
 	default "debug/tegra.S" if DEBUG_TEGRA_UART
 	default "debug/ux500.S" if DEBUG_UX500_UART
 	default "debug/vexpress.S" if DEBUG_VEXPRESS_UART0_DETECT
@@ -1464,6 +1482,7 @@ config DEBUG_UART_PHYS
 	default 0x20201000 if DEBUG_BCM2835
 	default 0x3f201000 if DEBUG_BCM2836
 	default 0x3e000000 if DEBUG_BCM_KONA_UART
+	default 0x40004400 if DEBUG_LL_UART_STM32
 	default 0x4000e400 if DEBUG_LL_UART_EFM32
 	default 0x40081000 if DEBUG_LPC18XX_UART0
 	default 0x40090000 if DEBUG_LPC32XX
@@ -1529,7 +1548,7 @@ config DEBUG_UART_PHYS
 	default 0xfffff700 if ARCH_IOP33X
 	depends on ARCH_EP93XX || \
 	        DEBUG_LL_UART_8250 || DEBUG_LL_UART_PL01X || \
-		DEBUG_LL_UART_EFM32 || \
+		DEBUG_LL_UART_EFM32 || DEBUG_LL_UART_STM32 || \
 		DEBUG_UART_8250 || DEBUG_UART_PL01X || DEBUG_MESON_UARTAO || \
 		DEBUG_NETX_UART || \
 		DEBUG_QCOM_UARTDM || DEBUG_R7S72100_SCIF2 || \
