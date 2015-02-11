@@ -691,6 +691,7 @@ dtb-$(CONFIG_ARCH_VT8500) += \
 	wm8850-w70v2.dtb
 dtb-$(CONFIG_ARCH_ZYNQ) += \
 	zynq-parallella.dtb \
+	zynq-parallella-headless.dtb \
 	zynq-parallella-microserver.dtb \
 	zynq-zc702.dtb \
 	zynq-zc706.dtb \

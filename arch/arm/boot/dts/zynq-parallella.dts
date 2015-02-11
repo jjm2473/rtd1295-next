@@ -15,7 +15,7 @@
 #include "zynq-parallella1.dtsi"
 
 / {
-	model = "Adapteva Parallella Board";
+	model = "Adapteva Parallella Board with HDMI bitstream";
 };
 
 &usb_phy0 {
