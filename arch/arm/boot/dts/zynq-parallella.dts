@@ -16,6 +16,18 @@
 
 / {
 	model = "Adapteva Parallella Board with HDMI bitstream";
+
+	hdmi-connector {
+		compatible = "hdmi-connector";
+		type = "d";
+		label = "hdmi";
+
+		port {
+			hdmi_connector_in: endpoint {
+				remote-endpoint = <&adv7513_out>;
+			};
+		};
+	};
 };
 
 &usb_phy0 {
@@ -65,6 +77,40 @@
 		clock-names = "axi", "ref";
 		dmas = <&dmac_s 0>;
 		dma-names = "tx";
+	};
+};
+
+&i2c0 {
+	adv7513: hdmi@39 {
+		compatible = "adi,adv7513";
+		reg = <0x39>;
+		adi,input-depth = <8>;
+		adi,input-colorspace = "rgb";
+		adi,input-clock = "1x";
+		adi,input-style = <2>;
+		adi,input-justification = "left";
+		adi,clock-delay = <3>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+
+				adv7513_in: endpoint {
+					/*remote-endpoint = <&dpi_out>;*/
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+
+				adv7513_out: endpoint {
+					remote-endpoint = <&hdmi_connector_in>;
+				};
+			};
+		};
 	};
 };
 
