@@ -66,6 +66,14 @@
 	ps-clk-frequency = <33333333>;
 };
 
+&fpga {
+	epiphany@808f0f00 {
+		compatible = "adapteva,parallella-fpgaconf";
+		reg = <0x808f0f00 0x18>;
+		/*clocks = <&>;*/
+	};
+};
+
 &gem0 {
 	status = "okay";
 	phy-mode = "rgmii-id";
