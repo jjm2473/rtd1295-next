@@ -357,4 +357,11 @@
 			timeout-sec = <10>;
 		};
 	};
+
+	fpga: fpga {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+	};
 };
