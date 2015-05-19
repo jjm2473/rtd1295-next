@@ -1047,6 +1047,8 @@ dtb-$(CONFIG_ARCH_VT8500) += \
 	wm8650-mid.dtb \
 	wm8750-apc8750.dtb \
 	wm8850-w70v2.dtb
+dtb-$(CONFIG_ARCH_XMC4000) += \
+	xmc4500-application-kit-sdram.dtb
 dtb-$(CONFIG_ARCH_ZYNQ) += \
 	zynq-microzed.dtb \
 	zynq-parallella.dtb \
