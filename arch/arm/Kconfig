@@ -881,6 +881,15 @@ config ARCH_MPS2
 	  Please, note that depends which Application Note is used memory map
 	  for the platform may vary, so adjustment of RAM base might be needed.
 
+config ARCH_XMC4000
+	bool "Infineon XMC4000"
+	depends on ARM_SINGLE_ARMV7M
+	select ARCH_HAS_RESET_CONTROLLER
+	select ARMV7M_SYSTICK
+	select RESET_CONTROLLER
+	help
+	  Support for Infineon XMC4500 processors.
+
 # Definitions to make life easier
 config ARCH_ACORN
 	bool
