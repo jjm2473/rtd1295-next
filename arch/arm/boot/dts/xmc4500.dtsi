@@ -1,0 +1,10 @@
+/*
+ * Device tree for Infineon XMC4500
+ */
+
+#include "armv7-m.dtsi"
+
+/ {
+	soc {
+	};
+};
