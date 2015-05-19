@@ -811,6 +811,24 @@ config ARCH_STM32
 	help
 	  Support for STMicroelectronics STM32 processors.
 
+config ARCH_XMC4000
+	bool "Infineon XMC4000"
+	depends on !MMU
+	select ARCH_HAS_RESET_CONTROLLER
+	select ARM_NVIC
+	select ARMV7M_SYSTICK
+	select AUTO_ZRELADDR
+	select CLKSRC_OF
+	select COMMON_CLK
+	select CPU_V7M
+	select GENERIC_CLOCKEVENTS
+	select NO_IOPORT_MAP
+	select RESET_CONTROLLER
+	select SPARSE_IRQ
+	select USE_OF
+	help
+	  Support for Infineon XMC4500 processors.
+
 endchoice
 
 menu "Multiple platform selection"
