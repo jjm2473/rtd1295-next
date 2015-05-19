@@ -1,0 +1,15 @@
+/dts-v1/;
+#include "xmc4500.dtsi"
+
+/ {
+	model = "Infineon XMC4500 Application Kit 'SDRAM'";
+	compatible = "infineon,xmc4500-appkit-sdram", "infineon,xmc4500";
+
+	chosen {
+		bootargs = "earlyprintk";
+	};
+
+	memory {
+		reg = <0x60000000 0x00800000>;
+	};
+};
