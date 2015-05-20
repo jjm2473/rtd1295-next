@@ -204,6 +204,11 @@
 			reg = <0x50004600 0x200>;
 			#clock-cells = <1>;
 		};
+
+		rtc: rtc@50004A00 {
+			compatible = "infineon,xmc4500-rtc";
+			reg = <0x50004A00 0x300>;
+		};
 	};
 };
 
