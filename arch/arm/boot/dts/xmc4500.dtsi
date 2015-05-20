@@ -46,6 +46,63 @@
 
 / {
 	soc {
+		ccu40: ccu4@4000C000 {
+			compatible = "infineon,xmc4500-ccu4";
+			reg = <0x4000C000 0x4000>;
+			interrupts = <44>, <45>, <46>, <47>;
+			clocks = <&scu_ccu 2>;
+			clock-names = "mclk";
+			resets = <&scu_rcu 2>;
+		};
+
+		ccu41: ccu4@40010000 {
+			compatible = "infineon,xmc4500-ccu4";
+			reg = <0x40010000 0x4000>;
+			interrupts = <48>, <49>, <50>, <51>;
+			clocks = <&scu_ccu 2>;
+			clock-names = "mclk";
+			resets = <&scu_rcu 3>;
+			status = "disabled";
+		};
+
+		ccu42: ccu4@40014000 {
+			compatible = "infineon,xmc4500-ccu4";
+			reg = <0x40014000 0x4000>;
+			interrupts = <52>, <53>, <54>, <55>;
+			clocks = <&scu_ccu 2>;
+			clock-names = "mclk";
+			resets = <&scu_rcu 4>;
+			status = "disabled";
+		};
+
+		ccu80: ccu8@40020000 {
+			compatible = "infineon,xmc4500-ccu8";
+			reg = <0x40020000 0x4000>;
+			interrupts = <60>, <61>, <62>, <63>;
+			clocks = <&scu_ccu 2>;
+			resets = <&scu_rcu 7>;
+			status = "disabled";
+		};
+
+		ccu81: ccu8@40024000 {
+			compatible = "infineon,xmc4500-ccu8";
+			reg = <0x40024000 0x4000>;
+			interrupts = <64>, <65>, <66>, <67>;
+			clocks = <&scu_ccu 2>;
+			resets = <&scu_rcu 8>;
+			status = "disabled";
+		};
+
+		ccu43: ccu4@48004000 {
+			compatible = "infineon,xmc4500-ccu4";
+			reg = <0x48004000 0x4000>;
+			interrupts = <56>, <57>, <58>, <59>;
+			clocks = <&scu_ccu 2>;
+			clock-names = "mclk";
+			resets = <&scu_rcu 32>;
+			status = "disabled";
+		};
+
 		scu_rcu: reset@50004400 {
 			compatible = "infineon,xmc4500-scu-rcu";
 			reg = <0x50004400 0x200>;
