@@ -53,3 +53,8 @@
 		};
 	};
 };
+
+&systick {
+	status = "okay";
+	clocks = <&scu_ccu 0>;
+};
