@@ -46,6 +46,12 @@
 
 / {
 	soc {
+		scu_rcu: reset@50004400 {
+			compatible = "infineon,xmc4500-scu-rcu";
+			reg = <0x50004400 0x200>;
+			#reset-cells = <1>;
+		};
+
 		scu_ccu: clk@50004600 {
 			compatible = "infineon,xmc4500-scu-ccu";
 			reg = <0x50004600 0x200>;
