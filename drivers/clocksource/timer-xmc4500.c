@@ -35,15 +35,15 @@ static __init void xmc4500_ccu4_init(struct device_node *node)
 	int ret;
 
 	reset = of_reset_control_get(node, NULL);
-	if (IS_ERR(reset)) {
-		pr_err("failed to get reset controller\n");
-		goto err_reset;
+	if (!IS_ERR(reset)) {
+		if (!reset_control_status(reset))
+			reset_control_assert(reset);
+		reset_control_deassert(reset);
+		reset_control_put(reset);
+	} else {
+		writel_relaxed(BIT(2), (void *)(0x50004400 + 0x10));
+		writel_relaxed(BIT(2), (void *)(0x50004400 + 0x14));
 	}
-
-	if (!reset_control_status(reset))
-		reset_control_assert(reset);
-	reset_control_deassert(reset);
-	reset_control_put(reset);
 
 	clk = of_clk_get_by_name(node, "mclk");
 	if (IS_ERR(clk)) {
@@ -74,7 +74,6 @@ err_iomap:
 err_clk_enable:
 	clk_put(clk);
 err_clk_get:
-err_reset:
 	return;
 }
 CLOCKSOURCE_OF_DECLARE(xmc4500ccu4, "infineon,xmc4500-ccu4", xmc4500_ccu4_init);
