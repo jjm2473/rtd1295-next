@@ -46,5 +46,10 @@
 
 / {
 	soc {
+		scu_ccu: clk@50004600 {
+			compatible = "infineon,xmc4500-scu-ccu";
+			reg = <0x50004600 0x200>;
+			#clock-cells = <1>;
+		};
 	};
 };
