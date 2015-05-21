@@ -121,9 +121,6 @@ static __init void xmc4500_ccu4_init(struct device_node *node)
 			reset_control_assert(reset);
 		reset_control_deassert(reset);
 		reset_control_put(reset);
-	} else {
-		writel_relaxed(BIT(2), (void *)(0x50004400 + 0x10));
-		writel_relaxed(BIT(2), (void *)(0x50004400 + 0x14));
 	}
 
 	clk = of_clk_get_by_name(node, "mclk");
