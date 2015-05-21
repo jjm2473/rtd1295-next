@@ -17,6 +17,19 @@ struct xmc4500_reset_controller_dev {
 #define to_xmc_reset(_rcdev) \
 	container_of(_rcdev, struct xmc4500_reset_controller_dev, rcdev)
 
+static int xmc4500_reset_status(struct reset_controller_dev *rcdev,
+			        unsigned long id)
+{
+	struct xmc4500_reset_controller_dev *s = to_xmc_reset(rcdev);
+	int bank = id / BITS_PER_LONG;
+	int offset = id % BITS_PER_LONG;
+	u32 reg;
+
+	reg = readl_relaxed(s->regs + 0x0C + bank * 3 * 4);
+
+	return !!(reg & BIT(offset));
+}
+
 static int xmc4500_reset_assert(struct reset_controller_dev *rcdev,
 				unsigned long id)
 {
@@ -54,6 +67,7 @@ static int xmc4500_reset_deassert(struct reset_controller_dev *rcdev,
 static struct reset_control_ops xmc4500_reset_ops = {
 	.assert		= xmc4500_reset_assert,
 	.deassert	= xmc4500_reset_deassert,
+	.status		= xmc4500_reset_status,
 };
 
 static int xmc4500_reset_probe(struct platform_device *pdev)
