@@ -7,6 +7,7 @@
 #include <linux/kernel.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
+#include <linux/reset.h>
 
 #define to_xmc_clockevent(_evt) container_of(_evt, struct xmc4500_clock_event_device, evtdev)
 
@@ -30,7 +31,19 @@ static __init void xmc4500_ccu4_init(struct device_node *node)
 	void __iomem *base;
 	struct clk *clk;
 	unsigned long rate;
+	struct reset_control *reset;
 	int ret;
+
+	reset = of_reset_control_get(node, NULL);
+	if (IS_ERR(reset)) {
+		pr_err("failed to get reset controller\n");
+		goto err_reset;
+	}
+
+	if (!reset_control_status(reset))
+		reset_control_assert(reset);
+	reset_control_deassert(reset);
+	reset_control_put(reset);
 
 	clk = of_clk_get_by_name(node, "mclk");
 	if (IS_ERR(clk)) {
@@ -61,6 +74,7 @@ err_iomap:
 err_clk_enable:
 	clk_put(clk);
 err_clk_get:
+err_reset:
 	return;
 }
 CLOCKSOURCE_OF_DECLARE(xmc4500ccu4, "infineon,xmc4500-ccu4", xmc4500_ccu4_init);
