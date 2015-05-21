@@ -19,5 +19,6 @@ obj-$(CONFIG_RESET_SUNXI) += reset-sunxi.o
 obj-$(CONFIG_RESET_TI_SCI) += reset-ti-sci.o
 obj-$(CONFIG_RESET_TI_SYSCON) += reset-ti-syscon.o
 obj-$(CONFIG_RESET_UNIPHIER) += reset-uniphier.o
+obj-$(CONFIG_ARCH_XMC4000) += reset-xmc4500.o
 obj-$(CONFIG_RESET_ZYNQ) += reset-zynq.o
 
