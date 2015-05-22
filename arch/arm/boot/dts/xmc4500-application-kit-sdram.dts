@@ -6,10 +6,18 @@
 	compatible = "infineon,xmc4500-appkit-sdram", "infineon,xmc4500";
 
 	chosen {
-		bootargs = "earlyprintk";
+		bootargs = "console=ttyXMC0 ignore_loglevel debug"; /*  earlyprintk */
+	};
+
+	aliases {
+		serial0 = &usic0_ch0;
 	};
 
 	memory {
 		reg = <0x60000000 0x00800000>;
 	};
+};
+
+&usic0_ch0 {
+	status = "okay";
 };
