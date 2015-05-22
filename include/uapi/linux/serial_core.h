@@ -258,4 +258,7 @@
 /* Cris v10 / v32 SoC */
 #define PORT_CRIS	112
 
+/* Infineon XMC4000 USIC */
+#define PORT_XMC4000_USIC	114
+
 #endif /* _UAPILINUX_SERIAL_CORE_H */
