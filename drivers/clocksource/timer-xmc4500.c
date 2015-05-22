@@ -101,22 +101,10 @@ static irqreturn_t xmc4500_clock_event_handler(int irq, void *opaque)
 	struct xmc4500_clock_event_device *xmcdev = opaque;
 	int slice_offset = xmcdev->slice * 0x100;
 	void __iomem *slice_base = xmcdev->regs + 0x100 + slice_offset;
-	/*u32 gstat, gcst, tst, tc, ints, timer;
-
-	gstat = readl_relaxed(xmcdev->regs + CCU4_GSTAT);
-	gcst = readl_relaxed(xmcdev->regs + CCU4_GCST);
-	tst = readl_relaxed(slice_base + CCU4_CC40TST);
-	tc = readl_relaxed(slice_base + CCU4_CC40TC);
-	ints = readl_relaxed(slice_base + CCU4_CC40INTS);
-	timer = readl_relaxed(slice_base + CCU4_CC40TIMER);*/
 
 	writel_relaxed(CCU4_CC4ySWR_ROM | CCU4_CC4ySWR_RPM, slice_base + CCU4_CC40SWR);
-	//writel_relaxed(CCU4_CC4yTCSET_TRBS, slice_base + CCU4_CC40TCSET);
 
 	xmcdev->evtdev.event_handler(&xmcdev->evtdev);
-
-	/*pr_debug("CCU4 irq gstat %08x gcst %08x tst %08x tc %08x ints %08x timer %08x\n",
-		gstat, gcst, tst, tc, ints, timer);*/
 
 	return IRQ_HANDLED;
 }
@@ -176,13 +164,10 @@ static __init void xmc4500_ccu4_init(struct device_node *node)
 		goto err_get_irq;
 	}
 
-	pr_info("CCU4 @ 0x%p (%lu) %d\n", base, rate, irq);
-
 	writel_relaxed(CCU4_GIDLC_SPRB, base + CCU4_GIDLC);
 	writel_relaxed(0, base + CCU4_GCTRL);
 
 	writel_relaxed(0xa /* 1024 */, slice_base + CCU4_CC40PSC);
-	//writel_relaxed(DIV_ROUND_CLOSEST(rate, 1024 * HZ), slice_base + CCU4_CC40PRS);
 	writel_relaxed(CCU4_CC4yINTE_OME | CCU4_CC4yINTE_PME, slice_base + CCU4_CC40INTE);
 
 	writel_relaxed(BIT(xmc4500_clock_event_device.slice), base + CCU4_GIDLC);
