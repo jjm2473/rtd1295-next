@@ -49,7 +49,12 @@
 	compatible = "infineon,xmc4500-appkit-sdram", "infineon,xmc4500";
 
 	chosen {
-		bootargs = "earlyprintk";
+		bootargs = "ignore_loglevel debug"; /*  earlyprintk */
+		stdout-path = "serial0:19200n8";
+	};
+
+	aliases {
+		serial0 = &usic0_ch0;
 	};
 
 	memory {
@@ -74,4 +79,13 @@
 &scu_ccu {
 	clocks = <&clk_xtal>, <&clk_xtal_rtc>;
 	clock-names = "xtal", "xtal_rtc";
+};
+
+&usic0 {
+	status = "okay";
+};
+
+&usic0_ch0 {
+	status = "okay";
+	infineon,usic-mode = <2>;
 };
