@@ -9,7 +9,7 @@
 
 #define XMC4500_USIC_CHx_TRBSR_TFULL	(1 << 12)
 
-	.macro addruart, rx, tmp
+	.macro addruart, rx, tmp, tmp2
 	ldr	\rx, =(CONFIG_DEBUG_UART_PHYS)
 	.endm
 
