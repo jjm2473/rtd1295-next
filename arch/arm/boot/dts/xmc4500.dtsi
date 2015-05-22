@@ -93,6 +93,30 @@
 			status = "disabled";
 		};
 
+		usic0: usic@40030000 {
+			compatible = "infineon,xmc4500-usic";
+			reg = <0x40030000 0x4000>;
+			resets = <&scu_rcu 11>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40030000 0x4000>;
+			status = "disabled";
+
+			usic0_ch0: usic-channel@0 {
+				compatible = "infineon,xmc4500-usic-channel";
+				reg = <0x000 0x200>;
+				clocks = <&scu_ccu 1>;
+				status = "disabled";
+			};
+
+			usic0_ch1: usic-channel@200 {
+				compatible = "infineon,xmc4500-usic-channel";
+				reg = <0x200 0x200>;
+				clocks = <&scu_ccu 1>;
+				status = "disabled";
+			};
+		};
+
 		ccu43: ccu4@48004000 {
 			compatible = "infineon,xmc4500-ccu4";
 			reg = <0x48004000 0x4000>;
@@ -101,6 +125,54 @@
 			clock-names = "mclk";
 			resets = <&scu_rcu 32>;
 			status = "disabled";
+		};
+
+		usic1: usic@48020000 {
+			compatible = "infineon,xmc4500-usic";
+			reg = <0x48020000 0x4000>;
+			resets = <&scu_rcu 39>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x48020000 0x4000>;
+			status = "disabled";
+
+			usic1_ch0: usic-channel@0 {
+				compatible = "infineon,xmc4500-usic-channel";
+				reg = <0x000 0x200>;
+				clocks = <&scu_ccu 1>;
+				status = "disabled";
+			};
+
+			usic1_ch1: usic-channel@200 {
+				compatible = "infineon,xmc4500-usic-channel";
+				reg = <0x200 0x200>;
+				clocks = <&scu_ccu 1>;
+				status = "disabled";
+			};
+		};
+
+		usic2: usic@48024000 {
+			compatible = "infineon,xmc4500-usic";
+			reg = <0x48024000 0x4000>;
+			resets = <&scu_rcu 40>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x48024000 0x4000>;
+			status = "disabled";
+
+			usic2_ch0: usic-channel@0 {
+				compatible = "infineon,xmc4500-usic-channel";
+				reg = <0x000 0x200>;
+				clocks = <&scu_ccu 1>;
+				status = "disabled";
+			};
+
+			usic2_ch1: usic-channel@200 {
+				compatible = "infineon,xmc4500-usic-channel";
+				reg = <0x200 0x200>;
+				clocks = <&scu_ccu 1>;
+				status = "disabled";
+			};
 		};
 
 		scu_rcu: reset@50004400 {
