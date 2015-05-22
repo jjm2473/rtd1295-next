@@ -278,4 +278,7 @@
 /* MediaTek BTIF */
 #define PORT_MTK_BTIF	117
 
+/* Infineon XMC4000 USIC */
+#define PORT_XMC4000_USIC	118
+
 #endif /* _UAPILINUX_SERIAL_CORE_H */
