@@ -127,6 +127,17 @@
 			status = "disabled";
 		};
 
+		sdmmc: sdhci@4801C000 {
+			compatible = "infineon,xmc4500-sdmmc";
+			reg = <0x4801C000 0x4000>;
+			interrupts = <106>;
+			clocks = <&scu_ccu 4>;
+			clock-names = "clk_xin";
+			resets = <&scu_rcu 38>;
+			bus-width = <8>;
+			status = "disabled";
+		};
+
 		usic1: usic@48020000 {
 			compatible = "infineon,xmc4500-usic";
 			reg = <0x48020000 0x4000>;
