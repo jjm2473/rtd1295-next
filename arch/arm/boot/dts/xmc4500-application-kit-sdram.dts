@@ -55,4 +55,23 @@
 	memory {
 		reg = <0x60000000 0x00800000>;
 	};
+
+	clocks {
+		clk_xtal: xtal {
+			compatible = "fixed-clock";
+			clock-frequency = <12000000>;
+			#clock-cells = <0>;
+		};
+
+		clk_xtal_rtc: xtal-rtc {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+	};
+};
+
+&scu_ccu {
+	clocks = <&clk_xtal>, <&clk_xtal_rtc>;
+	clock-names = "xtal", "xtal_rtc";
 };
