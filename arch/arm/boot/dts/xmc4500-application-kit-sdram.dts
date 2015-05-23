@@ -39,6 +39,7 @@
 
 &sdmmc {
 	status = "okay";
+	non-removable;
 };
 
 &usic0_ch0 {
