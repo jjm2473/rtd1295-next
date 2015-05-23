@@ -77,6 +77,12 @@
 			status = "disabled";
 		};
 
+		sdmmc: sdhci@4801C0000 {
+			compatible = "infineon,xmc4500-sdmmc";
+			reg = <0x4801C000 0x4000>;
+			status = "disabled";
+		};
+
 		usic1_ch0: usic@48020000 {
 			compatible = "infineon,xmc4500-usic";
 			reg = <0x48020000 0x200>;
