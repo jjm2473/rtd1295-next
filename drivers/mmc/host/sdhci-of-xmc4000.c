@@ -4,22 +4,34 @@
 
 #include <linux/module.h>
 #include <linux/of_device.h>
+#include <linux/reset.h>
 #include "sdhci-pltfm.h"
-
-struct xmc4000_sdhci_data {
-	struct clk *clk_mmc;
-};
 
 static int xmc4000_sdhci_probe(struct platform_device *pdev)
 {
-	struct xmc4000_sdhci_data *data;
 	struct sdhci_host *host;
 	struct sdhci_pltfm_host *pltfm_host;
+	struct clk *clk_xin;
 	int ret;
 
-	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
-	if (!data)
-		return -ENOMEM;
+	clk_xin = devm_clk_get(&pdev->dev, "clk_xin");
+	if (IS_ERR(clk_xin)) {
+		dev_err(&pdev->dev, "clk_xin clock not found.\n");
+		ret = PTR_ERR(clk_xin);
+		goto err_clk_xin_get;
+	}
+
+	ret = clk_prepare_enable(clk_xin);
+	if (ret) {
+		dev_err(&pdev->dev, "Unable to enable clk_xin.\n");
+		goto err_clk_xin_enable;
+	}
+
+	ret = device_reset(&pdev->dev);
+	if (ret) {
+		dev_err(&pdev->dev, "Unable to reset.\n");
+		goto err_reset;
+	}
 
 	host = sdhci_pltfm_init(pdev, NULL, 0);
 	if (IS_ERR(host)) {
@@ -30,7 +42,7 @@ static int xmc4000_sdhci_probe(struct platform_device *pdev)
 	sdhci_get_of_property(pdev);
 
 	pltfm_host = sdhci_priv(host);
-	pltfm_host->priv = data;
+	pltfm_host->clk = clk_xin;
 
 	ret = mmc_of_parse(host->mmc);
 	if (ret) {
@@ -48,6 +60,11 @@ err_sdhci_add:
 err_mmc_parse:
 	sdhci_pltfm_free(pdev);
 err_sdhci_init:
+err_reset:
+	clk_disable_unprepare(clk_xin);
+err_clk_xin_enable:
+	devm_clk_put(&pdev->dev, clk_xin);
+err_clk_xin_get:
 	return ret;
 }
 
