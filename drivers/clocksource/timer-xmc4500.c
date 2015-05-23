@@ -175,7 +175,7 @@ static __init void xmc4500_ccu4_init(struct device_node *node)
 	xmc4500_clock_event_device.periodic_reload = DIV_ROUND_CLOSEST(rate, 1024 * HZ);
 
 	clockevents_config_and_register(&xmc4500_clock_event_device.evtdev,
-		DIV_ROUND_CLOSEST(rate, 1024), 0xf, 0x0000ffff);
+		DIV_ROUND_CLOSEST(rate, 1024), 0x1, 0x0000ffff);
 
 	ret = request_irq(irq, xmc4500_clock_event_handler, IRQF_TIMER,
 		"xmc4500 clockevent", &xmc4500_clock_event_device);
