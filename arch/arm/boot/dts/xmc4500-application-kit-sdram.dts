@@ -18,6 +18,10 @@
 	};
 };
 
+&sdmmc {
+	status = "okay";
+};
+
 &usic0_ch0 {
 	status = "okay";
 };
