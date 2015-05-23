@@ -50,7 +50,7 @@
 	compatible = "infineon,xmc4500-appkit-sdram", "infineon,xmc4500";
 
 	chosen {
-		bootargs = "ignore_loglevel debug"; /*  earlyprintk */
+		bootargs = "earlyprintk ignore_loglevel debug clk_ignore_unused";
 		stdout-path = "serial0:19200n8";
 	};
 
