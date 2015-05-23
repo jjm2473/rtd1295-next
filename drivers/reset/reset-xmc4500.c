@@ -64,10 +64,21 @@ static int xmc4500_reset_deassert(struct reset_controller_dev *rcdev,
 	return 0;
 }
 
+static int xmc4500_reset(struct reset_controller_dev *rcdev, unsigned long id)
+{
+	if (!xmc4500_reset_status(rcdev, id))
+		xmc4500_reset_assert(rcdev, id);
+
+	xmc4500_reset_deassert(rcdev, id);
+
+	return 0;
+}
+
 static struct reset_control_ops xmc4500_reset_ops = {
 	.assert		= xmc4500_reset_assert,
 	.deassert	= xmc4500_reset_deassert,
 	.status		= xmc4500_reset_status,
+	.reset		= xmc4500_reset,
 };
 
 static int xmc4500_reset_probe(struct platform_device *pdev)
