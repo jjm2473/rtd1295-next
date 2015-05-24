@@ -886,6 +886,8 @@ config ARCH_XMC4000
 	depends on ARM_SINGLE_ARMV7M
 	select ARCH_HAS_RESET_CONTROLLER
 	select ARMV7M_SYSTICK
+	select PINCTRL
+	select PINCTRL_XMC4500
 	select RESET_CONTROLLER
 	help
 	  Support for Infineon XMC4500 processors.

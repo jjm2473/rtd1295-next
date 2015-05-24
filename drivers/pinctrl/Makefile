@@ -64,5 +64,6 @@ obj-$(CONFIG_PINCTRL_SUNXI)	+= sunxi/
 obj-y				+= ti/
 obj-$(CONFIG_PINCTRL_UNIPHIER)	+= uniphier/
 obj-$(CONFIG_ARCH_VT8500)	+= vt8500/
+obj-$(CONFIG_PINCTRL_XMC4000)	+= xmc4000/
 obj-$(CONFIG_PINCTRL_MTK)	+= mediatek/
 obj-$(CONFIG_PINCTRL_ZX)	+= zte/
