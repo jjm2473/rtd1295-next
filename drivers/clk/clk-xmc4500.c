@@ -315,7 +315,7 @@ static __init void xmc4500_scu_ccu_init(struct device_node *node)
 
 	/* CLK gates */
 	clk[CLK_USB] = xmc4500_register_gate_clk("usb", "USB", base, 0);
-	clk[CLK_MMC] = xmc4500_register_gate_clk("mmc", "SDMMC", base, 1);
+	clk[CLK_MMC] = xmc4500_register_gate_clk("mmc", "USB", base, 1);
 	clk[CLK_ETH0] = xmc4500_register_gate_clk("eth0", "ETH", base, 2);
 	clk[CLK_EBU] = xmc4500_register_gate_clk("ebu", "EBU", base, 3);
 	clk[CLK_CCU] = xmc4500_register_gate_clk("ccu", "CCU", base, 4);
