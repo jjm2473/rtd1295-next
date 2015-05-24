@@ -149,12 +149,6 @@
 	clock-names = "xtal", "xtal_rtc";
 };
 
-&sdmmc {
-	status = "okay";
-	broken-cd;
-	non-removable;
-};
-
 &usic0 {
 	status = "okay";
 };
