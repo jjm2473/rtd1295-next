@@ -823,6 +823,8 @@ config ARCH_XMC4000
 	select CPU_V7M
 	select GENERIC_CLOCKEVENTS
 	select NO_IOPORT_MAP
+	select PINCTRL
+	select PINCTRL_XMC4000
 	select RESET_CONTROLLER
 	select SPARSE_IRQ
 	select USE_OF

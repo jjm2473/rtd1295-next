@@ -221,6 +221,15 @@ config PINCTRL_PALMAS
 	  open drain configuration for the Palmas series devices like
 	  TPS65913, TPS80036 etc.
 
+config PINCTRL_XMC4000
+	bool "Pinctrl driver for Infineon XMC4000"
+	depends on OF
+	depends on ARCH_XMC4000 || COMPILE_TEST
+	select PINMUX
+	select GENERIC_PINCONF
+	help
+	  This selects the pinctrl driver for Infineon XMC4xxx.
+
 config PINCTRL_ZYNQ
 	bool "Pinctrl driver for Xilinx Zynq"
 	depends on ARCH_ZYNQ
