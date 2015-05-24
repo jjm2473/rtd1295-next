@@ -80,6 +80,7 @@
 		sdmmc: sdhci@4801C000 {
 			compatible = "infineon,xmc4500-sdmmc";
 			reg = <0x4801C000 0x4000>;
+			interrupts = <106>;
 			clocks = <&scu_ccu 4>;
 			clock-names = "clk_xin";
 			resets = <&scu_rcu 38>;
