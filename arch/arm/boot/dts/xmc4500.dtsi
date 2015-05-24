@@ -175,6 +175,13 @@
 			};
 		};
 
+		ports: pinctrl@48028000 {
+			compatible = "infineon,xmc4500-ports";
+			reg = <0x48028000 0x1000>;
+			gpio-controller;
+			#gpio-cells = <3>;
+		};
+
 		scu_rcu: reset@50004400 {
 			compatible = "infineon,xmc4500-scu-rcu";
 			reg = <0x50004400 0x200>;
