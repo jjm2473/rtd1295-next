@@ -39,6 +39,7 @@
 
 &sdmmc {
 	status = "okay";
+	broken-cd;
 	non-removable;
 };
 
