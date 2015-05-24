@@ -1,0 +1,16 @@
+if ARCH_XMC4000 || COMPILE_TEST
+
+config PINCTRL_XMC4000
+	bool
+	depends on OF
+	select PINMUX
+	select GENERIC_PINCONF
+	select GPIOLIB
+
+config PINCTRL_XMC4500
+	bool "Pinctrl driver for Infineon XMC4500" if COMPILE_TEST && !MACH_XMC4500
+	depends on OF
+	default ARCH_XMC4000
+	select PINCTRL_XMC4000
+
+endif
