@@ -1,0 +1,21 @@
+/*
+ * Spansion/Cypress S6E2CCA H/J/L
+ *
+ * Copyright (c) 2015-2017 Andreas Färber
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+#include "fm4-s6e2cc.dtsi"
+
+/ {
+	soc {
+		sram0: sram@1ffd0000 {
+			compatible = "mmio-sram";
+			reg = <0x1ffd0000 0x30000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 0x1ffd0000 0x30000>;
+		};
+	};
+};

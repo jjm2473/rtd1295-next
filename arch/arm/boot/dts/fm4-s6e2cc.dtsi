@@ -1,0 +1,31 @@
+/*
+ * Spansion/Cypress S6E2CC family (FM4)
+ *
+ * Copyright (c) 2015-2017 Andreas Färber
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+#include "fm4.dtsi"
+
+/ {
+	soc {
+		/* sram0 offset differs with size */
+
+		sram1: sram@20038000 {
+			compatible = "mmio-sram";
+			reg = <0x20038000 0x8000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 0x20038000 0x8000>;
+		};
+
+		sram2: sram@20040000 {
+			compatible = "mmio-sram";
+			reg = <0x20040000 0x8000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 0x20040000 0x8000>;
+		};
+	};
+};

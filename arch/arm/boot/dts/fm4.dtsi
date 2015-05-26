@@ -1,0 +1,34 @@
+/*
+ * Device tree for Spansion/Cypress FM4
+ *
+ * Copyright (c) 2015-2017 Andreas Färber
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+#include "armv7-m.dtsi"
+
+/ {
+	compatible = "cypress,fm4";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+	};
+
+	chosen {
+	};
+
+	memory@60000000 {
+		device_type = "memory";
+		reg = <0x60000000 0x0>;
+	};
+
+	soc {
+	};
+};
+
+&systick {
+	status = "okay";
+	clocks = <&cgu 1>;
+};
