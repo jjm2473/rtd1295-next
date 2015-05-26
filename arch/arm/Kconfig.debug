@@ -1220,6 +1220,13 @@ choice
 		    0x4000e000 | UART0
 		    0x4000e400 | UART1
 
+	config DEBUG_LL_UART_FM4
+		bool "Kernel low-level debugging via FM4 UART"
+		depends on ARCH_FM4
+		help
+		  Say Y here if you wish the debug print routines to direct
+		  their output to a USIC UART port on FM4 based machines.
+
 	config DEBUG_LL_UART_PL01X
 		bool "Kernel low-level debugging via ARM Ltd PL01x Primecell UART"
 		help
@@ -1307,6 +1314,7 @@ config DEBUG_LL_INCLUDE
 	default "debug/pl01x.S" if DEBUG_LL_UART_PL01X || DEBUG_UART_PL01X
 	default "debug/exynos.S" if DEBUG_EXYNOS_UART
 	default "debug/efm32.S" if DEBUG_LL_UART_EFM32
+	default "debug/fm4.S" if DEBUG_LL_UART_FM4
 	default "debug/icedcc.S" if DEBUG_ICEDCC
 	default "debug/imx.S" if DEBUG_IMX1_UART || \
 				 DEBUG_IMX25_UART || \
@@ -1460,7 +1468,7 @@ config DEBUG_UART_PHYS
 	default 0xfffff700 if ARCH_IOP33X
 	depends on ARCH_EP93XX || \
 	        DEBUG_LL_UART_8250 || DEBUG_LL_UART_PL01X || \
-		DEBUG_LL_UART_EFM32 || \
+		DEBUG_LL_UART_EFM32 || DEBUG_LL_UART_FM4 || \
 		DEBUG_UART_8250 || DEBUG_UART_PL01X || DEBUG_MESON_UARTAO || \
 		DEBUG_NETX_UART || \
 		DEBUG_QCOM_UARTDM || DEBUG_R7S72100_SCIF2 || \
