@@ -759,6 +759,24 @@ config ARCH_S3C64XX
 	help
 	  Samsung S3C64XX series based systems
 
+config ARCH_FM4
+	bool "Spansion FM4"
+	depends on !MMU
+	select ARCH_HAS_RESET_CONTROLLER
+	select ARM_NVIC
+	select ARMV7M_SYSTICK
+	select AUTO_ZRELADDR
+	select CLKSRC_OF
+	select COMMON_CLK
+	select CPU_V7M
+	select GENERIC_CLOCKEVENTS
+	select NO_IOPORT_MAP
+	select RESET_CONTROLLER
+	select SPARSE_IRQ
+	select USE_OF
+	help
+	  Support for Spansion (formerly Fujitsu) FM4 processors.
+
 config ARCH_DAVINCI
 	bool "TI DaVinci"
 	select ARCH_HAS_HOLES_MEMORYMODEL
