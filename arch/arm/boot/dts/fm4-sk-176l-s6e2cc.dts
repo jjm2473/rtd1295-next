@@ -1,0 +1,15 @@
+/dts-v1/;
+#include "fm4.dtsi"
+
+/ {
+	model = "Spansion SK-FM4-176L-S6E2CC";
+	compatible = "spansion,fm4";
+
+	chosen {
+		bootargs = "earlyprintk";
+	};
+
+	memory {
+		reg = <0x60000000 0x00200000>;
+	};
+};
