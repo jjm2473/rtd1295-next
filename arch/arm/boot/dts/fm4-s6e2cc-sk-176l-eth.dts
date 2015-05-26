@@ -1,0 +1,36 @@
+/*
+ * Spansion/Cypress SK-FM4-176L-S6E2CC-ETH
+ *
+ * Copyright (c) 2015-2017 Andreas Färber
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+/dts-v1/;
+
+#include "fm4-s6e2cca.dtsi"
+
+/ {
+	model = "Cypress SK-FM4-176L-S6E2CC-ETH";
+	compatible = "cypress,fm4";
+
+	chosen {
+		bootargs = "earlycon";
+	};
+
+	memory@60000000 {
+		reg = <0x60000000 0x00200000>;
+	};
+
+	main_osc: main-osc-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <4000000>;
+		#clock-cells = <0>;
+	};
+
+	sub_osc: sub-osc-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+	};
+};
