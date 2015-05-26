@@ -866,6 +866,15 @@ config ARCH_EFM32
 	  Support for Energy Micro's (now Silicon Labs) efm32 Giant Gecko
 	  processors.
 
+config ARCH_FM4
+	bool "Spansion FM4"
+	depends on ARM_SINGLE_ARMV7M
+	select ARCH_HAS_RESET_CONTROLLER
+	select ARMV7M_SYSTICK
+	select RESET_CONTROLLER
+	help
+	  Support for Spansion (formerly Fujitsu, now Cypress) FM4 processors.
+
 config ARCH_LPC18XX
 	bool "NXP LPC18xx/LPC43xx"
 	depends on ARM_SINGLE_ARMV7M
