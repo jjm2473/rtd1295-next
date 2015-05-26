@@ -1,0 +1,10 @@
+/*
+ * Device tree for Spansion FM4
+ */
+
+#include "armv7-m.dtsi"
+
+/ {
+	soc {
+	};
+};
