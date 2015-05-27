@@ -8,3 +8,8 @@
 	soc {
 	};
 };
+
+&systick {
+	status = "okay";
+	clock-frequency = <200000000>;
+};
