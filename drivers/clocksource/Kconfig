@@ -254,6 +254,11 @@ config CLKSRC_EFM32
 	  Support to use the timers of EFM32 SoCs as clock source and clock
 	  event device.
 
+config CLKSRC_FM4
+	bool "Clocksource for Spansion FM4 SoCs" if !ARCH_FM4
+	depends on OF && ARM && (ARCH_FM4 || COMPILE_TEST)
+	select CLKSRC_MMIO
+
 config CLKSRC_LPC32XX
 	bool "Clocksource for LPC32XX" if COMPILE_TEST
 	depends on GENERIC_CLOCKEVENTS && HAS_IOMEM
