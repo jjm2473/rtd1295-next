@@ -33,6 +33,13 @@
 			#clock-cells = <1>;
 		};
 
+		dual_timer: timer@40015000 {
+			compatible = "cypress,fm4-dual-timer";
+			reg = <0x40015000 0x1000>;
+			clocks = <&cgu 1>;
+			interrupts = <47 0>;
+		};
+
 		intc: interrupt-controller@40031000 {
 			compatible = "cypress,fm4-intc";
 			reg = <0x40031000 0x1000>;
