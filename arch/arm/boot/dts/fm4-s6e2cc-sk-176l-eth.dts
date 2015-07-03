@@ -14,8 +14,13 @@
 	model = "Cypress SK-FM4-176L-S6E2CC-ETH";
 	compatible = "cypress,fm4";
 
+	aliases {
+		serial0 = &mfs0;
+	};
+
 	chosen {
-		bootargs = "earlycon";
+		bootargs = "console=ttyFM0,115200n8 earlycon ignore_loglevel ihash_entries=64 dhash_entries=64 uclinux.physaddr=0x00180000 root=/dev/mtdblock0 init=/sbin/init";
+		stdout-path = "serial0:115200n8";
 	};
 
 	memory@60000000 {
@@ -38,4 +43,8 @@
 &cgu {
 	clocks = <&main_osc>, <&sub_osc>;
 	clock-names = "CLKMO", "CLKSO";
+};
+
+&mfs0 {
+	status = "okay";
 };
