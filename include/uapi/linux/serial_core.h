@@ -271,4 +271,7 @@
 /* MPS2 UART */
 #define PORT_MPS2UART	116
 
+/* Cypress FM4 MFS UART */
+#define PORT_FM4_MFS	117
+
 #endif /* _UAPILINUX_SERIAL_CORE_H */
