@@ -1758,7 +1758,7 @@ source "mm/Kconfig"
 config FORCE_MAX_ZONEORDER
 	int "Maximum zone order"
 	default "12" if SOC_AM33XX
-	default "9" if SA1111 || ARCH_EFM32
+	default "9" if SA1111 || ARCH_EFM32 || ARCH_FM4
 	default "11"
 	help
 	  The kernel memory allocator divides physically contiguous memory
