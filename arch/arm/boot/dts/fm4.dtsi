@@ -182,6 +182,34 @@
 			interrupts = <126 0>, <127 0>;
 			status = "disabled";
 		};
+
+		can0: can@40062000 {
+			compatible = "bosch,c_can";
+			reg = <0x40062000 0x100>;
+			clocks = <&can_prescaler>;
+			interrupts = <80 0>;
+			status = "disabled";
+		};
+
+		can1: can@40063000 {
+			compatible = "bosch,c_can";
+			reg = <0x40063000 0x100>;
+			clocks = <&can_prescaler>;
+			interrupts = <81 0>;
+			status = "disabled";
+		};
+
+		can_fd: can@40070000 {
+			compatible = "bosch,m_can";
+			reg = <0x40070000 0x1000>, <0x40078000 0x4000>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&can_prescaler>, <&can_prescaler>;
+			clock-names = "hclk", "cclk";
+			interrupts = <81 3>, <81 4>;
+			interrupt-names = "int0", "int1";
+			bosch,mram-cfg = <0x0 0 0 32 0 0 0 1>;
+			status = "disabled";
+		};
 	};
 };
 
