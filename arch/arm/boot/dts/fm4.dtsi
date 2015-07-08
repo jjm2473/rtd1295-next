@@ -27,6 +27,12 @@
 	soc {
 		interrupt-parent = <&intc>;
 
+		cgu: clk@40010000 {
+			compatible = "cypress,fm4-crg";
+			reg = <0x40010000 0x1000>;
+			#clock-cells = <1>;
+		};
+
 		intc: interrupt-controller@40031000 {
 			compatible = "cypress,fm4-intc";
 			reg = <0x40031000 0x1000>;
