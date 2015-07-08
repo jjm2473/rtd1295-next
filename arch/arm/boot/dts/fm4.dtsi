@@ -48,6 +48,13 @@
 			#interrupt-cells = <2>;
 		};
 
+		can_prescaler: clk@40037000 {
+			compatible = "cypress,fm4-can-prescaler";
+			reg = <0x40037000 0x1000>;
+			clocks = <&cgu 0>;
+			#clock-cells = <0>;
+		};
+
 		mfs0: serial@40038000 {
 			compatible = "cypress,fm4-mfs";
 			reg = <0x40038000 0x100>;
