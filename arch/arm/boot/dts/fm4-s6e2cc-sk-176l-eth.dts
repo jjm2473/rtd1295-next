@@ -40,6 +40,11 @@
 	};
 };
 
+/*&can_prescaler {
+	assigned-clocks = <&can_prescaler>;
+	assigned-clock-rates = <40000000>;
+};*/
+
 &cgu {
 	clocks = <&main_osc>, <&sub_osc>;
 	clock-names = "CLKMO", "CLKSO";
