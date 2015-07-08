@@ -156,6 +156,14 @@ config COMMON_CLK_XGENE
 	---help---
 	  Sypport for the APM X-Gene SoC reference, PLL, and device clocks.
 
+config COMMON_CLK_FM4_CAN
+	tristate "CAN Prescaler driver for FM4"
+	default y if CAN
+	depends on ARCH_FM4 && OF
+	---help---
+	  Supports the Spansion FM4 CAN Prescaler clock supplied to CAN
+	  and CAN FD IP blocks.
+
 config COMMON_CLK_KEYSTONE
 	tristate "Clock drivers for Keystone based SOCs"
 	depends on (ARCH_KEYSTONE || COMPILE_TEST) && OF
