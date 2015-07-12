@@ -34,3 +34,8 @@
 		#clock-cells = <0>;
 	};
 };
+
+&cgu {
+	clocks = <&main_osc>, <&sub_osc>;
+	clock-names = "CLKMO", "CLKSO";
+};
