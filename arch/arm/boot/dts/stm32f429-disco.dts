@@ -53,7 +53,7 @@
 	compatible = "st,stm32f429i-disco", "st,stm32f429";
 
 	chosen {
-		bootargs = "root=/dev/ram rdinit=/linuxrc";
+		bootargs = "earlyprintk ihash_entries=64 dhash_entries=64 uclinux.physaddr=0x08140000 root=/dev/mtdblock0 init=/sbin/init";
 		stdout-path = "serial0:115200n8";
 	};
 
