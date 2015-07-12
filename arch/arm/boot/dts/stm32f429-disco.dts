@@ -62,7 +62,7 @@
 	};
 
 	aliases {
-		serial0 = &usart1;
+		serial0 = &usart3;
 	};
 };
 
@@ -70,6 +70,6 @@
 	clock-frequency = <8000000>;
 };
 
-&usart1 {
+&usart3 {
 	status = "okay";
 };
