@@ -40,6 +40,18 @@
 	};
 };
 
+&can0 {
+	status = "okay";
+};
+
+&can1 {
+	status = "okay";
+};
+
+&can_fd {
+	status = "okay";
+};
+
 /*&can_prescaler {
 	assigned-clocks = <&can_prescaler>;
 	assigned-clock-rates = <40000000>;
