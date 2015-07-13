@@ -62,6 +62,10 @@
 	clock-names = "CLKMO", "CLKSO";
 };
 
+&ethernet0 {
+	status = "okay";
+};
+
 &mfs0 {
 	status = "okay";
 };
