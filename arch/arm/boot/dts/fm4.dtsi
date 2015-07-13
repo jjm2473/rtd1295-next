@@ -199,6 +199,16 @@
 			status = "disabled";
 		};
 
+		ethernet0: ethernet@40066000 {
+			compatible = "snps,dwmac";
+			reg = <0x40066000 0x2000>;
+			clocks = <&cgu 0>;
+			clock-names = "stmmaceth";
+			interrupts = <82 0>;
+			interrupt-names = "macirq";
+			status = "disabled";
+		};
+
 		can_fd: can@40070000 {
 			compatible = "bosch,m_can";
 			reg = <0x40070000 0x1000>, <0x40078000 0x4000>;
