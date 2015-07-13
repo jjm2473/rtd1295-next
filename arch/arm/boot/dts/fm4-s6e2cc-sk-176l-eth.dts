@@ -19,7 +19,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyFM0,115200n8 earlycon ignore_loglevel ihash_entries=64 dhash_entries=64 uclinux.physaddr=0x00180000 root=/dev/mtdblock0 init=/sbin/init";
+		bootargs = "console=ttyFM0,115200n8 earlycon ignore_loglevel ihash_entries=64 dhash_entries=64 uclinux.physaddr=0x00180000 root=/dev/mtdblock0 init=/bin/sh";
 		stdout-path = "serial0:115200n8";
 	};
 
