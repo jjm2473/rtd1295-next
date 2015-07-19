@@ -209,6 +209,11 @@
 			status = "disabled";
 		};
 
+		pinctrl: pinctrl@4006f000 {
+			compatible = "cypress,fm4-gpio";
+			reg = <0x4006f000 0x1000>;
+		};
+
 		can_fd: can@40070000 {
 			compatible = "bosch,m_can";
 			reg = <0x40070000 0x1000>, <0x40078000 0x4000>;
