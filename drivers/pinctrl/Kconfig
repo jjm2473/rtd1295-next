@@ -115,6 +115,15 @@ config PINCTRL_DIGICOLOR
 	select PINMUX
 	select GENERIC_PINCONF
 
+config PINCTRL_FM4
+	bool "Spansion FM4 pinctrl driver"
+	depends on OF
+	depends on ARCH_FM4 || COMPILE_TEST
+	select PINMUX
+	select GENERIC_PINCONF
+	help
+	  Pinctrl driver for Spansion FM4.
+
 config PINCTRL_LANTIQ
 	bool
 	depends on LANTIQ

@@ -872,6 +872,8 @@ config ARCH_FM4
 	select ARCH_HAS_RESET_CONTROLLER
 	select ARMV7M_SYSTICK
 	select CLKSRC_FM4
+	select PINCTRL
+	select PINCTRL_FM4
 	select RESET_CONTROLLER
 	help
 	  Support for Spansion (formerly Fujitsu, now Cypress) FM4 processors.
