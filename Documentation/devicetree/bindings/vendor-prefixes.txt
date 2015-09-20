@@ -290,7 +290,7 @@ socionext	Socionext Inc.
 solidrun	SolidRun
 solomon        Solomon Systech Limited
 sony	Sony Corporation
-spansion	Spansion Inc.
+spansion	Cypress Semiconductor Corp. (formerly Spansion Inc.)
 sprd	Spreadtrum Communications Inc.
 st	STMicroelectronics
 starry	Starry Electronic Technology (ShenZhen) Co., LTD
