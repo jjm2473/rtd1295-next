@@ -13,6 +13,15 @@
 
 static struct irq_domain *fm4_irq_domain;
 
+static struct irq_chip fm4_chip = {
+	.name			= "FM4",
+	.irq_eoi		= irq_chip_eoi_parent,
+	.irq_mask		= irq_chip_mask_parent,
+	.irq_unmask		= irq_chip_unmask_parent,
+	.irq_retrigger		= irq_chip_retrigger_hierarchy,
+	.irq_set_type		= irq_chip_set_type_parent,
+};
+
 static int fm4_irq_domain_xlate(struct irq_domain *d,
 				struct device_node *controller,
 				const u32 *intspec, unsigned int intsize,
@@ -32,15 +41,6 @@ static int fm4_irq_domain_xlate(struct irq_domain *d,
 
 	return 0;
 }
-
-static struct irq_chip fm4_chip = {
-	.name			= "FM4",
-	.irq_eoi		= irq_chip_eoi_parent,
-	.irq_mask		= irq_chip_mask_parent,
-	.irq_unmask		= irq_chip_unmask_parent,
-	.irq_retrigger		= irq_chip_retrigger_hierarchy,
-	.irq_set_type		= irq_chip_set_type_parent,
-};
 
 static int fm4_alloc_nvic_irq(struct irq_domain *d, unsigned int virq, irq_hw_number_t hwirq)
 {
@@ -72,7 +72,6 @@ static int fm4_irq_domain_alloc(struct irq_domain *d, unsigned int virq,
 		if (err)
 			return err;
 		irq_domain_set_hwirq_and_chip(d, virq + i, hwirq + i, &fm4_chip, NULL);
-		//irq_set_chained_handler_and_data(irq_find_mapping(d->parent, (hwirq + i) / 32));
 	}
 	pr_info("%s: alloc %u (%u) %u %u -> %lu\n", irq_domain_get_of_node(d)->full_name,
 		virq, nr_irqs, args->args[0], args->args[1], hwirq);
