@@ -25,6 +25,15 @@
 	};
 
 	soc {
+		interrupt-parent = <&intc>;
+
+		intc: interrupt-controller@40031000 {
+			compatible = "cypress,fm4-intc";
+			reg = <0x40031000 0x1000>;
+			interrupt-parent = <&nvic>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 	};
 };
 
