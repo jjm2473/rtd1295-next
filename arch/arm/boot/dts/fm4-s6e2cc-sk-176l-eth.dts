@@ -59,6 +59,12 @@
 			default-state = "on";
 			/*linux,default-trigger = "heartbeat";*/
 		};
+
+		tx {
+			label = "tx:yellow";
+			gpios = <&gpio 0x6 0xe GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
 	};
 };
 
