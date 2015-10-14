@@ -204,8 +204,10 @@
 			reg = <0x40066000 0x2000>;
 			clocks = <&cgu 0>;
 			clock-names = "stmmaceth";
-			interrupts = <82 0>;
-			interrupt-names = "macirq";
+			interrupts = <82 0>, <82 1>, <82 2>;
+			interrupt-names = "macirq", "eth_wake_irq", "eth_lpi";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
