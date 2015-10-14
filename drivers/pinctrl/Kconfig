@@ -121,6 +121,7 @@ config PINCTRL_FM4
 	depends on ARCH_FM4 || COMPILE_TEST
 	select PINMUX
 	select GENERIC_PINCONF
+	select GPIOLIB
 	help
 	  Pinctrl driver for Spansion FM4.
 

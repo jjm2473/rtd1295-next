@@ -1,15 +1,18 @@
 /*
- * FM4
+ * Spansion FM4
  */
 
+#include <linux/gpio.h>
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/of.h>
-#include <linux/platform_device.h>
-#include <linux/pinctrl/pinctrl.h>
-#include <linux/pinctrl/pinmux.h>
+#include <linux/of_address.h>
+#include <linux/pinctrl/machine.h>
 #include <linux/pinctrl/pinconf.h>
 #include <linux/pinctrl/pinconf-generic.h>
+#include <linux/pinctrl/pinctrl.h>
+#include <linux/pinctrl/pinmux.h>
+#include <linux/platform_device.h>
 #include "pinctrl-utils.h"
 #include "core.h"
 
@@ -28,6 +31,63 @@ struct fm4_pinmux_function {
 	const char * const *groups;
 	unsigned int ngroups;
 };
+
+static void fm4_gpio_set(struct gpio_chip *gc, unsigned offset, int value)
+{
+	void __iomem *base = of_iomap(gc->of_node, 0) + 0x400 + (offset / 16) * 0x4;
+
+	base -= 0x40000000;
+	base = (void*)(0x42000000 + (unsigned long)base * 32);
+
+	writel_relaxed(value, base + (offset % 16) * 4);
+}
+
+static int fm4_gpio_direction_output(struct gpio_chip *gc, unsigned offset, int value)
+{
+	fm4_gpio_set(gc, offset, value);
+	return 0;
+}
+
+static int fm4_gpio_of_xlate(struct gpio_chip *gc, const struct of_phandle_args *gpiospec, u32 *flags)
+{
+	int pin;
+
+	pin = gpiospec->args[0] * 16 + gpiospec->args[1];
+	if (pin > gc->ngpio)
+		return -EINVAL;
+
+	if (flags)
+		*flags = gpiospec->args[2];
+
+	return pin;
+}
+
+static struct gpio_chip fm4_gpio_chip = {
+	.label = "fm4",
+	.owner = THIS_MODULE,
+	.base = 0,
+	.ngpio = 16 * 16,
+	.set = fm4_gpio_set,
+	.direction_output = fm4_gpio_direction_output,
+	.of_gpio_n_cells = 3,
+	.of_xlate = fm4_gpio_of_xlate,
+};
+
+static int fm4_gpiolib_register(struct platform_device *pdev)
+{
+	int ret;
+
+	fm4_gpio_chip.parent = &pdev->dev;
+	fm4_gpio_chip.of_node = pdev->dev.of_node;
+
+	ret = gpiochip_add(&fm4_gpio_chip);
+	if (ret) {
+		dev_err(&pdev->dev, "could not add gpio chip\n");
+		return ret;
+	}
+
+	return 0;
+}
 
 #define FM4_PINBANK(basenr, bank) \
 	PINCTRL_PIN((basenr) + 0x0, "P" __stringify(bank) __stringify(0)), \
@@ -185,11 +245,10 @@ static struct pinctrl_desc fm4_pinctrl_desc = {
 	.owner = THIS_MODULE,
 };
 
-#define PIN_NAME_LEN (1 + 1 + 1 + 1)
-
 static int fm4_pinctrl_probe(struct platform_device *pdev)
 {
 	struct fm4_pinctrl_dev *pinctrl;
+	int ret;
 
 	pinctrl = devm_kzalloc(&pdev->dev, sizeof(*pinctrl), GFP_KERNEL);
 	if (!pinctrl)
@@ -200,6 +259,12 @@ static int fm4_pinctrl_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	platform_set_drvdata(pdev, pinctrl);
+
+	ret = fm4_gpiolib_register(pdev);
+	if (ret) {
+		pinctrl_unregister(pinctrl->pcdev);
+		return ret;
+	}
 
 	dev_info(&pdev->dev, "FM4 pinctrl initialized\n");
 
