@@ -9,6 +9,7 @@
 /dts-v1/;
 
 #include "fm4-s6e2cca.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Cypress SK-FM4-176L-S6E2CC-ETH";
@@ -37,6 +38,27 @@
 		compatible = "fixed-clock";
 		clock-frequency = <32768>;
 		#clock-cells = <0>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led4-r {
+			label = "led4:red";
+			gpios = <&gpio 0x1 0xa GPIO_ACTIVE_LOW>;
+		};
+
+		led4-g {
+			label = "led4:green";
+			gpios = <&gpio 0xb 0x2 GPIO_ACTIVE_LOW>;
+		};
+
+		led4-b {
+			label = "led4:blue";
+			gpios = <&gpio 0x1 0x8 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+			/*linux,default-trigger = "heartbeat";*/
+		};
 	};
 };
 
