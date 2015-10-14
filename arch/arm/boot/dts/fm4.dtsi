@@ -209,9 +209,10 @@
 			status = "disabled";
 		};
 
-		pinctrl: pinctrl@4006f000 {
+		gpio: pinctrl: pinctrl@4006f000 {
 			compatible = "cypress,fm4-gpio";
 			reg = <0x4006f000 0x1000>;
+			#gpio-cells = <3>;
 		};
 
 		can_fd: can@40070000 {
