@@ -92,6 +92,12 @@ static int fm4_gpiolib_register(struct platform_device *pdev)
 		return ret;
 	}
 
+	ret = gpiochip_add_pin_range(&fm4_gpio_chip, dev_name(&pdev->dev), 0, 0, 16 * 16);
+	if (ret) {
+		dev_err(&pdev->dev, "could not add gpio pin range\n");
+		return ret;
+	}
+
 	return 0;
 }
 
