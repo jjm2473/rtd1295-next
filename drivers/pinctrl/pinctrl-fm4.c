@@ -42,10 +42,15 @@ static void fm4_gpio_set(struct gpio_chip *gc, unsigned offset, int value)
 	writel_relaxed(value, base + (offset % 16) * 4);
 }
 
+static int fm4_gpio_direction_input(struct gpio_chip *gc, unsigned offset)
+{
+	return pinctrl_gpio_direction_input(gc->base + offset);
+}
+
 static int fm4_gpio_direction_output(struct gpio_chip *gc, unsigned offset, int value)
 {
 	fm4_gpio_set(gc, offset, value);
-	return 0;
+	return pinctrl_gpio_direction_output(gc->base + offset);
 }
 
 static int fm4_gpio_of_xlate(struct gpio_chip *gc, const struct of_phandle_args *gpiospec, u32 *flags)
@@ -68,6 +73,7 @@ static struct gpio_chip fm4_gpio_chip = {
 	.base = 0,
 	.ngpio = 16 * 16,
 	.set = fm4_gpio_set,
+	.direction_input  = fm4_gpio_direction_input,
 	.direction_output = fm4_gpio_direction_output,
 	.of_gpio_n_cells = 3,
 	.of_xlate = fm4_gpio_of_xlate,
@@ -201,11 +207,25 @@ static int fm4_pinctrl_set_mux(struct pinctrl_dev *pcdev,
 	return -ENOTSUPP;
 }
 
+static int fm4_pinctrl_gpio_set_direction(struct pinctrl_dev *pcdev,
+		struct pinctrl_gpio_range *range, unsigned offset, bool input)
+{
+	void __iomem *base = of_iomap(range->gc->of_node, 0) + 0x200 + (offset / 16) * 0x4;
+
+	base -= 0x40000000;
+	base = (void*)(0x42000000 + (unsigned long)base * 32);
+
+	writel_relaxed(input ? 0 : 1, base + (offset % 16) * 4);
+
+	return 0;
+}
+
 static const struct pinmux_ops fm4_pinmux_ops = {
 	.get_functions_count = fm4_pinctrl_get_functions_count,
 	.get_function_name = fm4_pinctrl_get_function_name,
 	.get_function_groups = fm4_pinctrl_get_function_groups,
 	.set_mux = fm4_pinctrl_set_mux,
+	.gpio_set_direction = fm4_pinctrl_gpio_set_direction,
 };
 
 static int fm4_pin_config_get(struct pinctrl_dev *pcdev, unsigned pin,
