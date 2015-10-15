@@ -45,6 +45,16 @@ config DWMAC_GENERIC
 	  platform specific code to function or is using platform
 	  data for setup.
 
+config DWMAC_FM4
+	tristate "Spansion FM4 DWMAC support"
+	default ARCH_FM4
+	depends on OF
+	help
+	  Support for Ethernet controller on Spansion FM4 SoCs.
+
+	  This selects the Spansion FM4 SoC glue layer support for the
+	  stmmac device driver.
+
 config DWMAC_IPQ806X
 	tristate "QCA IPQ806x DWMAC support"
 	default ARCH_QCOM
