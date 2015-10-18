@@ -93,7 +93,7 @@
 
 &ethernet0 {
 	status = "okay";
-	snps,reset-gpio = <&gpio 0x6 0xa GPIO_ACTIVE_LOW>;
+	snps,reset-gpio = <&gpio 0x6 0x5 GPIO_ACTIVE_LOW>;
 	snps,reset-active-low;
 	snps,reset-delays-us = <0 10000 1000000>;
 	phy-mode = "mii";
