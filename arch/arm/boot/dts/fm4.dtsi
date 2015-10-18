@@ -200,7 +200,7 @@
 		};
 
 		ethernet0: ethernet@40066000 {
-			compatible = "snps,dwmac";
+			compatible = "cypress,fm4-dwmac", "snps,dwmac";
 			reg = <0x40066000 0x2000>;
 			clocks = <&cgu 0>;
 			clock-names = "stmmaceth";
