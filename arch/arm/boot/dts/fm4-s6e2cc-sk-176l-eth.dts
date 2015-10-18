@@ -16,6 +16,7 @@
 	compatible = "cypress,fm4";
 
 	aliases {
+		ethernet0 = &ethernet0;
 		serial0 = &mfs0;
 	};
 
@@ -100,6 +101,7 @@
 
 	phy: ethernet-phy@7 {
 		reg = <7>;
+		micrel,led-mode = <0>;
 	};
 };
 
