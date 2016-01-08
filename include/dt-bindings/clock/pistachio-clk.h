@@ -21,6 +21,7 @@
 /* Fixed-factor clocks */
 #define CLK_WIFI_DIV4			16
 #define CLK_WIFI_DIV8			17
+#define CLK_SDHOST_DIV4			18
 
 /* Gate clocks */
 #define CLK_MIPS			32

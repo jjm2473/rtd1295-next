@@ -44,7 +44,7 @@ static struct pistachio_gate pistachio_gates[] __initdata = {
 	GATE(CLK_AUX_ADC_INTERNAL, "aux_adc_internal", "sys_internal_div",
 	     0x104, 22),
 	GATE(CLK_AUX_ADC, "aux_adc", "aux_adc_div", 0x104, 23),
-	GATE(CLK_SD_HOST, "sd_host", "sd_host_div", 0x104, 24),
+	GATE(CLK_SD_HOST, "sd_host", "sd_host_div4", 0x104, 24),
 	GATE(CLK_BT, "bt", "bt_div", 0x104, 25),
 	GATE(CLK_BT_DIV4, "bt_div4", "bt_div4_div", 0x104, 26),
 	GATE(CLK_BT_DIV8, "bt_div8", "bt_div8_div", 0x104, 27),
@@ -54,6 +54,7 @@ static struct pistachio_gate pistachio_gates[] __initdata = {
 static struct pistachio_fixed_factor pistachio_ffs[] __initdata = {
 	FIXED_FACTOR(CLK_WIFI_DIV4, "wifi_div4", "wifi_pll", 4),
 	FIXED_FACTOR(CLK_WIFI_DIV8, "wifi_div8", "wifi_pll", 8),
+	FIXED_FACTOR(CLK_SDHOST_DIV4, "sd_host_div4", "sd_host_div", 4),
 };
 
 static struct pistachio_div pistachio_divs[] __initdata = {
