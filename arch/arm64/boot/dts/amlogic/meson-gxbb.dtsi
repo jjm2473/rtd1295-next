@@ -141,6 +141,13 @@
 				clocks = <&xtal>;
 				status = "disabled";
 			};
+
+			timer@9980 {
+				compatible = "amlogic,meson6-timer";
+				reg = <0x0 0x09980 0x0 0x18>; /*XXX*/
+				interrupts = <GIC_SPI 60 IRQ_TYPE_EDGE_RISING>;
+				status = "disabled";
+			};
 		};
 
 		gic: interrupt-controller@c4301000 {
