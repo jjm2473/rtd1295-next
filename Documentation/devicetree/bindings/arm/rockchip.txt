@@ -91,6 +91,11 @@ Rockchip platforms device tree bindings
     Required root node properties:
       - compatible = "geekbuying,geekbox", "rockchip,rk3368";
 
+- GeekBuying Landingship with GeekBox module:
+    Required root node properties:
+      - compatible = "geekbuying,geekbox-landingship",
+		     "geekbuying,geekbox", "rockchip,rk3368";
+
 - Rockchip RK3368 evb:
     Required root node properties:
       - compatible = "rockchip,rk3368-evb-act8846", "rockchip,rk3368";
