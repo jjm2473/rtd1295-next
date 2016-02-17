@@ -142,6 +142,48 @@
 			infineon,hwsel = <0>;
 		};
 	};
+
+	usic1_ch1_default: usic1-ch1-default {
+		u1c1-sclkout-mux {
+			groups = "P0.13";
+			function = "alt2"; /* U1C1.SCLKOUT */
+		};
+
+		u1c1-sclkout-conf {
+			pins = "P0.13";
+			infineon,hwsel = <0>;
+		};
+
+		u1c1-dout3-conf {
+			pins = "P0.14";
+			infineon,hwsel = <1>; /* U1C1.DOUT3 */
+		};
+
+		u1c1-dout2-conf {
+			pins = "P0.15";
+			infineon,hwsel = <1>; /* U1C1.DOUT2 */
+		};
+
+		u1c1-cs#-mux {
+			groups = "P3.3";
+			function = "alt2"; /* U1C1.SELO1 */
+		};
+
+		u1c1-cs#-conf {
+			pins = "P3.3";
+			infineon,hwsel = <0>;
+		};
+
+		u1c1-dout1-conf {
+			pins = "P3.14";
+			infineon,hwsel = <1>; /* U1C1.DOUT1 */
+		};
+
+		u1c1-dout0-conf {
+			pins = "P3.15";
+			infineon,hwsel = <1>; /* U1C1.DOUT0 */
+		};
+	};
 };
 
 &scu_ccu {
@@ -158,4 +200,15 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&usic0_ch0_default>;
 	infineon,usic-mode = <2>;
+};
+
+&usic1 {
+	status = "okay";
+};
+
+&usic1_ch1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&usic1_ch1_default>;
+	infineon,usic-mode = <1>;
 };
