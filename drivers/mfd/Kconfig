@@ -1802,6 +1802,13 @@ config MFD_STM32_TIMERS
 	  for PWM and IIO Timer. This driver allow to share the
 	  registers between the others drivers.
 
+config MFD_XMC4000_USIC
+	tristate "Infineon XMC4000 USIC"
+	depends on ARCH_XMC4000 || COMPILE_TEST
+	select MFD_CORE
+	help
+	  Infineon XMC4000 Universal Serial Interface Channel (USIC)
+
 menu "Multimedia Capabilities Port drivers"
 	depends on ARCH_SA1100
 
