@@ -76,6 +76,30 @@
 	};
 };
 
+&ports {
+	usic0_ch0_default: usic0-ch0-default {
+		rx-mux {
+			groups = "P1.4";
+			function = "gpio"; /* U0C0.DX0B */
+		};
+
+		rx-conf {
+			pins = "P1.4";
+			infineon,hwsel = <0>;
+		};
+
+		tx-mux {
+			groups = "P1.5";
+			function = "alt2"; /* U0C0.DOUT0 */
+		};
+
+		tx-conf {
+			pins = "P1.5";
+			infineon,hwsel = <0>;
+		};
+	};
+};
+
 &scu_ccu {
 	clocks = <&clk_xtal>, <&clk_xtal_rtc>;
 	clock-names = "xtal", "xtal_rtc";
@@ -87,5 +111,7 @@
 
 &usic0_ch0 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&usic0_ch0_default>;
 	infineon,usic-mode = <2>;
 };
