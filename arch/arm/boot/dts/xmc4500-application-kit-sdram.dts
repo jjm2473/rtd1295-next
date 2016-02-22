@@ -202,13 +202,37 @@
 	infineon,usic-mode = <2>;
 };
 
+&usic0_ch1 {
+	status = "okay";
+	infineon,usic-mode = <1>;
+};
+
 &usic1 {
 	status = "okay";
+};
+
+&usic1_ch0 {
+	status = "okay";
+	infineon,usic-mode = <1>;
 };
 
 &usic1_ch1 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&usic1_ch1_default>;
+	infineon,usic-mode = <1>;
+};
+
+&usic2 {
+	status = "okay";
+};
+
+&usic2_ch0 {
+	status = "okay";
+	infineon,usic-mode = <1>;
+};
+
+&usic2_ch1 {
+	status = "okay";
 	infineon,usic-mode = <1>;
 };
