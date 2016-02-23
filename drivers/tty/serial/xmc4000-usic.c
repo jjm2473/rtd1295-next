@@ -14,12 +14,6 @@
 #include <linux/serial_core.h>
 #include <linux/slab.h>
 
-#define XMC4500_USICx_CHy_TRBSR	0x114
-#define XMC4500_USICx_CHy_TRBSR_TEMPTY	BIT(11)
-#define XMC4500_USICx_CHy_TRBSR_TFULL	BIT(12)
-
-#define XMC4500_USICx_CHy_IN0	0x180
-
 #define DRIVER_NAME "xmc4000-usic-channel-asc"
 #define XMC4000_UART_DEVICE "ttyXMC"
 #define XMC4000_MAX_USIC_NR 1
@@ -43,9 +37,9 @@ static struct xmc4000_uart_port *xmc4000_uart_get(int index)
 
 static void xmc4000_usic_putchar(struct xmc4000_uart_port *xmc_port, char ch)
 {
-	while ((readl(xmc_port->port.membase + XMC4500_USICx_CHy_TRBSR) & XMC4500_USICx_CHy_TRBSR_TFULL));
+	while ((readl(xmc_port->port.membase + USICx_CHy_TRBSR) & USICx_CHy_TRBSR_TFULL));
 
-	writel_relaxed(ch, xmc_port->port.membase + XMC4500_USICx_CHy_IN0);
+	writel_relaxed(ch, xmc_port->port.membase + USICx_CHy_IN0);
 }
 
 static unsigned int xmc4000_usic_tx_empty(struct uart_port *port)
@@ -53,9 +47,9 @@ static unsigned int xmc4000_usic_tx_empty(struct uart_port *port)
 	struct xmc4000_uart_port *xmc_port = to_xmc_port(port);
 	u32 trbsr;
 
-	trbsr = readl_relaxed(xmc_port->port.membase + XMC4500_USICx_CHy_TRBSR);
+	trbsr = readl_relaxed(xmc_port->port.membase + USICx_CHy_TRBSR);
 
-	return trbsr & XMC4500_USICx_CHy_TRBSR_TEMPTY ? TIOCSER_TEMT : 0;
+	return trbsr & USICx_CHy_TRBSR_TEMPTY ? TIOCSER_TEMT : 0;
 }
 
 static void xmc4000_usic_set_mctrl(struct uart_port *port, unsigned int mctrl)
