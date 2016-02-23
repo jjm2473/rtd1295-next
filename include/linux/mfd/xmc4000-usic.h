@@ -24,6 +24,8 @@
 #define USICx_CHy_CCR		0x40
 #define USICx_CHy_TBCTR		0x108
 #define USICx_CHy_RBCTR		0x10C
+#define USICx_CHy_TRBSR		0x114
+#define USICx_CHy_IN0		0x180
 
 #define USICx_CHy_CCFG_SSC	BIT(0)
 #define USICx_CHy_CCFG_ASC	BIT(1)
@@ -98,5 +100,8 @@
 
 #define USICx_CHy_RBCTR_LIMIT_OFFSET	8
 #define USICx_CHy_RBCTR_LIMIT_MASK	(0x3f << USICx_CHy_RBCTR_LIMIT_OFFSET)
+
+#define USICx_CHy_TRBSR_TEMPTY		BIT(11)
+#define USICx_CHy_TRBSR_TFULL		BIT(12)
 
 #endif
