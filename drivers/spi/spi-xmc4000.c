@@ -11,6 +11,25 @@
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 
+#define USICx_CHy_PCR_SSC_MSLSEN	BIT(0)
+#define USICx_CHy_PCR_SSC_SELCTR	BIT(1)
+#define USICx_CHy_PCR_SSC_SELINV	BIT(2)
+#define USICx_CHy_PCR_SSC_FEM		BIT(3)
+#define USICx_CHy_PCR_SSC_MSLSIEN	BIT(14)
+
+#define USICx_CHy_PCR_SSC_CTQSEL1_OFFSET	4
+#define USICx_CHy_PCR_SSC_CTQSEL1_PDIV		(0x0 << USICx_CHy_PCR_SSC_CTQSEL1_OFFSET)
+#define USICx_CHy_PCR_SSC_CTQSEL1_PPP		(0x1 << USICx_CHy_PCR_SSC_CTQSEL1_OFFSET)
+#define USICx_CHy_PCR_SSC_CTQSEL1_SCLK		(0x2 << USICx_CHy_PCR_SSC_CTQSEL1_OFFSET)
+#define USICx_CHy_PCR_SSC_CTQSEL1_MCLK		(0x3 << USICx_CHy_PCR_SSC_CTQSEL1_OFFSET)
+#define USICx_CHy_PCR_SSC_CTQSEL1_MASK		(0x3 << USICx_CHy_PCR_SSC_CTQSEL1_OFFSET)
+
+#define USICx_CHy_PCR_SSC_DCTQ1_OFFSET		8
+#define USICx_CHy_PCR_SSC_DCTQ1_MASK		(0x1f << USICx_CHy_PCR_SSC_DCTQ1_OFFSET)
+
+#define USICx_CHy_PCR_SSC_SELO_OFFSET		16
+#define USICx_CHy_PCR_SSC_SELO_MASK		(0xff << USICx_CHy_PCR_SSC_SELO_OFFSET)
+
 static int xmc4000_usic_ssc_probe(struct platform_device *pdev)
 {
 	void __iomem *base;
@@ -27,15 +46,112 @@ static int xmc4000_usic_ssc_probe(struct platform_device *pdev)
 
 	base = of_iomap(pdev->dev.parent->of_node, 0);
 
-	reg = readl_relaxed(base + USICx_CHy_KSCFG);
-	reg |= USICx_CHy_KSCFG_BPMODEN | USICx_CHy_KSCFG_MODEN;
-	writel_relaxed(reg, base + USICx_CHy_KSCFG);
-
 	reg = readl_relaxed(base + USICx_CHy_CCFG);
 	if (!(reg & USICx_CHy_CCFG_SSC)) {
 		dev_warn(&pdev->dev, "no support for SSC on this channel (%08X)\n", reg);
 		return -EINVAL;
 	}
+
+	reg = readl_relaxed(base + USICx_CHy_CCR);
+	reg &= ~USICx_CHy_CCR_MODE_MASK;
+	writel_relaxed(reg, base + USICx_CHy_CCR);
+
+	reg = readl_relaxed(base + USICx_CHy_KSCFG);
+	reg |= USICx_CHy_KSCFG_BPMODEN | USICx_CHy_KSCFG_MODEN;
+	writel_relaxed(reg, base + USICx_CHy_KSCFG);
+
+	// ratio = ((120000000.f / (2 * 1024)) * 500) / 100000.f = 292.96875
+	// pdiv = 291.96875
+	// step = ((((100000 * 1024) / 1000000) * 2) * (1 + pdiv)) / 120 = 500
+
+	reg = readl_relaxed(base + USICx_CHy_FDR);
+	reg &= ~USICx_CHy_FDR_DM_MASK;
+	reg |= USICx_CHy_FDR_DM_FRAC;
+	writel_relaxed(reg, base + USICx_CHy_FDR);
+
+	reg |= (500 << USICx_CHy_FDR_STEP_OFFSET) & USICx_CHy_FDR_STEP_MASK;
+	writel_relaxed(reg, base + USICx_CHy_FDR);
+
+	reg = readl_relaxed(base + USICx_CHy_BRG);
+	reg &= ~(USICx_CHy_BRG_SCLKCFG_MASK | USICx_CHy_BRG_PDIV_MASK | USICx_CHy_BRG_DCTQ_MASK | USICx_CHy_BRG_CTQSEL_MASK);
+	reg |= (1 << USICx_CHy_BRG_DCTQ_OFFSET) & USICx_CHy_BRG_DCTQ_MASK;
+	reg |= (291 << USICx_CHy_BRG_PDIV_OFFSET) & USICx_CHy_BRG_PDIV_MASK;
+	reg |= USICx_CHy_BRG_SCLKCFG_PASSIVE_1 | USICx_CHy_BRG_CTQSEL_SCLK;
+	writel_relaxed(reg, base + USICx_CHy_BRG);
+
+	reg = readl_relaxed(base + USICx_CHy_SCTR);
+	reg &= ~(USICx_CHy_SCTR_WLE_MASK | USICx_CHy_SCTR_FLE_MASK | USICx_CHy_SCTR_TRM_MASK);
+	reg |= (0x1 << USICx_CHy_SCTR_TRM_OFFSET) & USICx_CHy_SCTR_TRM_MASK;
+	reg |= ((8 - 1) << USICx_CHy_SCTR_FLE_OFFSET) & USICx_CHy_SCTR_FLE_MASK;
+	reg |= ((8 - 1) << USICx_CHy_SCTR_WLE_OFFSET) & USICx_CHy_SCTR_WLE_MASK;
+	reg |= USICx_CHy_SCTR_PDL_1 | USICx_CHy_SCTR_SDIR_MSB;
+	writel_relaxed(reg, base + USICx_CHy_SCTR);
+
+	/* begin quad mode */
+
+	reg = readl_relaxed(base + USICx_CHy_CCR);
+	reg &= ~USICx_CHy_CCR_HPCEN_MASK;
+	reg |= (0x3 << USICx_CHy_CCR_HPCEN_OFFSET) & USICx_CHy_CCR_HPCEN_MASK;
+	writel_relaxed(reg, base + USICx_CHy_CCR);
+
+	reg = readl_relaxed(base + USICx_CHy_TCSR);
+	reg |= USICx_CHy_TCSR_HPCMD;
+	writel_relaxed(reg, base + USICx_CHy_TCSR);
+
+	reg = readl_relaxed(base + USICx_CHy_DX0CR);
+	reg &= ~(USICx_CHy_DXnCR_DSEL_MASK);
+	reg |= (0x6 << USICx_CHy_DXnCR_DSEL_OFFSET) & USICx_CHy_DXnCR_DSEL_MASK;
+	reg |= USICx_CHy_DXnCR_INSW;
+	writel_relaxed(reg, base + USICx_CHy_DX0CR);
+
+	reg = readl_relaxed(base + USICx_CHy_DX3CR);
+	reg &= ~(USICx_CHy_DXnCR_DSEL_MASK);
+	reg |= (0x6 << USICx_CHy_DXnCR_DSEL_OFFSET) & USICx_CHy_DXnCR_DSEL_MASK;
+	reg |= USICx_CHy_DXnCR_INSW;
+	writel_relaxed(reg, base + USICx_CHy_DX3CR);
+
+	reg = readl_relaxed(base + USICx_CHy_DX4CR);
+	reg &= ~(USICx_CHy_DXnCR_DSEL_MASK);
+	reg |= (0x6 << USICx_CHy_DXnCR_DSEL_OFFSET) & USICx_CHy_DXnCR_DSEL_MASK;
+	reg |= USICx_CHy_DXnCR_INSW;
+	writel_relaxed(reg, base + USICx_CHy_DX4CR);
+
+	reg = readl_relaxed(base + USICx_CHy_DX5CR);
+	reg &= ~(USICx_CHy_DXnCR_DSEL_MASK);
+	reg |= (0x6 << USICx_CHy_DXnCR_DSEL_OFFSET) & USICx_CHy_DXnCR_DSEL_MASK;
+	reg |= USICx_CHy_DXnCR_INSW;
+	writel_relaxed(reg, base + USICx_CHy_DX5CR);
+
+	/* end quad mode */
+
+	reg = readl_relaxed(base + USICx_CHy_TCSR);
+	reg &= ~(USICx_CHy_TCSR_TDEN_MASK);
+	reg |= (0x1 << USICx_CHy_TCSR_TDEN_OFFSET) & USICx_CHy_TCSR_TDEN_MASK;
+	reg |= USICx_CHy_TCSR_TDSSM;
+	writel_relaxed(reg, base + USICx_CHy_TCSR);
+
+	reg = readl_relaxed(base + USICx_CHy_PCR);
+	reg &= ~(USICx_CHy_PCR_SSC_SELO_MASK | USICx_CHy_PCR_SSC_MSLSIEN | USICx_CHy_PCR_SSC_DCTQ1_MASK | USICx_CHy_PCR_SSC_CTQSEL1_MASK);
+	reg |= (0 << USICx_CHy_PCR_SSC_DCTQ1_OFFSET) & USICx_CHy_PCR_SSC_DCTQ1_MASK;
+	reg |= ((1 << 1) << USICx_CHy_PCR_SSC_SELO_OFFSET) & USICx_CHy_PCR_SSC_SELO_MASK;
+	reg |= USICx_CHy_PCR_SSC_CTQSEL1_SCLK;
+	reg |= USICx_CHy_PCR_SSC_FEM | USICx_CHy_PCR_SSC_SELINV | USICx_CHy_PCR_SSC_SELCTR | USICx_CHy_PCR_SSC_MSLSEN;
+	writel_relaxed(reg, base + USICx_CHy_PCR);
+
+	reg = readl_relaxed(base + USICx_CHy_TBCTR);
+	reg &= ~(USICx_CHy_TBCTR_LIMIT_MASK);
+	reg |= (1 << USICx_CHy_TBCTR_LIMIT_OFFSET) & USICx_CHy_TBCTR_LIMIT_MASK;
+	writel_relaxed(reg, base + USICx_CHy_TBCTR);
+
+	reg = readl_relaxed(base + USICx_CHy_RBCTR);
+	reg &= ~(USICx_CHy_RBCTR_LIMIT_MASK);
+	reg |= (1 << USICx_CHy_RBCTR_LIMIT_OFFSET) & USICx_CHy_RBCTR_LIMIT_MASK;
+	writel_relaxed(reg, base + USICx_CHy_RBCTR);
+
+	reg = readl_relaxed(base + USICx_CHy_CCR);
+	reg &= ~(USICx_CHy_CCR_MODE_MASK);
+	reg |= USICx_CHy_CCR_MODE_SSC;
+	writel_relaxed(reg, base + USICx_CHy_CCR);
 
 	return 0;
 }
