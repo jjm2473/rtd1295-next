@@ -133,7 +133,7 @@ static int xmc4000_usic_ssc_probe(struct platform_device *pdev)
 	reg = readl_relaxed(base + USICx_CHy_PCR);
 	reg &= ~(USICx_CHy_PCR_SSC_SELO_MASK | USICx_CHy_PCR_SSC_MSLSIEN | USICx_CHy_PCR_SSC_DCTQ1_MASK | USICx_CHy_PCR_SSC_CTQSEL1_MASK);
 	reg |= (0 << USICx_CHy_PCR_SSC_DCTQ1_OFFSET) & USICx_CHy_PCR_SSC_DCTQ1_MASK;
-	reg |= ((1 << 1) << USICx_CHy_PCR_SSC_SELO_OFFSET) & USICx_CHy_PCR_SSC_SELO_MASK;
+	reg |= (BIT(1) << USICx_CHy_PCR_SSC_SELO_OFFSET) & USICx_CHy_PCR_SSC_SELO_MASK;
 	reg |= USICx_CHy_PCR_SSC_CTQSEL1_SCLK;
 	reg |= USICx_CHy_PCR_SSC_FEM | USICx_CHy_PCR_SSC_SELINV | USICx_CHy_PCR_SSC_SELCTR | USICx_CHy_PCR_SSC_MSLSEN;
 	writel_relaxed(reg, base + USICx_CHy_PCR);
