@@ -234,5 +234,5 @@
 
 &usic2_ch1 {
 	status = "okay";
-	infineon,usic-mode = <1>;
+	infineon,usic-mode = <4>;
 };
