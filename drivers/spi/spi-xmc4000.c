@@ -34,6 +34,8 @@
 
 struct xmc4000_ssc {
 	void __iomem *base;
+	const void *txbuf;
+	void *rxbuf;
 };
 
 static int xmc4000_usic_ssc_setup(struct spi_device *spi)
@@ -51,6 +53,11 @@ static int xmc4000_usic_ssc_transfer_one(struct spi_master *master,
 					 struct spi_device *spi,
 					 struct spi_transfer *transfer)
 {
+	struct xmc4000_ssc *ssc = spi_master_get_devdata(master);
+
+	ssc->txbuf = transfer->tx_buf;
+	ssc->rxbuf = transfer->rx_buf;
+
 	return 0;
 }
 
@@ -207,7 +214,7 @@ static int xmc4000_usic_ssc_probe(struct platform_device *pdev)
 	reg |= USICx_CHy_CCR_MODE_SSC;
 	writel_relaxed(reg, ssc->base + USICx_CHy_CCR);
 
-	ret = spi_register_master(master);
+	ret = devm_spi_register_master(&pdev->dev, master);
 	if (ret)
 		goto err_register_master;
 
