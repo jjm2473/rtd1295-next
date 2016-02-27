@@ -235,7 +235,7 @@ static const struct of_device_id xmc4000_usic_ssc_of_matches[] = {
 	{ .compatible = "infineon,xmc4500-usic-channel-ssc" },
 	{ }
 };
-MODULE_DEVICE_TABLE(of, xmc4000_spi_of_matches);
+MODULE_DEVICE_TABLE(of, xmc4000_usic_ssc_of_matches);
 
 static struct platform_driver xmc4000_usic_ssc_driver = {
 	.probe = xmc4000_usic_ssc_probe,
