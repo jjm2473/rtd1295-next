@@ -1102,6 +1102,16 @@ config I2C_XLP9XX
 	  This driver can also be built as a module.  If so, the module will
 	  be called i2c-xlp9xx.
 
+config I2C_XMC4000
+	tristate "Infineon XMC4000 I2C support"
+	depends on ARCH_XMC4000 || COMPILE_TEST
+	help
+	  Say yes if you want to support the I2C bus on Infineon XMC4000
+	  family SoCs.
+
+	  This driver can also be built as a module. If so, the module
+	  will be called i2c-xmc4000-usic.
+
 config I2C_RCAR
 	tristate "Renesas R-Car I2C Controller"
 	depends on HAS_DMA
