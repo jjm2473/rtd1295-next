@@ -1,5 +1,7 @@
 /*
  * XMC4500 USIC SSC
+ *
+ * License: GPL-2.0+
  */
 #include <linux/kernel.h>
 #include <linux/io.h>
