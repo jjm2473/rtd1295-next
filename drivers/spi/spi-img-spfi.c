@@ -346,12 +346,11 @@ static int img_spfi_start_dma(struct spi_master *master,
 		if (xfer->len % 4 == 0) {
 			rxconf.src_addr = spfi->phys + SPFI_RX_32BIT_VALID_DATA;
 			rxconf.src_addr_width = 4;
-			rxconf.src_maxburst = 4;
 		} else {
 			rxconf.src_addr = spfi->phys + SPFI_RX_8BIT_VALID_DATA;
 			rxconf.src_addr_width = 1;
-			rxconf.src_maxburst = 4;
 		}
+		rxconf.src_maxburst = 8;
 		dmaengine_slave_config(spfi->rx_ch, &rxconf);
 
 		rxdesc = dmaengine_prep_slave_sg(spfi->rx_ch, xfer->rx_sg.sgl,
@@ -370,12 +369,11 @@ static int img_spfi_start_dma(struct spi_master *master,
 		if (xfer->len % 4 == 0) {
 			txconf.dst_addr = spfi->phys + SPFI_TX_32BIT_VALID_DATA;
 			txconf.dst_addr_width = 4;
-			txconf.dst_maxburst = 4;
 		} else {
 			txconf.dst_addr = spfi->phys + SPFI_TX_8BIT_VALID_DATA;
 			txconf.dst_addr_width = 1;
-			txconf.dst_maxburst = 4;
 		}
+		txconf.dst_maxburst = 4;
 		dmaengine_slave_config(spfi->tx_ch, &txconf);
 
 		txdesc = dmaengine_prep_slave_sg(spfi->tx_ch, xfer->tx_sg.sgl,
