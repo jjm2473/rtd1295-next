@@ -50,6 +50,18 @@
 	};
 };
 
+&mmc0 {
+	status = "okay";
+};
+
+&mmc1 {
+	status = "okay";
+};
+
+&mmc2 {
+	status = "okay";
+};
+
 &uart_AO {
 	status = "okay";
 };
