@@ -185,6 +185,27 @@
 			#address-cells = <2>;
 			#size-cells = <2>;
 			ranges = <0x0 0x0 0x0 0xd0000000 0x0 0x200000>;
+
+			mmc0: mmc@70000 {
+				compatible = "amlogic,meson-mmc";
+				reg = <0x0 0x0070000 0x0 0x2000>;
+				interrupts = <0 216 IRQ_TYPE_EDGE_RISING>;
+				status = "disabled";
+			};
+
+			mmc1: mmc@72000 {
+				compatible = "amlogic,meson-mmc";
+				reg = <0x0 0x0072000 0x0 0x2000>;
+				interrupts = <0 217 IRQ_TYPE_EDGE_RISING>;
+				status = "disabled";
+			};
+
+			mmc2: mmc@74000 {
+				compatible = "amlogic,meson-mmc";
+				reg = <0x0 0x0074000 0x0 0x2000>;
+				interrupts = <0 218 IRQ_TYPE_EDGE_RISING>;
+				status = "disabled";
+			};
 		};
 	};
 };
