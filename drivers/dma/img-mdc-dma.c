@@ -621,25 +621,33 @@ static enum dma_status mdc_tx_status(struct dma_chan *chan,
 			(MDC_CMDS_PROCESSED_CMDS_DONE_MASK + 1);
 
 		/*
-		 * If the command loaded event hasn't been processed yet, then
-		 * the difference above includes an extra command.
+		 * If the first node has not yet been read from memory,
+		 * the residue register value is undefined
 		 */
-		if (!mdesc->cmd_loaded)
-			cmds--;
-		else
-			cmds += mdesc->list_cmds_done;
-
-		bytes = mdesc->list_xfer_size;
-		ldesc = mdesc->list;
-		for (i = 0; i < cmds; i++) {
-			bytes -= ldesc->xfer_size + 1;
-			ldesc = ldesc->next_desc;
-		}
-		if (ldesc) {
-			if (residue != MDC_TRANSFER_SIZE_MASK)
-				bytes -= ldesc->xfer_size - residue;
+		if (!mdesc->cmd_loaded && !cmds) {
+			bytes = mdesc->list_xfer_size;
+		} else {
+			/*
+			 * If the command loaded event hasn't been processed yet, then
+			 * the difference above includes an extra command.
+			 */
+			if (!mdesc->cmd_loaded)
+				cmds--;
 			else
+				cmds += mdesc->list_cmds_done;
+
+			bytes = mdesc->list_xfer_size;
+			ldesc = mdesc->list;
+			for (i = 0; i < cmds; i++) {
 				bytes -= ldesc->xfer_size + 1;
+				ldesc = ldesc->next_desc;
+			}
+			if (ldesc) {
+				if (residue != MDC_TRANSFER_SIZE_MASK)
+					bytes -= ldesc->xfer_size - residue;
+				else
+					bytes -= ldesc->xfer_size + 1;
+			}
 		}
 	}
 	spin_unlock_irqrestore(&mchan->vc.lock, flags);
