@@ -60,69 +60,66 @@
 			  MBUS_ID(0x09, 0x19) 0 0xf1100000 0x10000
 			  MBUS_ID(0x09, 0x15) 0 0xf1110000 0x10000
 			  MBUS_ID(0x0c, 0x04) 0 0xf1200000 0x100000>;
-
-		internal-regs {
-			ethernet@70000 {
-				pinctrl-0 = <&ge0_rgmii_pins>;
-				pinctrl-names = "default";
-				phy = <&phy_dedicated>;
-				phy-mode = "rgmii-id";
-				buffer-manager = <&bm>;
-				bm,pool-long = <0>;
-				bm,pool-short = <1>;
-				status = "okay";
-			};
-
-			mdio@72004 {
-				/*
-				 * Add the phy clock here, so the phy can be
-				 * accessed to read its IDs prior to binding
-				 * with the driver.
-				 */
-				pinctrl-0 = <&mdio_pins &microsom_phy_clk_pins>;
-				pinctrl-names = "default";
-
-				phy_dedicated: ethernet-phy@0 {
-					/*
-					 * Annoyingly, the marvell phy driver
-					 * configures the LED register, rather
-					 * than preserving reset-loaded setting.
-					 * We undo that rubbish here.
-					 */
-					marvell,reg-init = <3 16 0 0x101e>;
-					reg = <0>;
-				};
-			};
-
-			pinctrl@18000 {
-				microsom_phy_clk_pins: microsom-phy-clk-pins {
-					marvell,pins = "mpp45";
-					marvell,function = "ref";
-				};
-			};
-
-			rtc@a3800 {
-				/*
-				 * If the rtc doesn't work, run "date reset"
-				 * twice in u-boot.
-				 */
-				status = "okay";
-			};
-
-			serial@12000 {
-				pinctrl-0 = <&uart0_pins>;
-				pinctrl-names = "default";
-				status = "okay";
-			};
-
-			bm@c8000 {
-				status = "okay";
-			};
-		};
-
-		bm-bppi {
-			status = "okay";
-		};
-
 	};
+};
+
+&bm {
+	status = "okay";
+};
+
+&bm_bppi {
+	status = "okay";
+};
+
+&eth0 {
+	pinctrl-0 = <&ge0_rgmii_pins>;
+	pinctrl-names = "default";
+	phy = <&phy_dedicated>;
+	phy-mode = "rgmii-id";
+	buffer-manager = <&bm>;
+	bm,pool-long = <0>;
+	bm,pool-short = <1>;
+	status = "okay";
+};
+
+&mdio {
+	/*
+	 * Add the phy clock here, so the phy can be
+	 * accessed to read its IDs prior to binding
+	 * with the driver.
+	 */
+	pinctrl-0 = <&mdio_pins &microsom_phy_clk_pins>;
+	pinctrl-names = "default";
+
+	phy_dedicated: ethernet-phy@0 {
+		/*
+		 * Annoyingly, the marvell phy driver
+		 * configures the LED register, rather
+		 * than preserving reset-loaded setting.
+		 * We undo that rubbish here.
+		 */
+		marvell,reg-init = <3 16 0 0x101e>;
+		reg = <0>;
+	};
+};
+
+&pinctrl {
+	microsom_phy_clk_pins: microsom-phy-clk-pins {
+		marvell,pins = "mpp45";
+		marvell,function = "ref";
+	};
+};
+
+&rtc {
+	/*
+	 * If the rtc doesn't work, run "date reset"
+	 * twice in u-boot.
+	 */
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
 };

@@ -63,208 +63,6 @@
 			  MBUS_ID(0x09, 0x15) 0 0xf1110000 0x10000
 			  MBUS_ID(0x0c, 0x04) 0 0xf1200000 0x100000>;
 
-		internal-regs {
-			i2c@11000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&i2c0_pins>;
-				status = "okay";
-				clock-frequency = <100000>;
-
-				expander0: pca9555@20 {
-					compatible = "nxp,pca9555";
-					pinctrl-names = "default";
-					pinctrl-0 = <&pca0_pins>;
-					interrupt-parent = <&gpio0>;
-					interrupts = <18 IRQ_TYPE_EDGE_FALLING>;
-					gpio-controller;
-					#gpio-cells = <2>;
-					interrupt-controller;
-					#interrupt-cells = <2>;
-					reg = <0x20>;
-				};
-
-				expander1: pca9555@21 {
-					compatible = "nxp,pca9555";
-					pinctrl-names = "default";
-					interrupt-parent = <&gpio0>;
-					interrupts = <18 IRQ_TYPE_EDGE_FALLING>;
-					gpio-controller;
-					#gpio-cells = <2>;
-					interrupt-controller;
-					#interrupt-cells = <2>;
-					reg = <0x21>;
-				};
-
-				eeprom@57 {
-					compatible = "atmel,24c64";
-					reg = <0x57>;
-				};
-			};
-
-			serial@12000 {
-				/*
-				 * Exported on the micro USB connector CON16
-				 * through an FTDI
-				 */
-
-				pinctrl-names = "default";
-				pinctrl-0 = <&uart0_pins>;
-				status = "okay";
-			};
-
-			/* GE1 CON15 */
-			ethernet@30000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&ge1_rgmii_pins>;
-				status = "okay";
-				phy = <&phy1>;
-				phy-mode = "rgmii-id";
-				buffer-manager = <&bm>;
-				bm,pool-long = <2>;
-				bm,pool-short = <3>;
-			};
-
-			/* CON4 */
-			usb@58000 {
-				vcc-supply = <&reg_usb2_0_vbus>;
-				status = "okay";
-			};
-
-			/* GE0 CON1 */
-			ethernet@70000 {
-				pinctrl-names = "default";
-				/*
-				 * The Reference Clock 0 is used to provide a
-				 * clock to the PHY
-				 */
-				pinctrl-0 = <&ge0_rgmii_pins>, <&ref_clk0_pins>;
-				status = "okay";
-				phy = <&phy0>;
-				phy-mode = "rgmii-id";
-				buffer-manager = <&bm>;
-				bm,pool-long = <0>;
-				bm,pool-short = <1>;
-			};
-
-
-			mdio@72004 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&mdio_pins>;
-
-				phy0: ethernet-phy@1 {
-					reg = <1>;
-				};
-
-				phy1: ethernet-phy@0 {
-					reg = <0>;
-				};
-			};
-
-			sata@a8000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&sata0_pins>, <&sata1_pins>;
-				status = "okay";
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				sata0: sata-port@0 {
-					reg = <0>;
-					target-supply = <&reg_5v_sata0>;
-				};
-
-				sata1: sata-port@1 {
-					reg = <1>;
-					target-supply = <&reg_5v_sata1>;
-				};
-			};
-
-			bm@c8000 {
-				status = "okay";
-			};
-
-			sata@e0000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&sata2_pins>, <&sata3_pins>;
-				status = "okay";
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				sata2: sata-port@0 {
-					reg = <0>;
-					target-supply = <&reg_5v_sata2>;
-				};
-
-				sata3: sata-port@1 {
-					reg = <1>;
-					target-supply = <&reg_5v_sata3>;
-				};
-			};
-
-			sdhci@d8000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&sdhci_pins>;
-				no-1-8-v;
-				/*
-				 * A388-GP board v1.5 and higher replace
-				 * hitherto card detection method based on GPIO
-				 * with the one using DAT3 pin. As they are
-				 * incompatible, software-based polling is
-				 * enabled with 'broken-cd' property. For boards
-				 * older than v1.5 it can be replaced with:
-				 * 'cd-gpios = <&expander0 5 GPIO_ACTIVE_LOW>;',
-				 * whereas for the newer ones following can be
-				 * used instead:
-				 * 'dat3-cd;'
-				 * 'cd-inverted;'
-				 */
-				broken-cd;
-				wp-inverted;
-				bus-width = <8>;
-				status = "okay";
-			};
-
-			/* CON5 */
-			usb3@f0000 {
-				usb-phy = <&usb2_1_phy>;
-				status = "okay";
-			};
-
-			/* CON7 */
-			usb3@f8000 {
-				usb-phy = <&usb3_phy>;
-				status = "okay";
-			};
-		};
-
-		bm-bppi {
-			status = "okay";
-		};
-
-		pcie-controller {
-			status = "okay";
-			/*
-			 * One PCIe units is accessible through
-			 * standard PCIe slot on the board.
-			 */
-			pcie@1,0 {
-				/* Port 0, Lane 0 */
-				status = "okay";
-			};
-
-			/*
-			 * The two other PCIe units are accessible
-			 * through mini PCIe slot on the board.
-			 */
-			pcie@2,0 {
-				/* Port 1, Lane 0 */
-				status = "okay";
-			};
-			pcie@3,0 {
-				/* Port 2, Lane 0 */
-				status = "okay";
-			};
-		};
-
 		gpio-fan {
 			compatible = "gpio-fan";
 			gpios = <&expander1 3 GPIO_ACTIVE_HIGH>;
@@ -412,11 +210,189 @@
 	};
 };
 
+&ahci0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sata0_pins>, <&sata1_pins>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	sata0: sata-port@0 {
+		reg = <0>;
+		target-supply = <&reg_5v_sata0>;
+	};
+
+	sata1: sata-port@1 {
+		reg = <1>;
+		target-supply = <&reg_5v_sata1>;
+	};
+};
+
+&ahci1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sata2_pins>, <&sata3_pins>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	sata2: sata-port@0 {
+		reg = <0>;
+		target-supply = <&reg_5v_sata2>;
+	};
+
+	sata3: sata-port@1 {
+		reg = <1>;
+		target-supply = <&reg_5v_sata3>;
+	};
+};
+
+&bm {
+	status = "okay";
+};
+
+&bm_bppi {
+	status = "okay";
+};
+
+/* CON4 */
+&ehci {
+	vcc-supply = <&reg_usb2_0_vbus>;
+	status = "okay";
+};
+
+/* GE0 CON1 */
+&eth0 {
+	pinctrl-names = "default";
+	/*
+	 * The Reference Clock 0 is used to provide a
+	 * clock to the PHY
+	 */
+	pinctrl-0 = <&ge0_rgmii_pins>, <&ref_clk0_pins>;
+	status = "okay";
+	phy = <&phy0>;
+	phy-mode = "rgmii-id";
+	buffer-manager = <&bm>;
+	bm,pool-long = <0>;
+	bm,pool-short = <1>;
+};
+
+/* GE1 CON15 */
+&eth1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ge1_rgmii_pins>;
+	status = "okay";
+	phy = <&phy1>;
+	phy-mode = "rgmii-id";
+	buffer-manager = <&bm>;
+	bm,pool-long = <2>;
+	bm,pool-short = <3>;
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+	clock-frequency = <100000>;
+
+	expander0: pca9555@20 {
+		compatible = "nxp,pca9555";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pca0_pins>;
+		interrupt-parent = <&gpio0>;
+		interrupts = <18 IRQ_TYPE_EDGE_FALLING>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		reg = <0x20>;
+	};
+
+	expander1: pca9555@21 {
+		compatible = "nxp,pca9555";
+		pinctrl-names = "default";
+		interrupt-parent = <&gpio0>;
+		interrupts = <18 IRQ_TYPE_EDGE_FALLING>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		reg = <0x21>;
+	};
+
+	eeprom@57 {
+		compatible = "atmel,24c64";
+		reg = <0x57>;
+	};
+};
+
+&mdio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	phy0: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	phy1: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+/*
+ * One PCIe units is accessible through
+ * standard PCIe slot on the board.
+ */
+&pcie1 {
+	/* Port 0, Lane 0 */
+	status = "okay";
+};
+
+/*
+ * The two other PCIe units are accessible
+ * through mini PCIe slot on the board.
+ */
+&pcie2 {
+	/* Port 1, Lane 0 */
+	status = "okay";
+};
+
+&pcie3 {
+	/* Port 2, Lane 0 */
+	status = "okay";
+};
+
 &pinctrl {
 	pca0_pins: pca0_pins {
 		marvell,pins = "mpp18";
 		marvell,function = "gpio";
 	};
+};
+
+&sdhci {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdhci_pins>;
+	no-1-8-v;
+	/*
+	 * A388-GP board v1.5 and higher replace
+	 * hitherto card detection method based on GPIO
+	 * with the one using DAT3 pin. As they are
+	 * incompatible, software-based polling is
+	 * enabled with 'broken-cd' property. For boards
+	 * older than v1.5 it can be replaced with:
+	 * 'cd-gpios = <&expander0 5 GPIO_ACTIVE_LOW>;',
+	 * whereas for the newer ones following can be
+	 * used instead:
+	 * 'dat3-cd;'
+	 * 'cd-inverted;'
+	 */
+	broken-cd;
+	wp-inverted;
+	bus-width = <8>;
+	status = "okay";
 };
 
 &spi0 {
@@ -432,4 +408,27 @@
 		spi-max-frequency = <50000000>;
 		m25p,fast-read;
 	};
+};
+
+&uart0 {
+	/*
+	 * Exported on the micro USB connector CON16
+	 * through an FTDI
+	 */
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+/* CON5 */
+&xhci0 {
+	usb-phy = <&usb2_1_phy>;
+	status = "okay";
+};
+
+/* CON7 */
+&xhci1 {
+	usb-phy = <&usb3_phy>;
+	status = "okay";
 };

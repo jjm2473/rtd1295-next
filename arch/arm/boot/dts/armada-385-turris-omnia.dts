@@ -65,56 +65,17 @@
 			  MBUS_ID(0x01, 0x1d) 0 0xfff00000 0x100000
 			  MBUS_ID(0x09, 0x19) 0 0xf1100000 0x10000
 			  MBUS_ID(0x09, 0x15) 0 0xf1110000 0x10000>;
-
-		internal-regs {
-
-			/* USB part of the PCIe2/USB 2.0 port */
-			usb@58000 {
-				status = "okay";
-			};
-
-			sata@a8000 {
-				status = "okay";
-			};
-
-			sdhci@d8000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&sdhci_pins>;
-				status = "okay";
-
-				bus-width = <8>;
-				no-1-8-v;
-				non-removable;
-			};
-
-			usb3@f0000 {
-				status = "okay";
-			};
-
-			usb3@f8000 {
-				status = "okay";
-			};
-		};
-
-		pcie-controller {
-			status = "okay";
-
-			pcie@1,0 {
-				/* Port 0, Lane 0 */
-				status = "okay";
-			};
-
-			pcie@2,0 {
-				/* Port 1, Lane 0 */
-				status = "okay";
-			};
-
-			pcie@3,0 {
-				/* Port 2, Lane 0 */
-				status = "okay";
-			};
-		};
 	};
+};
+
+/* PCIe0/mSATA port */
+&ahci0 {
+	status = "okay";
+};
+
+/* USB part of the PCIe2/USB 2.0 port */
+&ehci {
+	status = "okay";
 };
 
 /* Connected to 88E6176 switch, port 6 */
@@ -276,6 +237,25 @@
 	/* Switch MV88E7176 at address 0x10 */
 };
 
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	/* Port 0, Lane 0 */
+	status = "okay";
+};
+
+&pcie2 {
+	/* Port 1, Lane 0 */
+	status = "okay";
+};
+
+&pcie3 {
+	/* Port 2, Lane 0 */
+	status = "okay";
+};
+
 &pinctrl {
 	pcawan_pins: pcawan-pins {
 		marvell,pins = "mpp46";
@@ -291,6 +271,17 @@
 		marvell,pins = "mpp26";
 		marvell,function = "spi0";
 	};
+};
+
+/* eMMC */
+&sdhci {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdhci_pins>;
+	status = "okay";
+
+	bus-width = <8>;
+	no-1-8-v;
+	non-removable;
 };
 
 &spi0 {
@@ -336,5 +327,15 @@
 	/* Pin header CN11 */
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart1_pins>;
+	status = "okay";
+};
+
+/* front USB port */
+&xhci0 {
+	status = "okay";
+};
+
+/* rear USB port */
+&xhci1 {
 	status = "okay";
 };
