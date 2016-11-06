@@ -1,0 +1,234 @@
+/dts-v1/;
+
+#include "armada-385.dtsi"
+
+/ {
+	model = "Turris Omnia";
+	compatible = "marvell,armada385", "marvell,armada380";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x0 0x40000000>; /* 1 GB for RTROM01 */
+	};
+
+	soc {
+		ranges =
+			<MBUS_ID(0xf0, 0x01) 0 0xf1000000 0x100000>,
+			<MBUS_ID(0x01, 0x1d) 0 0xfff00000 0x100000>,
+			<MBUS_ID(0x09, 0x19) 0 0xf1100000 0x10000>,
+			<MBUS_ID(0x09, 0x15) 0 0xf1110000 0x10000>;
+
+		internal-regs {
+			sata0: sata@a8000 {
+			};
+		};
+
+		pcie-controller {
+			status = "okay";
+
+			pcie@1,0 {
+				status = "okay";
+			};
+
+			pcie@2,0 {
+				status = "okay";
+			};
+
+			pcie@3,0 {
+				status = "okay";
+			};
+		};
+	};
+};
+
+&eth0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ge0_rgmii_pins>;
+	phy-mode = "rgmii-id";
+	status = "okay";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&eth1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ge1_rgmii_pins>;
+	phy-mode = "rgmii-id";
+	status = "okay";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&eth2 {
+	phy-mode = "sgmii";
+	phy = <&phy1>;
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	clock-frequency = <100000>;
+	status = "okay";
+
+	i2c-mux@70 {
+		compatible = "nxp,pca9547";
+		reg = <0x70>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			eeprom@54 {
+				compatible = "at,24c64";
+				reg = <0x54>;
+			};
+		};
+
+		/* mSATA/PCI1 */
+		i2c@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		/* PCI2 */
+		i2c@2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		/* PCI3 */
+		i2c@3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		/* SFP */
+		i2c@4 {
+			reg = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		/* crypto */
+		i2c@5 {
+			reg = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/*foo@64 {
+				reg = <0x64>;
+			};*/
+		};
+
+		/* GPIO pin header */
+		i2c@6 {
+			reg = <6>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c@7 {
+			reg = <7>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			sfp_gpio: gpio@71 {
+				compatible = "nxp,pca9538";
+				reg = <0x71>;
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+	};
+};
+
+&mdio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	phy1: ethernet-phy@1 {
+		compatible = "marvell,88e1514", "ethernet-phy-ieee802.3-c22";
+		reg = <1>;
+	};
+};
+
+/* mSATA */
+&sata0 {
+	status = "okay";
+};
+
+/* eMMC */
+&sdhci {
+	bus-width = <8>;
+	no-1-8-v;
+	non-removable;
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "spansion,s25fl164k", "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@000000 {
+			reg = <0x00000000 0x00100000>;
+			label = "U-Boot";
+		};
+
+		partition@100000 {
+			reg = <0x00100000 0x00700000>;
+			label = "rescue";
+		};
+	};
+};
+
+/* serial pin header */
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+/* GPIO pin header */
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_pins>;
+	status = "okay";
+};
+
+/* mSATA/PCI1/PCI2/PCI3 */
+&usb2 {
+	status = "okay";
+};
+
+/* front USB port */
+&usb3_0 {
+	status = "okay";
+};
+
+/* rear USB port */
+&usb3_1 {
+	status = "okay";
+};
