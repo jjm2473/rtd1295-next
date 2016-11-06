@@ -92,6 +92,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			mcu@2a {
+				compatible = "cznic,turris-omnia-mcu";
+				reg = <0x2a>;
+			};
+
 			eeprom@54 {
 				compatible = "at,24c64";
 				reg = <0x54>;
