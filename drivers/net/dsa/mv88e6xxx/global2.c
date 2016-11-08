@@ -507,6 +507,9 @@ void mv88e6xxx_g2_irq_free(struct mv88e6xxx_chip *chip)
 {
 	int irq, virq;
 
+	virq = irq_find_mapping(chip->g1_irq.domain, GLOBAL_STATUS_IRQ_DEVICE);
+	devm_free_irq(chip->dev, virq, chip);
+
 	for (irq = 0; irq < 16; irq++) {
 		virq = irq_find_mapping(chip->g2_irq.domain, irq);
 		irq_dispose_mapping(virq);
