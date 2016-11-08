@@ -158,7 +158,7 @@
 				compatible = "nxp,pca9538";
 				reg = <0x71>;
 				interrupt-parent = <&gpio1>;
-				interrupts = <14 IRQ_TYPE_LEVEL_LOW>; /* MPP[46] */
+				interrupts = <14 IRQ_TYPE_EDGE_FALLING>; /* MPP[46] */
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
@@ -179,7 +179,7 @@
 		compatible = "marvell,mv88e6176";
 		reg = <0x10>;
 		interrupt-parent = <&gpio1>;
-		interrupts = <13 IRQ_TYPE_LEVEL_LOW>; /* MPP[45] */
+		interrupts = <13 IRQ_TYPE_EDGE_FALLING>; /* MPP[45] */
 		interrupt-controller;
 		#interrupt-cells = <2>;
 
