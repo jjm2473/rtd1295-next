@@ -429,7 +429,7 @@ static void mv88e6xxx_g1_irq_free(struct mv88e6xxx_chip *chip)
 {
 	int irq, virq;
 
-	for (irq = 0; irq < 16; irq++) {
+	for (irq = 0; irq < chip->g1_irq.nirqs; irq++) {
 		virq = irq_find_mapping(chip->g1_irq.domain, irq);
 		irq_dispose_mapping(virq);
 	}
