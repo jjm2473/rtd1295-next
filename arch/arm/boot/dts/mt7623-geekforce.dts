@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2016-2017 Andreas Färber
+ */
+
+/dts-v1/;
+
+#include "mt7623.dtsi"
+
+/ {
+	model = "AsiaRF Geek Force";
+	compatible = "mediatek,mt7623";
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+		serial2 = &uart2;
+	};
+
+	chosen {
+		stdout-path = "serial2:115200n8";
+	};
+
+	memory {
+		reg = <0 0x80000000 0 0x40000000>;
+	};
+};
+
+/* on Raspberry Pi connector */
+&uart0 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};
