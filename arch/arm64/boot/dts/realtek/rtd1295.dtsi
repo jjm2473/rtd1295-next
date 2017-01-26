@@ -18,6 +18,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0x0 0x0>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0 0x9801aa44>;
 			next-level-cache = <&l2>;
 		};
 
@@ -25,6 +27,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0x0 0x1>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0 0x9801aa44>;
 			next-level-cache = <&l2>;
 		};
 
@@ -32,6 +36,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0x0 0x2>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0 0x9801aa44>;
 			next-level-cache = <&l2>;
 		};
 
@@ -39,6 +45,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0x0 0x3>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0 0x9801aa44>;
 			next-level-cache = <&l2>;
 		};
 
