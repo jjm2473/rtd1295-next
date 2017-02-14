@@ -140,7 +140,7 @@ endif
 head-y		:= arch/arm64/kernel/head.o
 
 # The byte offset of the kernel image in RAM from the start of RAM.
-TEXT_OFFSET := 0x0
+TEXT_OFFSET := 0x00280000
 
 ifeq ($(CONFIG_KASAN_SW_TAGS), y)
 KASAN_SHADOW_SCALE_SHIFT := 4
