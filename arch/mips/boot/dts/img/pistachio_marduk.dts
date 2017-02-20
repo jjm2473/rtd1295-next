@@ -120,6 +120,7 @@
 
 &pin_sdhost_data {
 	drive-strength = <2>;
+	pins = "mfio17", "mfio18", "mfio19", "mfio20";
 };
 
 &pwm {
@@ -132,7 +133,7 @@
 
 &sdhost {
 	status = "okay";
-	bus-width = <4>;
+	bus-width = <1>;
 	disable-wp;
 };
 
