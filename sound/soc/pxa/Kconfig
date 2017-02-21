@@ -9,11 +9,10 @@ config SND_PXA2XX_SOC
 	  to select the audio interfaces to support below.
 
 config SND_MMP_SOC
-	bool "Soc Audio for Marvell MMP chips"
-	depends on ARCH_MMP
-	select MMP_SRAM
+	bool "SoC Audio for Marvell MMP chips"
+	depends on ARCH_MMP || COMPILE_TEST
+	select MMP_SRAM if ARM
 	select SND_SOC_GENERIC_DMAENGINE_PCM
-	select SND_ARM
 	help
 	  Say Y if you want to add support for codecs attached to
 	  the MMP SSPA interface.
