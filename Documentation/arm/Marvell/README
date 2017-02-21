@@ -243,7 +243,7 @@ PXA 2xx/3xx/93x/95x family
    Linux kernel plat directory: arch/arm/plat-pxa
 
 MMP/MMP2/MMP3 family (communication processor)
------------------------------------------
+----------------------------------------------
 
    Flavors:
         PXA168, a.k.a Armada 168
@@ -294,6 +294,16 @@ MMP/MMP2/MMP3 family (communication processor)
 
    Linux kernel mach directory: arch/arm/mach-mmp
    Linux kernel plat directory: arch/arm/plat-pxa
+
+MMP ARMv8 family (application processor)
+----------------------------------------
+
+  Flavors:
+        IAP140
+          Product brief: http://www.marvell.com/application-processors/assets/Marvell-IAP140-Platform-Brief-20160601.pdf
+          Core: quad-core ARMv8 Cortex-A53
+
+  Homepage: http://www.marvell.com/application-processors/
 
 Berlin family (Multimedia Solutions)
 -------------------------------------
