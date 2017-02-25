@@ -174,6 +174,7 @@ dtb-$(CONFIG_ARCH_EXYNOS5) += \
 	exynos5440-ssdk5440.dtb \
 	exynos5800-peach-pi.dtb
 dtb-$(CONFIG_ARCH_FM4) += \
+	fm4-9b560-sk-u120-mem.dtb \
 	fm4-s6e2cc-sk-176l-eth.dtb
 dtb-$(CONFIG_ARCH_HI3xxx) += \
 	hi3620-hi4511.dtb

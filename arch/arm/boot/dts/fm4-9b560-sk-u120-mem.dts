@@ -1,0 +1,72 @@
+/*
+ * Spansion/Cypress SK-FM4-U120-9B560-MEM
+ *
+ * Copyright (c) 2015-2017 Andreas Färber
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+/dts-v1/;
+
+#include "fm4.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Spansion SK-FM4-U120-9B560-MEM";
+	compatible = "spansion,fm4";
+
+	chosen {
+		bootargs = "console=ttyFM0,115200n8 earlyprintk ignore_loglevel ihash_entries=64 dhash_entries=64";
+	};
+
+	aliases {
+		serial0 = &mfs0;
+	};
+
+	memory {
+		reg = <0x70000000 0x01000000>;
+	};
+
+	main_osc: main-osc-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <4000000>;
+		#clock-cells = <0>;
+	};
+
+	sub_osc: sub-osc-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led2-r {
+			label = "led2:red";
+			gpios = <&gpio 0x2 0x7 GPIO_ACTIVE_LOW>;
+		};
+
+		led2-g {
+			label = "led2:green";
+			gpios = <&gpio 0x3 0x8 GPIO_ACTIVE_LOW>;
+		};
+
+		led2-b {
+			label = "led2:blue";
+			gpios = <&gpio 0xe 0x0 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+			/*linux,default-trigger = "heartbeat";*/
+		};
+	};
+};
+
+&cgu {
+	clocks = <&main_osc>, <&sub_osc>;
+	clock-names = "CLKMO", "CLKSO";
+};
+
+&mfs0 {
+	status = "okay";
+};
