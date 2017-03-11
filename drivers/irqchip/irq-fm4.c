@@ -20,14 +20,20 @@ static struct irq_chip fm4_chip = {
 	.irq_unmask		= irq_chip_unmask_parent,
 	.irq_retrigger		= irq_chip_retrigger_hierarchy,
 	.irq_set_type		= irq_chip_set_type_parent,
+	.flags			= IRQCHIP_SKIP_SET_WAKE,
+#ifdef CONFIG_SMP
+	.irq_set_affinity	= irq_chip_set_affinity_parent,
+#endif
 };
 
-static int fm4_irq_domain_xlate(struct irq_domain *d,
+/*static int fm4_irq_domain_xlate(struct irq_domain *d,
 				struct device_node *controller,
 				const u32 *intspec, unsigned int intsize,
 				unsigned long *out_hwirq,
 				unsigned int *out_type)
 {
+	pr_info("%s: %s\n", irq_domain_get_of_node(d)->full_name, __func__);
+
 	if (irq_domain_get_of_node(d) != controller)
 		return -EINVAL;
 
@@ -35,36 +41,40 @@ static int fm4_irq_domain_xlate(struct irq_domain *d,
 		return -EINVAL;
 
 	*out_hwirq = intspec[0] * 32 + intspec[1];
-	*out_type = 0;
+	*out_type = IRQ_TYPE_NONE;
 
 	pr_info("%s: xlate %u %u -> %lu\n", irq_domain_get_of_node(d)->full_name, intspec[0], intspec[1], *out_hwirq);
 
 	return 0;
-}
+}*/
 
 static int fm4_alloc_nvic_irq(struct irq_domain *d, unsigned int virq, irq_hw_number_t hwirq)
 {
-	struct of_phandle_args args;
+	struct irq_fwspec fwspec;
 
-	args.np = irq_domain_get_of_node(d->parent);
-	args.args_count = 1;
-	args.args[0] = hwirq / 32;
+	pr_info("%s: %s\n", irq_domain_get_of_node(d)->full_name, __func__);
 
-	return irq_domain_alloc_irqs_parent(d, virq, 1, &args);
+	fwspec.fwnode = d->parent->fwnode;
+	fwspec.param_count = 1;
+	fwspec.param[0] = hwirq / 32;
+
+	return irq_domain_alloc_irqs_parent(d, virq, 1, &fwspec);
 }
 
 static int fm4_irq_domain_alloc(struct irq_domain *d, unsigned int virq,
 				unsigned int nr_irqs, void *data)
 {
-	struct of_phandle_args *args = data;
+	struct irq_fwspec *fwspec = data;
 	irq_hw_number_t hwirq;
 	int i;
 
-	if (args->args_count != 2)
+	pr_info("%s: %s\n", irq_domain_get_of_node(d)->full_name, __func__);
+
+	if (fwspec->param_count != 2)
 		return -EINVAL;
 
-	hwirq = args->args[0] * 32 + args->args[1];
-	if (hwirq + nr_irqs > 128 * 32)
+	hwirq = fwspec->param[0] * 32 + fwspec->param[1];
+	if (hwirq + nr_irqs > d->parent->hwirq_max * 32)
 		return -EINVAL;
 
 	for (i = 0; i < nr_irqs; i++) {
@@ -74,13 +84,41 @@ static int fm4_irq_domain_alloc(struct irq_domain *d, unsigned int virq,
 		irq_domain_set_hwirq_and_chip(d, virq + i, hwirq + i, &fm4_chip, NULL);
 	}
 	pr_info("%s: alloc %u (%u) %u %u -> %lu\n", irq_domain_get_of_node(d)->full_name,
-		virq, nr_irqs, args->args[0], args->args[1], hwirq);
+		virq, nr_irqs, fwspec->param[0], fwspec->param[1], hwirq);
 	return 0;
 }
 
+static void fm4_irq_domain_free(struct irq_domain *d, unsigned int virq,
+			        unsigned int nr_irqs)
+{
+	pr_info("%s: free %u (%u)\n", irq_domain_get_of_node(d)->full_name,
+		virq, nr_irqs);
+}
+
+static int fm4_irq_domain_translate(struct irq_domain *d,
+				    struct irq_fwspec *fwspec,
+				    unsigned long *out_hwirq,
+				    unsigned int *out_type)
+{
+	pr_info("%s: %s\n", irq_domain_get_of_node(d)->full_name, __func__);
+
+	if (is_of_node(fwspec->fwnode)) {
+		if (fwspec->param_count != 2)
+			return -EINVAL;
+
+		*out_hwirq = fwspec->param[0] * 32 + fwspec->param[1];
+		*out_type = IRQ_TYPE_NONE;
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
 static const struct irq_domain_ops fm4_irq_domain_ops = {
-	.xlate = fm4_irq_domain_xlate,
+	/*.xlate = fm4_irq_domain_xlate,*/
 	.alloc = fm4_irq_domain_alloc,
+	.free = fm4_irq_domain_free,
+	.translate = fm4_irq_domain_translate,
 };
 
 static int __init fm4_of_init(struct device_node *node, struct device_node *parent)
@@ -97,6 +135,8 @@ static int __init fm4_of_init(struct device_node *node, struct device_node *pare
 		pr_err("%s: unable to obtain parent domain\n", node->full_name);
 		return -ENXIO;
 	}
+
+	pr_info("%s: before domain add (%ld)\n", node->full_name, parent_domain->hwirq_max);
 
 	domain = irq_domain_add_hierarchy(parent_domain, 0, parent_domain->hwirq_max * 32, node, &fm4_irq_domain_ops, NULL);
 	if (!domain)
