@@ -127,6 +127,8 @@ static __init int fm4_dualtimer_init(struct device_node *node)
 	unsigned long rate;
 	int ret, irq;
 
+	pr_info("Dual Timer\n");
+
 	clk = of_clk_get(node, 0);
 	if (IS_ERR(clk)) {
 		pr_err("failed to get clock for Dual Timer\n");
