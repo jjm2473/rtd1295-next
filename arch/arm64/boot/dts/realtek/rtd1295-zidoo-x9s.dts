@@ -25,6 +25,13 @@
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};
+
+	/*firmware {
+		optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+		};
+	};*/
 };
 
 &uart0 {
