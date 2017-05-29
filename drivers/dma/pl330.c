@@ -505,7 +505,7 @@ struct pl330_dmac {
 	/* Maximum possible events/irqs */
 	int			events[32];
 	/* BUS address of MicroCode buffer */
-	u32			mcode_bus;
+	dma_addr_t		mcode_bus;
 	/* CPU address of MicroCode buffer */
 	void			*mcode_cpu;
 	/* List of all Channel threads */
@@ -577,6 +577,7 @@ struct dma_pl330_chan {
 struct dma_pl330_dmac {
 	struct pl330_info pif;
 
+	struct device_dma_parameters dma_parms;
 	/* DMA-Engine Device */
 	struct dma_device ddma;
 
@@ -1258,9 +1259,15 @@ static inline int _ldst_memtomem(unsigned dry_run, u8 buf[],
 
 	/* check lock-up free version */
 	if (get_revision(pcfg->periph_id) >= PERIPH_REV_R1P0) {
+		struct pl330_xfer *x = pxs->x;
 		while (cyc--) {
-			off += _emit_LD(dry_run, &buf[off], ALWAYS);
-			off += _emit_ST(dry_run, &buf[off], ALWAYS);
+			/* Mark MEMSET_ZERO by the hack */
+			if (x->src_addr == x->dst_addr) {
+				off += _emit_STZ(dry_run, &buf[off]);
+			} else {
+				off += _emit_LD(dry_run, &buf[off], ALWAYS);
+				off += _emit_ST(dry_run, &buf[off], ALWAYS);
+			}
 		}
 	} else {
 		while (cyc--) {
@@ -2485,9 +2492,9 @@ static void pl330_free_chan_resources(struct dma_chan *chan)
 	struct dma_pl330_chan *pch = to_pchan(chan);
 	unsigned long flags;
 
-	spin_lock_irqsave(&pch->lock, flags);
-
 	tasklet_kill(&pch->task);
+
+	spin_lock_irqsave(&pch->lock, flags);
 
 	pl330_release_channel(pch->pl330_chid);
 	pch->pl330_chid = NULL;
@@ -2527,6 +2534,10 @@ static dma_cookie_t pl330_tx_submit(struct dma_async_tx_descriptor *tx)
 	/* Assign cookies to all nodes */
 	while (!list_empty(&last->node)) {
 		desc = list_entry(last->node.next, struct dma_pl330_desc, node);
+		if (pch->cyclic) {
+			desc->txd.callback = last->txd.callback;
+			desc->txd.callback_param = last->txd.callback_param;
+		}
 
 		dma_cookie_assign(&desc->txd);
 
@@ -2542,12 +2553,9 @@ static dma_cookie_t pl330_tx_submit(struct dma_async_tx_descriptor *tx)
 
 static inline void _init_desc(struct dma_pl330_desc *desc)
 {
-	desc->pchan = NULL;
 	desc->req.x = &desc->px;
 	desc->req.token = desc;
 	desc->rqcfg.swap = SWAP_NO;
-	desc->rqcfg.privileged = 0;
-	desc->rqcfg.insnaccess = 0;
 	desc->rqcfg.scctl = SCCTRL0;
 	desc->rqcfg.dcctl = DCCTRL0;
 	desc->req.cfg = &desc->rqcfg;
@@ -2567,7 +2575,7 @@ static int add_desc(struct dma_pl330_dmac *pdmac, gfp_t flg, int count)
 	if (!pdmac)
 		return 0;
 
-	desc = kmalloc(count * sizeof(*desc), flg);
+	desc = kcalloc(count, sizeof(*desc), flg);
 	if (!desc)
 		return 0;
 
@@ -2710,45 +2718,122 @@ static struct dma_async_tx_descriptor *pl330_prep_dma_cyclic(
 		size_t period_len, enum dma_transfer_direction direction,
 		unsigned long flags, void *context)
 {
-	struct dma_pl330_desc *desc;
+	struct dma_pl330_desc *desc = NULL, *first = NULL;
 	struct dma_pl330_chan *pch = to_pchan(chan);
+	struct dma_pl330_dmac *pdmac = pch->dmac;
+	unsigned int i;
 	dma_addr_t dst;
 	dma_addr_t src;
 
-	desc = pl330_get_desc(pch);
-	if (!desc) {
-		dev_err(pch->dmac->pif.dev, "%s:%d Unable to fetch desc\n",
-			__func__, __LINE__);
+	if (len % period_len != 0)
 		return NULL;
-	}
 
-	switch (direction) {
-	case DMA_MEM_TO_DEV:
-		desc->rqcfg.src_inc = 1;
-		desc->rqcfg.dst_inc = 0;
-		desc->req.rqtype = MEMTODEV;
-		src = dma_addr;
-		dst = pch->fifo_addr;
-		break;
-	case DMA_DEV_TO_MEM:
-		desc->rqcfg.src_inc = 0;
-		desc->rqcfg.dst_inc = 1;
-		desc->req.rqtype = DEVTOMEM;
-		src = pch->fifo_addr;
-		dst = dma_addr;
-		break;
-	default:
+	if (!is_slave_direction(direction)) {
 		dev_err(pch->dmac->pif.dev, "%s:%d Invalid dma direction\n",
 		__func__, __LINE__);
 		return NULL;
 	}
 
-	desc->rqcfg.brst_size = pch->burst_sz;
-	desc->rqcfg.brst_len = 1;
+	for (i = 0; i < len / period_len; i++) {
+		desc = pl330_get_desc(pch);
+		if (!desc) {
+			dev_err(pch->dmac->pif.dev, "%s:%d Unable to fetch desc\n",
+				__func__, __LINE__);
+
+			if (!first)
+				return NULL;
+
+			spin_lock_irqsave(&pdmac->pool_lock, flags);
+
+			while (!list_empty(&first->node)) {
+				desc = list_entry(first->node.next,
+						struct dma_pl330_desc, node);
+				list_move_tail(&desc->node, &pdmac->desc_pool);
+			}
+
+			list_move_tail(&first->node, &pdmac->desc_pool);
+
+			spin_unlock_irqrestore(&pdmac->pool_lock, flags);
+
+			return NULL;
+		}
+
+		switch (direction) {
+		case DMA_MEM_TO_DEV:
+			desc->rqcfg.src_inc = 1;
+			desc->rqcfg.dst_inc = 0;
+			desc->req.rqtype = MEMTODEV;
+			src = dma_addr;
+			dst = pch->fifo_addr;
+			break;
+		case DMA_DEV_TO_MEM:
+			desc->rqcfg.src_inc = 0;
+			desc->rqcfg.dst_inc = 1;
+			desc->req.rqtype = DEVTOMEM;
+			src = pch->fifo_addr;
+			dst = dma_addr;
+			break;
+		default:
+			break;
+		}
+
+		desc->rqcfg.brst_size = pch->burst_sz;
+		desc->rqcfg.brst_len = 1;
+		fill_px(&desc->px, dst, src, period_len);
+
+		if (!first)
+			first = desc;
+		else
+			list_add_tail(&desc->node, &first->node);
+
+		dma_addr += period_len;
+	}
+
+	if (!desc)
+		return NULL;
 
 	pch->cyclic = true;
+	desc->txd.flags = flags;
 
-	fill_px(&desc->px, dst, src, period_len);
+	return &desc->txd;
+}
+
+static struct dma_async_tx_descriptor *
+pl330_prep_interleaved_dma(struct dma_chan *chan,
+		struct dma_interleaved_template *xt, unsigned long flags)
+{
+	struct dma_pl330_desc *desc;
+	struct dma_pl330_chan *pch = to_pchan(chan);
+	struct pl330_info *pi;
+	dma_addr_t dst, src;
+	size_t len = xt->sgl[0].size; /* must be a ^2 */
+
+	if (unlikely(!pch))
+		return NULL;
+
+	/* Strictly allow only MEMSET for now */
+	if (xt->dir != DMA_MEM_TO_MEM || xt->src_inc ||	!xt->dst_inc ||
+			(xt->frame_size != 1) || xt->sgl[0].icg) {
+		dev_err(pch->dmac->pif.dev, "Doesn't seem like MEMSET!\n");
+		return NULL;
+	}
+
+	pi = &pch->dmac->pif;
+
+	src = xt->src_start;
+	dst = xt->dst_start;
+
+	desc = __pl330_prep_dma_memcpy(pch, dst, src, len * xt->numf);
+	if (!desc)
+		return NULL;
+
+	desc->req.rqtype = MEMTOMEM;
+	desc->rqcfg.src_inc = xt->src_inc ? 1 : 0;
+	desc->rqcfg.dst_inc = xt->dst_inc ? 1 : 0;
+	desc->rqcfg.brst_size = __ffs(len); /* 4bytes ? */
+	desc->rqcfg.brst_len = get_burst_len(desc, len * xt->numf);
+
+	desc->txd.flags = flags;
 
 	return &desc->txd;
 }
@@ -2888,6 +2973,7 @@ pl330_probe(struct amba_device *adev, const struct amba_id *id)
 	struct resource *res;
 	int i, ret, irq;
 	int num_chan;
+	const __be32 *prop;
 
 	pdat = adev->dev.platform_data;
 
@@ -2915,6 +3001,14 @@ pl330_probe(struct amba_device *adev, const struct amba_id *id)
 			dev_name(&adev->dev), pi);
 	if (ret)
 		return ret;
+
+	i = 1;
+	irq = adev->irq[i++];
+	while (irq) {
+		ret = request_irq(irq, pl330_irq_handler, 0,
+			dev_name(&adev->dev), pi);
+		irq = adev->irq[i++];
+	}
 
 	ret = pl330_add(pi);
 	if (ret)
@@ -2965,10 +3059,13 @@ pl330_probe(struct amba_device *adev, const struct amba_id *id)
 		pd->cap_mask = pdat->cap_mask;
 	} else {
 		dma_cap_set(DMA_MEMCPY, pd->cap_mask);
+		dma_cap_set(DMA_INTERLEAVE, pd->cap_mask);
 		if (pi->pcfg.num_peri) {
 			dma_cap_set(DMA_SLAVE, pd->cap_mask);
 			dma_cap_set(DMA_CYCLIC, pd->cap_mask);
 			dma_cap_set(DMA_PRIVATE, pd->cap_mask);
+		} else {
+			pd->copy_align = __ffs(pi->pcfg.data_buf_dep);
 		}
 	}
 
@@ -2976,10 +3073,20 @@ pl330_probe(struct amba_device *adev, const struct amba_id *id)
 	pd->device_free_chan_resources = pl330_free_chan_resources;
 	pd->device_prep_dma_memcpy = pl330_prep_dma_memcpy;
 	pd->device_prep_dma_cyclic = pl330_prep_dma_cyclic;
+	pd->device_prep_interleaved_dma = pl330_prep_interleaved_dma;
 	pd->device_tx_status = pl330_tx_status;
 	pd->device_prep_slave_sg = pl330_prep_slave_sg;
 	pd->device_control = pl330_control;
 	pd->device_issue_pending = pl330_issue_pending;
+
+	pd->dev->dma_parms = &pdmac->dma_parms;
+	/*
+	 * This is the limit for transfers with a buswidth of 1, larger
+	 * buswidths will have larger limits.
+	 */
+	ret = dma_set_max_seg_size(pd->dev, 1900800);
+	if (ret)
+		dev_err(&adev->dev, "unable to set the seg size\n");
 
 	ret = dma_async_device_register(pd);
 	if (ret) {
@@ -2994,6 +3101,9 @@ pl330_probe(struct amba_device *adev, const struct amba_id *id)
 			dev_err(&adev->dev,
 			"unable to register DMA to the generic DT DMA helpers\n");
 		}
+		prop = of_get_property(adev->dev.of_node, "copy-align", NULL);
+		if (prop)
+                	pd->copy_align = __ffs(be32_to_cpu(*prop));
 	}
 
 	dev_info(&adev->dev,

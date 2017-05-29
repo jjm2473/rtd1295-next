@@ -30,6 +30,7 @@
 #include <linux/device.h>
 #include <linux/slab.h>
 #include <linux/platform_device.h>
+#include <linux/of.h>
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
@@ -111,7 +112,7 @@ static int platram_remove(struct platform_device *pdev)
 		iounmap(info->map.virt);
 
 	kfree(info);
-
+	
 	return 0;
 }
 
@@ -128,15 +129,40 @@ static int platram_probe(struct platform_device *pdev)
 	struct resource *res;
 	int err = 0;
 
+#ifdef CONFIG_OF
+	const int *p;
+	
 	dev_dbg(&pdev->dev, "probe entered\n");
 
-	if (pdev->dev.platform_data == NULL) {
-		dev_err(&pdev->dev, "no platform data supplied\n");
-		err = -ENOENT;
-		goto exit_error;
-	}
+	if (pdev->dev.of_node) {
+		pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
+		if (pdata == NULL) {
+			dev_err(&pdev->dev, "Out of memory\n");
+			err = -ENOMEM;
+			goto exit_error;
+		}
 
-	pdata = pdev->dev.platform_data;
+		p = of_get_property(pdev->dev.of_node, "bank-width", NULL);
+		if(p)
+			pdata->bankwidth = be32_to_cpu(*p);
+
+		/* FIXME: not sure these are correct */
+		pdata->mapname = NULL;
+		pdata->map_probes = NULL;
+		pdata->probes = NULL;
+		pdata->nr_partitions = 0;
+
+		/* TODO: get other properties */
+	} else
+#endif
+	{
+		 pdata = pdev->dev.platform_data;
+		 if (pdata == NULL) {
+		  	 dev_err(&pdev->dev, "no platform data supplied\n");
+			 err = -ENOENT;
+			 goto exit_error;
+		 }
+ 	}
 
 	info = kzalloc(sizeof(*info), GFP_KERNEL);
 	if (info == NULL) {
@@ -247,6 +273,13 @@ static int platram_probe(struct platform_device *pdev)
 
 /* device driver info */
 
+static const struct of_device_id mtd_ram_dt_ids[] = {
+	{ .compatible = "mtd-ram" },
+	{ /* sentinel */ }
+};
+
+
+
 /* work with hotplug and coldplug */
 MODULE_ALIAS("platform:mtd-ram");
 
@@ -256,8 +289,14 @@ static struct platform_driver platram_driver = {
 	.driver		= {
 		.name	= "mtd-ram",
 		.owner	= THIS_MODULE,
+		.of_match_table = mtd_ram_dt_ids,
+
 	},
 };
+
+MODULE_DEVICE_TABLE(of, mtd_ram_dt_ids);
+
+
 
 /* module init/exit */
 

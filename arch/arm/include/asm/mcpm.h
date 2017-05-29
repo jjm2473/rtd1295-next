@@ -42,6 +42,14 @@ extern void mcpm_entry_point(void);
 void mcpm_set_entry_vector(unsigned cpu, unsigned cluster, void *ptr);
 
 /*
+ * This sets an early poke i.e a value to be poked into some address
+ * from very early assembly code before the CPU is ungated.  The
+ * address must be physical, and if 0 then nothing will happen.
+ */
+void mcpm_set_early_poke(unsigned cpu, unsigned cluster,
+			 unsigned long poke_phys_addr, unsigned long poke_val);
+
+/*
  * CPU/cluster power operations API for higher subsystems to use.
  */
 
@@ -166,6 +174,22 @@ int __mcpm_cluster_state(unsigned int cluster);
 
 int __init mcpm_sync_init(
 	void (*power_up_setup)(unsigned int affinity_level));
+
+/**
+ * mcpm_loopback - make a run through the MCPM low-level code
+ *
+ * @cache_disable: pointer to function performing cache disabling
+ *
+ * This exercises the MCPM machinery by soft resetting the CPU and branching
+ * to the MCPM low-level entry code before returning to the caller.
+ * The @cache_disable function must do the necessary cache disabling to
+ * let the regular kernel init code turn it back on as if the CPU was
+ * hotplugged in. The MCPM state machine is set as if the cluster was
+ * initialized meaning the power_up_setup callback passed to mcpm_sync_init()
+ * will be invoked for all affinity levels. This may be useful to initialize
+ * some resources such as enabling the CCI that requires the cache to be off, or simply for testing purposes.
+ */
+int __init mcpm_loopback(void (*cache_disable)(void));
 
 void __init mcpm_smp_set_ops(void);
 

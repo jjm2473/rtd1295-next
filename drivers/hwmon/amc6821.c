@@ -46,6 +46,8 @@ static const unsigned short normal_i2c[] = {0x18, 0x19, 0x1a, 0x2c, 0x2d, 0x2e,
 /*
  * Insmod parameters
  */
+static int low_temp;	/* Low Temperature Bit of Remote Sensor */
+static int fan_char;	/* set FAN-Characteristics */
 
 static int pwminv;	/*Inverted PWM output. */
 module_param(pwminv, int, S_IRUGO);
@@ -79,6 +81,7 @@ enum chips { amc6821 };
 #define AMC6821_REG_LTEMP_FAN_CTRL 0x24
 #define AMC6821_REG_RTEMP_FAN_CTRL 0x25
 #define AMC6821_REG_DCY_LOW_TEMP 0x21
+#define AMC6821_REG_FAN_CHAR 0x20
 
 #define AMC6821_REG_TACH_LLIMITL 0x10
 #define AMC6821_REG_TACH_LLIMITH 0x11
@@ -173,18 +176,10 @@ static const struct i2c_device_id amc6821_id[] = {
 
 MODULE_DEVICE_TABLE(i2c, amc6821_id);
 
-static struct i2c_driver amc6821_driver = {
-	.class = I2C_CLASS_HWMON,
-	.driver = {
-		.name	= "amc6821",
-	},
-	.probe = amc6821_probe,
-	.remove = amc6821_remove,
-	.id_table = amc6821_id,
-	.detect = amc6821_detect,
-	.address_list = normal_i2c,
+static struct of_device_id amc6821_dt_ids[] = {
+	{ .compatible = "ti,amc6821" },
+	{ /* sentinel */ }
 };
-
 
 /*
  * Client data (each client gets its own)
@@ -201,6 +196,8 @@ struct amc6821_data {
 
 	u16 fan[FAN1_IDX_LEN];
 	u8 fan1_div;
+
+	bool off_in_suspend;
 
 	u8 pwm1;
 	u8 temp1_auto_point_temp[3];
@@ -707,7 +704,7 @@ static SENSOR_DEVICE_ATTR(temp1_max_alarm, S_IRUGO,
 	get_temp_alarm, NULL, IDX_TEMP1_MAX);
 static SENSOR_DEVICE_ATTR(temp1_crit_alarm, S_IRUGO,
 	get_temp_alarm, NULL, IDX_TEMP1_CRIT);
-static SENSOR_DEVICE_ATTR(temp2_input, S_IRUGO | S_IWUSR,
+static SENSOR_DEVICE_ATTR(temp2_input, S_IRUGO,
 	get_temp, NULL, IDX_TEMP2_INPUT);
 static SENSOR_DEVICE_ATTR(temp2_min, S_IRUGO | S_IWUSR, get_temp,
 	set_temp, IDX_TEMP2_MIN);
@@ -853,6 +850,7 @@ static int amc6821_probe(
 {
 	struct amc6821_data *data;
 	int err;
+	const int *p;
 
 	data = devm_kzalloc(&client->dev, sizeof(struct amc6821_data),
 			    GFP_KERNEL);
@@ -861,6 +859,21 @@ static int amc6821_probe(
 
 	i2c_set_clientdata(client, data);
 	mutex_init(&data->update_lock);
+
+	p = of_get_property(client->dev.of_node, "pwminv", NULL);
+	if (p)
+		pwminv = be32_to_cpu(*p);	/* Inverted PWM output. */
+
+	p = of_get_property(client->dev.of_node, "low_temp", NULL);
+	if (p)
+		low_temp = be32_to_cpu(*p);	/* Low Temp of Remote Sensor */
+
+	p = of_get_property(client->dev.of_node, "fan_char", NULL);
+	if (p)
+		fan_char = be32_to_cpu(*p);	/* set FAN-Characteristics */
+
+	if (of_property_read_bool(client->dev.of_node, "off-in-suspend"))
+		data->off_in_suspend = true;
 
 	/*
 	 * Initialize the amc6821 chip
@@ -900,6 +913,41 @@ static int amc6821_init_client(struct i2c_client *client)
 	int err = -EIO;
 
 	if (init) {
+		/* set FAN-Characteristics */
+		config = i2c_smbus_read_byte_data(client, AMC6821_REG_FAN_CHAR);
+		if (config < 0) {
+				dev_err(&client->dev,
+			"Error reading configuration register, aborting.\n");
+				return err;
+		}
+
+		config = fan_char;
+
+		if (i2c_smbus_write_byte_data(
+				client, AMC6821_REG_FAN_CHAR, config)) {
+			dev_err(&client->dev,
+			"Configuration register write error, aborting.\n");
+			return err;
+		}
+
+		/* set Low Temperature Bit of Remote Sensor */
+		config = i2c_smbus_read_byte_data(client,
+						AMC6821_REG_RTEMP_FAN_CTRL);
+		if (config < 0) {
+				dev_err(&client->dev,
+			"Error reading configuration register, aborting.\n");
+				return err;
+		}
+
+		config = low_temp;
+
+		if (i2c_smbus_write_byte_data(
+				client, AMC6821_REG_RTEMP_FAN_CTRL, config)) {
+			dev_err(&client->dev,
+			"Configuration register write error, aborting.\n");
+			return err;
+		}
+
 		config = i2c_smbus_read_byte_data(client, AMC6821_REG_CONF4);
 
 		if (config < 0) {
@@ -1083,6 +1131,46 @@ static struct amc6821_data *amc6821_update_device(struct device *dev)
 	mutex_unlock(&data->update_lock);
 	return data;
 }
+int amc6821_suspend(struct i2c_client *client, pm_message_t mesg)
+{
+	struct amc6821_data *data = i2c_get_clientdata(client);
+
+	if (!data->off_in_suspend)
+		return 0;
+	/*
+	 * disable PWM output when going down to suspend
+	 */
+	return i2c_smbus_write_byte_data(client, AMC6821_REG_CONF2,
+		i2c_smbus_read_byte_data(client, AMC6821_REG_CONF2) & ~1);
+}
+
+int amc6821_resume(struct i2c_client *client)
+{
+	struct amc6821_data *data = i2c_get_clientdata(client);
+
+	if (!data->off_in_suspend)
+		return 0;
+	/*
+	 * enable PWM when resuming
+	 */
+	return i2c_smbus_write_byte_data(client, AMC6821_REG_CONF2,
+		i2c_smbus_read_byte_data(client, AMC6821_REG_CONF2) | 1);
+}
+
+static struct i2c_driver amc6821_driver = {
+	.class = I2C_CLASS_HWMON,
+	.driver = {
+		.name	= "amc6821",
+		.of_match_table	= of_match_ptr(amc6821_dt_ids),
+	},
+	.probe = amc6821_probe,
+	.remove = amc6821_remove,
+	.id_table = amc6821_id,
+	.detect = amc6821_detect,
+	.address_list = normal_i2c,
+	.suspend = amc6821_suspend,
+	.resume = amc6821_resume,
+};
 
 module_i2c_driver(amc6821_driver);
 

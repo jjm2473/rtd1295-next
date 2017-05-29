@@ -8,7 +8,7 @@ obj-$(CONFIG_DMA_OF) += of-dma.o
 
 obj-$(CONFIG_NET_DMA) += iovlock.o
 obj-$(CONFIG_INTEL_MID_DMAC) += intel_mid_dma.o
-obj-$(CONFIG_DMATEST) += dmatest.o
+obj-$(CONFIG_DMATEST) += dmatest.o memset.o
 obj-$(CONFIG_INTEL_IOATDMA) += ioat/
 obj-$(CONFIG_INTEL_IOP_ADMA) += iop-adma.o
 obj-$(CONFIG_FSL_DMA) += fsldma.o
@@ -38,3 +38,6 @@ obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
 obj-$(CONFIG_MMP_TDMA) += mmp_tdma.o
 obj-$(CONFIG_DMA_OMAP) += omap-dma.o
 obj-$(CONFIG_MMP_PDMA) += mmp_pdma.o
+obj-$(CONFIG_MB8AC0300_HDMAC) += mb8ac0300-hdmac.o
+obj-$(CONFIG_MB8AC0300_XDMAC) += mb8ac0300-xdmac.o
+

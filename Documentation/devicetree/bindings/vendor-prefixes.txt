@@ -9,6 +9,7 @@ aeroflexgaisler	Aeroflex Gaisler AB
 ak	Asahi Kasei Corp.
 amcc	Applied Micro Circuits Corporation (APM, formally AMCC)
 apm	Applied Micro Circuits Corporation (APM)
+apnet	Alpha Project
 arm	ARM Ltd.
 atmel	Atmel Corporation
 bosch	Bosch Sensortec GmbH

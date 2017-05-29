@@ -89,6 +89,8 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-cloudbox.dtb \
 	kirkwood-ts219-6282.dtb \
 	kirkwood-openblocks_a6.dtb
 dtb-$(CONFIG_ARCH_MARCO) += marco-evb.dtb
+dtb-$(CONFIG_ARCH_MB8AC0300) += mb8ac0300eb.dtb
+dtb-$(CONFIG_ARCH_MB86S70) += mb86s70eb.dtb mb86s73eb.dtb mb86s72eb.dtb mb86s71eb.dtb msb7701.dtb
 dtb-$(CONFIG_ARCH_MSM) += msm8660-surf.dtb \
 	msm8960-cdp.dtb
 dtb-$(CONFIG_ARCH_MVEBU) += armada-370-db.dtb \
@@ -202,7 +204,14 @@ dtb-$(CONFIG_ARCH_VERSATILE) += versatile-ab.dtb \
 dtb-$(CONFIG_ARCH_VEXPRESS) += vexpress-v2p-ca5s.dtb \
 	vexpress-v2p-ca9.dtb \
 	vexpress-v2p-ca15-tc1.dtb \
-	vexpress-v2p-ca15_a7.dtb
+	vexpress-v2p-ca15_a7.dtb \
+	rtsm_ve-cortex_a9x2.dtb \
+	rtsm_ve-cortex_a9x4.dtb \
+	rtsm_ve-cortex_a15x1.dtb \
+	rtsm_ve-cortex_a15x2.dtb \
+	rtsm_ve-cortex_a15x4.dtb \
+	rtsm_ve-v2p-ca15x1-ca7x1.dtb \
+	rtsm_ve-v2p-ca15x4-ca7x4.dtb
 dtb-$(CONFIG_ARCH_VIRT) += xenvm-4.2.dtb
 dtb-$(CONFIG_ARCH_VT8500) += vt8500-bv07.dtb \
 	wm8505-ref.dtb \
@@ -210,7 +219,7 @@ dtb-$(CONFIG_ARCH_VT8500) += vt8500-bv07.dtb \
 	wm8850-w70v2.dtb
 dtb-$(CONFIG_ARCH_ZYNQ) += zynq-zc702.dtb
 
-targets += dtbs
+targets += dtbs dtbs_install
 targets += $(dtb-y)
 endif
 
@@ -220,3 +229,5 @@ dtbs: $(addprefix $(obj)/, $(dtb-y))
 	$(Q)rm -f $(obj)/../*.dtb
 
 clean-files := *.dtb
+
+dtbs_install: $(addsuffix _dtbinst_, $(dtb-y))

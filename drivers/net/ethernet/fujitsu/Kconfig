@@ -5,7 +5,7 @@
 config NET_VENDOR_FUJITSU
 	bool "Fujitsu devices"
 	default y
-	depends on ISA || PCMCIA
+	depends on ISA || PCMCIA || ARCH_MB8AC0300 || ARCH_MB86S70
 	---help---
 	  If you have a network (Ethernet) card belonging to this class, say Y
 	  and read the Ethernet-HOWTO, available from
@@ -27,5 +27,76 @@ config PCMCIA_FMVJ18X
 
 	  To compile this driver as a module, choose M here: the module will be
 	  called fmvj18x_cs.  If unsure, say N.
+
+config FGMAC4
+	tristate "FUJITSU F_GMAC4 support"
+	select CRC32
+	select MII
+	select PHYLIB
+	depends on ARCH_MB8AC0300 || ARCH_MB86S70
+	default m
+	help
+	  This is the driver for the Ethernet interface on the
+	  FUJITSU ARM SoC
+	  Platform. If you have the FUJITSU ARM SoC Platform, say Y or M here.
+	  If unsure, say N.
+
+config FGMAC4_ANEG
+	bool "Fujitsu F_GMAC4 Autonegotiation"
+	depends on FGMAC4
+	default y
+	help
+	  Select this to allow the FGMA4 PHY to autonegotiate the speed
+	  and duplex state. If you leave this off, it will default to a
+	  fixed 100Mbps duplex connection no matter what you actually
+	  connect it to.  You probably want to enable it.
+
+config FGMAC4_ALT_DESC
+	bool "Alternate or Enhanced Descriptors"
+	depends on FGMAC4
+	default n
+	help
+	  Say 'y' here if F_GMAC4 IP on your SoC uses
+	  Alternate or Enhanced Descriptors.
+	  This kind of descriptor is valid
+	  Only for F_GMAC4(M)T IP
+
+config FGMAC4_TDESC_NUM
+	int "Number of transmit buffers"
+	depends on FGMAC4
+	range 19 256
+	default "256"
+	help
+	  Set the number of transmit buffers used in driver.
+
+config FGMAC4_RDESC_NUM
+	int "Number of receive buffers"
+	depends on FGMAC4
+	range 1 256
+	default "256"
+	help
+	  Set the number of received buffers used in driver.
+
+config FGMAC4_BUFFER_SIZE
+	int "Size of one transmit or receive buffer"
+	depends on FGMAC4
+	range 1536 9024
+	default "1536"
+help
+	  Set the size of one transmit or receive buffer used in driver.
+	  The buffer size must be in multiples of cache line size(32).
+	  If jumbo frames are to be used, a large number is recommended, and
+	  otherwise, default value is ok.
+
+config FGMAC4_USE_BOUNCE_BUF
+	bool "Use bounce buffers"
+	depends on FGMAC4
+	default n
+
+config F_TAIKI
+	tristate "F_TAIKI network support"
+help
+	  Enable for F_TAIKI support of FGAMC4 IP
+	  Provides Gigabit ethernet support with low power mode
 
 endif # NET_VENDOR_FUJITSU

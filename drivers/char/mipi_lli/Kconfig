@@ -1,0 +1,17 @@
+#
+# MB86S70 MIPI_LLI device configuration
+#
+
+menu "MB86S70 MIPI_LLI devices"
+	depends on ARCH_MB86S70 && MIPILLI
+
+config MB86S70_MIPILLI
+	depends on ARCH_MB86S70 && MIPILLI
+	tristate "MB86S70 MIPILLI"
+	help
+	  MB86S70 MIPI-LLI SUPPLY, dirver for Fujitsu MIPI-LLI IP,
+	  selected if MB86S70 platform is defined.
+	  main function is to locally allocate a remote memory
+	  on another board via MIPI-LLI interface, this allocated
+	  memory can be used by usr-land application.
+endmenu

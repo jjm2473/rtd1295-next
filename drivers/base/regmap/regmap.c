@@ -963,7 +963,8 @@ int _regmap_raw_write(struct regmap *map, unsigned int reg,
 		unsigned int ival;
 		int val_bytes = map->format.val_bytes;
 		for (i = 0; i < val_len / val_bytes; i++) {
-			ival = map->format.parse_val(val + (i * val_bytes));
+			ival = map->format.parse_val((void *)
+						(val + (i * val_bytes)));
 			ret = regcache_write(map, reg + (i * map->reg_stride),
 					     ival);
 			if (ret) {
@@ -1177,7 +1178,7 @@ int _regmap_write(struct regmap *map, unsigned int reg,
 	}
 
 #ifdef LOG_DEVICE
-	if (strcmp(dev_name(map->dev), LOG_DEVICE) == 0)
+	if (map->dev && strcmp(dev_name(map->dev), LOG_DEVICE) == 0)
 		dev_info(map->dev, "%x <= %x\n", reg, val);
 #endif
 
@@ -1437,7 +1438,7 @@ static int _regmap_read(struct regmap *map, unsigned int reg,
 	ret = map->reg_read(context, reg, val);
 	if (ret == 0) {
 #ifdef LOG_DEVICE
-		if (strcmp(dev_name(map->dev), LOG_DEVICE) == 0)
+		if (map->dev && strcmp(dev_name(map->dev), LOG_DEVICE) == 0)
 			dev_info(map->dev, "%x => %x\n", reg, *val);
 #endif
 
@@ -1717,7 +1718,7 @@ int regmap_async_complete(struct regmap *map)
 	int ret;
 
 	/* Nothing to do with no async support */
-	if (!map->bus->async_write)
+	if (!map->bus || !map->bus->async_write)
 		return 0;
 
 	trace_regmap_async_complete_start(map->dev);

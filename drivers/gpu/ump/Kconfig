@@ -1,0 +1,5 @@
+config UMP
+	tristate "Arm Mali Memory Allocator"
+	help
+	  Mali Kernel Memory Allocator
+

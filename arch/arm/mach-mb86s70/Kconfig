@@ -1,0 +1,32 @@
+config ARCH_MB86S70
+	bool "Fujitsu Semiconductor MB86S70"
+	select CPU_V7
+	select ARM_AMBA
+	select ARM_GIC
+#	select ARM_TIMER_SP804
+	select ARCH_REQUIRE_GPIOLIB
+	select ARCH_HAS_CPUFREQ
+	select ARCH_HAS_OPP
+	select PM_OPP
+	select USB_ARCH_HAS_EHCI
+	select USB_ARCH_HAS_XHCI
+	select BIG_LITTLE
+	select CLKDEV_LOOKUP
+	select COMMON_CLK
+	select GENERIC_CLOCKEVENTS
+	select GENERIC_GPIO
+	select HAVE_ARM_ARCH_TIMER
+	select HAVE_CLK
+	select HAVE_SMP
+	select MB8AC0300_EXIU
+	select MIGHT_HAVE_CACHE_L2X0
+	select ARM_CCI
+	select MIGHT_HAVE_PCI
+	select PCIEPORTBUS
+	select PINCTRL
+	select PINCTRL_MB86S70
+	select PM_GENERIC_DOMAINS if PM
+	select LOCAL_TIMERS
+	select ARCH_DMA_ADDR_T_64BIT
+	help
+	  Support for Fujitsu Semiconductor's systems.

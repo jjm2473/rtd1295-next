@@ -537,6 +537,7 @@ void pci_common_init(struct hw_pci *hw)
 		pci_bus_add_devices(bus);
 	}
 }
+EXPORT_SYMBOL_GPL(pci_common_init);
 
 #ifndef CONFIG_PCI_HOST_ITE8152
 void pcibios_set_master(struct pci_dev *dev)
@@ -608,8 +609,9 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
 			continue;
 
 		r = dev->resource + idx;
+
 		if (!r->start && r->end) {
-			printk(KERN_ERR "PCI: Device %s not available because"
+			printk(KERN_WARNING	 "PCI: Device %s not available because"
 			       " of resource collisions\n", pci_name(dev));
 			return -EINVAL;
 		}
@@ -669,3 +671,4 @@ void __init pci_map_io_early(unsigned long pfn)
 	pci_io_desc.pfn = pfn;
 	iotable_init(&pci_io_desc, 1);
 }
+

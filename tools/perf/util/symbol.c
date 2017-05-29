@@ -673,7 +673,7 @@ int dso__load_kallsyms(struct dso *dso, const char *filename,
 	if (dso__load_all_kallsyms(dso, filename, map) < 0)
 		return -1;
 
-	symbols__fixup_duplicate(&dso->symbols[map->type]);
+/*	symbols__fixup_duplicate(&dso->symbols[map->type]); */
 	symbols__fixup_end(&dso->symbols[map->type]);
 
 	if (dso->kernel == DSO_TYPE_GUEST_KERNEL)
@@ -892,13 +892,17 @@ int dso__load_vmlinux(struct dso *dso, struct map *map,
 	snprintf(symfs_vmlinux, sizeof(symfs_vmlinux), "%s%s",
 		 symbol_conf.symfs, vmlinux);
 
+printf("trying %s\n", symfs_vmlinux);
+
 	if (dso->kernel == DSO_TYPE_GUEST_KERNEL)
 		symtab_type = DSO_BINARY_TYPE__GUEST_VMLINUX;
 	else
 		symtab_type = DSO_BINARY_TYPE__VMLINUX;
 
-	if (symsrc__init(&ss, dso, symfs_vmlinux, symtab_type))
+	if (symsrc__init(&ss, dso, symfs_vmlinux, symtab_type)) {
+		printf("failed in symsrc__init\n");
 		return -1;
+	}
 
 	err = dso__load_sym(dso, map, &ss, &ss, filter, 0);
 	symsrc__destroy(&ss);
@@ -908,6 +912,8 @@ int dso__load_vmlinux(struct dso *dso, struct map *map,
 		dso__set_loaded(dso, map->type);
 		pr_debug("Using %s for symbols\n", symfs_vmlinux);
 	}
+
+	printf("do_load_sym result %d\n", err);
 
 	return err;
 }

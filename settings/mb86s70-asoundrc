@@ -1,0 +1,20 @@
+pcm.Playback {
+        type plug
+        slave {
+                pcm "hw:0,0"
+        }
+}
+
+pcm.Capture {
+        type plug
+        slave {
+                pcm "hw:0,1"
+        }
+}
+
+pcm.!default {
+        type asym
+        playback.pcm Playback
+        capture.pcm Capture
+}
+

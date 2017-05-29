@@ -38,11 +38,13 @@
 #include <linux/platform_device.h>
 
 #include "core.h"
+#include "../host/xhci.h"
 
 int dwc3_host_init(struct dwc3 *dwc)
 {
 	struct platform_device	*xhci;
 	int			ret;
+	struct xhci_platform_data platform_data;
 
 	xhci = platform_device_alloc("xhci-hcd", PLATFORM_DEVID_AUTO);
 	if (!xhci) {
@@ -58,6 +60,16 @@ int dwc3_host_init(struct dwc3 *dwc)
 	xhci->dev.dma_parms	= dwc->dev->dma_parms;
 
 	dwc->xhci = xhci;
+
+	memset(&platform_data, 0, sizeof(platform_data));
+	platform_data.quirks |= dwc->quirks;
+
+	ret = platform_device_add_data(xhci, &platform_data,
+					sizeof(struct xhci_platform_data));
+	if (ret) {
+		dev_err(dwc->dev, "couldn't add platform data to xHCI device\n");
+		goto err1;
+	}
 
 	ret = platform_device_add_resources(xhci, dwc->xhci_resources,
 						DWC3_XHCI_RESOURCES_NUM);

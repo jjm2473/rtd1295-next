@@ -571,6 +571,9 @@ int phy_ethtool_get_eee(struct phy_device *phydev, struct ethtool_eee *data);
 int phy_ethtool_set_wol(struct phy_device *phydev, struct ethtool_wolinfo *wol);
 void phy_ethtool_get_wol(struct phy_device *phydev, struct ethtool_wolinfo *wol);
 
+int phy_init_eee_private(struct mii_bus *bus, unsigned int phy_addr, int speed,
+		      int duplex, bool clk_stop_enable);
+
 int __init mdio_bus_init(void);
 void mdio_bus_exit(void);
 

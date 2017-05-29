@@ -30,8 +30,8 @@ config DRM_KMS_HELPER
 	tristate
 	depends on DRM
 	select FB
-	select FRAMEBUFFER_CONSOLE if !EXPERT
-	select FRAMEBUFFER_CONSOLE_DETECT_PRIMARY if FRAMEBUFFER_CONSOLE
+#	select FRAMEBUFFER_CONSOLE if !EXPERT
+#	select FRAMEBUFFER_CONSOLE_DETECT_PRIMARY if FRAMEBUFFER_CONSOLE
 	help
 	  FB and CRTC helpers for KMS drivers.
 
@@ -220,3 +220,5 @@ source "drivers/gpu/drm/omapdrm/Kconfig"
 source "drivers/gpu/drm/tilcdc/Kconfig"
 
 source "drivers/gpu/drm/qxl/Kconfig"
+
+source "drivers/gpu/drm/fujitsu/Kconfig"

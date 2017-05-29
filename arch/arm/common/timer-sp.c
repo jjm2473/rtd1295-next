@@ -28,6 +28,7 @@
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
+#include <linux/syscore_ops.h>
 
 #include <asm/sched_clock.h>
 #include <asm/hardware/arm_timer.h>
@@ -208,6 +209,53 @@ void __init __sp804_clockevents_init(void __iomem *base, unsigned int irq, struc
 	clockevents_config_and_register(evt, rate, 0xf, 0xffffffff);
 }
 
+static void __iomem *_sp804_base;
+static u32 reg[6];
+
+static int sp804_suspend(void)
+{
+	unsigned long flags;
+
+	printk("suspend\n");
+	local_irq_save(flags);
+	reg[0] = readl(_sp804_base + TIMER_LOAD);
+	reg[1] = readl(_sp804_base + TIMER_VALUE);
+	reg[2] = readl(_sp804_base + TIMER_CTRL);
+	reg[3] = readl(_sp804_base + TIMER_2_BASE + TIMER_LOAD);
+	reg[4] = readl(_sp804_base + TIMER_2_BASE + TIMER_VALUE);
+	reg[5] = readl(_sp804_base + TIMER_2_BASE + TIMER_CTRL);
+	local_irq_restore(flags);
+
+	return 0;
+}
+
+static void sp804_resume(void)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	/* Disable timers */
+	writel(0, _sp804_base + TIMER_CTRL);
+	writel(0, _sp804_base + TIMER_2_BASE + TIMER_CTRL);
+
+	/* Program Load and Value regs */
+	writel(reg[0], _sp804_base + TIMER_LOAD);
+	writel(reg[1], _sp804_base + TIMER_VALUE);
+	writel(reg[3], _sp804_base + TIMER_2_BASE + TIMER_LOAD);
+	writel(reg[4], _sp804_base + TIMER_2_BASE + TIMER_VALUE);
+
+	/* Restore timers */
+	writel(reg[2], _sp804_base + TIMER_CTRL);
+	writel(reg[5], _sp804_base + TIMER_2_BASE + TIMER_CTRL);
+	local_irq_restore(flags);
+	printk("resume\n");
+}
+
+static struct syscore_ops sp804_syscore_ops = {
+	.suspend = sp804_suspend,
+	.resume = sp804_resume,
+};
+
 static void __init sp804_of_init(struct device_node *np)
 {
 	static bool initialized = false;
@@ -257,6 +305,9 @@ static void __init sp804_of_init(struct device_node *np)
 							 name, clk2, 1);
 	}
 	initialized = true;
+
+	_sp804_base = base;
+	register_syscore_ops(&sp804_syscore_ops);
 
 	return;
 err:

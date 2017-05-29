@@ -1,0 +1,248 @@
+/*
+ * Copyright (C) 2013-2015 Linaro, LTD for FUJITSU SEMICONDUCTOR LIMITED
+ * Copyright (C) 2015-2016 Socionext Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+
+/include/ "mb8ac0300.dtsi"
+
+/ {
+	model = "Fujitsu MB8AC0300 Evaluation Board";
+	compatible = "fujitsu,mb8ac0300eb", "fujitsu,mb8ac0300";
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x40000000 0x80000000>; /* 2 GB */
+	};
+
+	chosen {
+		bootargs = "loglevel=4 console=ttyS0,115200 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait rw                                                                                         ";
+		linux,initrd-start = <0x70000000>;
+		linux,initrd-end = <0x70000000>;
+	};
+
+	alsa: mb8ac0300_adau1361 {
+		compatible = "fujitsu,mb8ac0300_adau1361";
+		channel = <0>;
+		ms_mode = <0x4000>; // SND_SOC_DAIFMT_CBS_CFS
+		format = <1>; // SND_SOC_DAIFMT_I2S
+		use_eclk = <1>; // 0 = AHB
+	};
+
+	joypad: gpiomouse {
+		compatible = "fujitsu,mb8ac0300-gpiomouse";
+		scan_ms = <20>;
+		polarity = <0>; // GPIO_MOUSE_POLARITY_ACT_HIGH
+		pins = < 16 17 18 19 21 20 22 >;
+	};
+
+	gpio-revision {
+		compatible = "fujitsu,gpio-revision";
+	};
+
+	i2c0 {
+		status = "ok";
+		compatible = "fujitsu,f_i2c";
+		reg = <0xfff73000 0x1000>;
+		interrupts = <0 91 0x4>;
+		clocks = <&clk_main_6_1>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		adau1x61: adau1x61@38 {
+			compatible = "analog,adau1x61";
+			reg = <0x38>;
+		};
+	};
+
+	/* if you started by XCS0 boot path */
+
+	flash@XCS0_XSC4 {
+		status = "okay";
+		compatible = "spansion,s29gl128p", "cfi-flash";
+		reg = <0x04000000 0x02000000>;
+		bank-width = <4>;
+		device-width = <2>;
+	};
+
+	flash@XCS0_XSC0 {
+		status = "okay";
+		compatible = "spansion,s29gl128p", "cfi-flash";
+		reg = <0x11000000 0x01000000>;
+		bank-width = <1>;
+		device-width = <1>;
+                #address-cells = <1>;
+                #size-cells = <1>;
+
+
+                part0@0 {
+                       label = "xsc0-bootloader";
+                       reg = <0 0x200000>;
+                };
+                part1@1 {
+                       label = "xcs0-romfs";
+                       reg = <0x200000 0xe00000>;
+                };
+
+
+	};
+
+	/* if you started by XCS4 boot path */
+
+	flash@XCS4_XSC4 {
+		status = "----";
+		compatible = "spansion,s29gl128p", "cfi-flash";
+		reg = <0x10000000 0x01000000>;
+		bank-width = <4>;
+		device-width = <2>;
+	};
+
+	flash@XCS4_XSC0 {
+		status = "----";
+		compatible = "spansion,s29gl128p", "cfi-flash";
+		reg = <0x04000000 0x01000000>;
+		bank-width = <1>;
+		device-width = <1>;
+	};
+
+	hsspi: hsspi.0 {
+		compatible = "fujitsu,mb86s7x-hsspi";
+		reg = <0xfff46000 0x1000>,
+		      <0x12000000 0x1000000>;
+		interrupts = <0 77 0x4>,
+			     <0 76 0x4>,
+			     <0 78 0x4>;
+		mode = <1>; // HS_SPI_DIRECT_MODE
+		read_operation = <1>; // HS_SPI_NORMAL_READ
+		write_operation = <5>; // HS_SPI_NORMAL_WRITE
+		bank_size = <0x01000000>;	// 16MB flash bank
+		num_chipselect = <4>;
+		addr_width = <3>;
+		dma_rx_dreq = <0x800000>; // XDDES_TF_DREQ6
+		dma_tx_dreq = <0x900000>; // XDDES_TF_DREQ7
+		dma_channel = <0>;
+		sync_on = <1>;
+		clock = <0>; // HS_SPI_HCLK
+		clocks = <&clk_main_4_3>, <&clk_main_4_3>;
+		clock-names = "iHCLK", "iPCLK";
+		#address-cells = <1>;
+	        #size-cells = <0>;
+
+		flash@0 {
+			compatible = "spansion,s25fl129p1";
+			spi-max-frequency = <31250000>;
+			reg = <0>;
+			eeprom-size = <0x01000000>;
+			eeprom-name = "spiflash";
+			rx-bitwidth = <3>; /* quad */
+			tx-bitwidth = <3>; /* quad */
+		    };
+	};
+
+	videomodes@0 {
+		compatible = "video-modes";
+		native-mode = <&mode1>;
+		mode0: mode@0 {
+			mode  = "800x430x24bpp";
+			hactive = <800>;
+			vactive = <430>;
+			hback-porch = <116>;
+			hfront-porch = <6>;
+			hsync-len = <134>;
+			vback-porch = <83>;
+			vfront-porch = <2>;
+			vsync-len = <10>;
+			clock = <25000>;
+			bpp = <24>;
+			red_offset      = <0>;
+			red_length      = <8>;
+			green_offset    = <8>;
+			green_length    = <8>;
+			blue_offset     = <16>;
+			blue_length     = <8>;
+			alpha_offset    = <24>;
+			alpha_length    = <8>;
+		};
+		mode1: mode@1 {
+			mode  = "800x430x16bpp";
+			hactive = <800>;
+			vactive = <430>;
+			xres-virtual = <800>;
+			yres-virtual = <860>;
+			hback-porch = <116>;
+			hfront-porch = <6>;
+			hsync-len = <134>;
+			vback-porch = <83>;
+			vfront-porch = <2>;
+			vsync-len = <10>;
+			clock = <25000>;
+			bpp = <16>;
+			red_offset      = <11>;
+			red_length      = <5>;
+			green_offset    = <5>;
+			green_length    = <6>;
+			blue_offset     = <0>;
+			blue_length     = <5>;
+			alpha_offset    = <0>;
+			alpha_length    = <0>;
+		};
+
+		/* this suits the fixed 640x480 DVI output on mb8ac0300 EVB */
+		mode2: mode@2 {
+			mode  = "800x480x24bpp";
+			hactive = <800>;
+			vactive = <480>;
+			hback-porch = <116>;
+			hfront-porch = <6>;
+			hsync-len = <134>;
+			vback-porch = <33>;
+			vfront-porch = <2>;
+			vsync-len = <10>;
+			clock = <25000>;
+			bpp = <24>;
+			red_offset      = <0>;
+			red_length      = <8>;
+			green_offset    = <8>;
+			green_length    = <8>;
+			blue_offset     = <16>;
+			blue_length     = <8>;
+			alpha_offset    = <24>;
+			alpha_length    = <8>;
+		};
+
+		mode3: mode@3 {
+			mode  = "800x480x16bpp";
+			hactive = <800>;
+			vactive = <480>;
+			xres-virtual = <800>;
+			yres-virtual = <960>;
+			hback-porch = <116>;
+			hfront-porch = <6>;
+			hsync-len = <134>;
+			vback-porch = <33>;
+			vfront-porch = <2>;
+			vsync-len = <10>;
+			clock = <25000>;
+			bpp = <16>;
+			red_offset      = <11>;
+			red_length      = <5>;
+			green_offset    = <5>;
+			green_length    = <6>;
+			blue_offset     = <0>;
+			blue_length     = <5>;
+			alpha_offset    = <0>;
+			alpha_length    = <0>;
+		};
+
+	};
+};

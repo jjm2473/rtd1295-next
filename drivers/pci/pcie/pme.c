@@ -20,6 +20,8 @@
 #include <linux/device.h>
 #include <linux/pcieport_if.h>
 #include <linux/pm_runtime.h>
+#include <linux/of_irq.h>
+#include <linux/of_address.h>
 
 #include "../pci.h"
 #include "portdrv.h"
@@ -342,7 +344,7 @@ static int pcie_pme_probe(struct pcie_device *srv)
 {
 	struct pci_dev *port;
 	struct pcie_pme_service_data *data;
-	int ret;
+	int ret, pme_int_off = 0;
 
 	data = kzalloc(sizeof(*data), GFP_KERNEL);
 	if (!data)
@@ -354,6 +356,15 @@ static int pcie_pme_probe(struct pcie_device *srv)
 	set_service_data(srv, data);
 
 	port = srv->port;
+
+	if (of_property_read_u32(port->bus->dev.of_node,
+				"pme_int_off", &pme_int_off)) {
+	} else {
+		pme_int_off = 
+		srv->irq = of_irq_to_resource(port->bus->dev.of_node,
+				pme_int_off, NULL);
+	}
+
 	pcie_pme_interrupt_enable(port, false);
 	pcie_clear_root_pme_status(port);
 

@@ -1,0 +1,581 @@
+/*
+ * Copyright (C) 2013-2015 Linaro, LTD for FUJITSU SEMICONDUCTOR LIMITED
+ * Copyright (C) 2015-2016 Socionext Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+#include "mb86s70.dtsi"
+
+/ {
+	model = "Socionext MB86S70 EVB";
+	compatible = "fujitsu,mb8aa0350eb","fujitsu,mb86s70";
+
+	memory {
+		device_type = "memory";
+		reg = <0 0x80000000 0x80000000>, <0x08 0x80000000 0x80000000>;
+
+	};
+
+	chosen {
+		bootargs = "consoleblank=0 no_console_suspend shm_offset=2048 loglevel=4 console=ttyS0,115200 root=/dev/mmcblk1p2 rootfstype=ext4 rootwait rw pcie_ports=native ";
+		linux,initrd-start = <0x88000000>;
+		linux,initrd-end =   <0x88800000>;
+		/* Backward compatibility for 2016.03-1-1 */
+		/* linux,initrd-start = <0xc0000000>; */
+		/* linux,initrd-end =   <0xc0800000>; */
+	};
+
+	flash@XSC4 {
+		status = "disabled";
+		compatible = "spansion,s29gl128p", "cfi-flash";
+		reg = <0 0x40000000 0x01000000>;
+		bank-width = <2>;
+		device-width = <2>;
+	};
+
+	pmdev@s70_ev_pm {
+		compatible = "mb86s70evb,pm_ops";
+		interrupts = <0 96 0x4>;
+	};
+
+/*
+ * GPIO 0
+ *
+ * PD0  input  POWER_KEY
+ * PD1  input  HOME_KEY
+ * PD2  out H  LED_D6
+ * PD3  out H  LED_D8
+ * PD4  input  DEBUG_SW_A
+ * PD5  input  DEBUG_SW_B
+ * PD6  input  DEBUG_SW_C
+ * PD7  input  DEBUG_SW_D
+ * PD8  input  LAN_PHY_INTB      EXINT24
+ * PD9  input  LAN_PHY_PMEB      EXINT25
+ * PD10 input  PCIE_DET_0
+ * PD11 input  TP_INT            EXINT27
+ * PD12 input  HSSPI_SEL
+ * PD13 out L  LAN_PHY_RSTOUT
+ * PD14 out L  LAN_PHY_ENABLE
+ * PD15 out L  LCM_SDIC_ENABLE
+ * PD16 func   CAP_VSYNC
+ * PD17 func   CAP_HSYNC
+ * PD18 func   CAP_CLK
+ * PD19 func   CAP_R7
+ * PD20 func   CAP_R6
+ * PD21 func   CAP_R5
+ * PD22 func   CAP_R4
+ * PD23 func   CAP_R3
+ * PD24 func   CAP_R2
+ * PD25 func   CAP_R1
+ * PD26 func   CAP_R0
+ * PD27 func   CAP_G7
+ * PD28 func   CAP_G6
+ * PD29 func   CAP_G5
+ * PD30 func   CAP_G4
+ * PD31 func   CAP_G3
+ */
+
+	gpio0: mb86s70_gpio0 {
+		compatible = "fujitsu,mb86s70-gpio";
+		reg = <0 0x31000000 0x10000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		clocks = <&clk_alw_2_1>;
+		base = <0>;
+	};
+
+/*
+ * GPIO 1
+ *
+ * PD32 func   CAP_G2
+ * PD33 func   CAP_G1
+ * PD34 func   CAP_G0
+ * PD35 func   CAP_B7
+ * PD36 func   CAP_B6
+ * PD37 func   CAP_B5
+ * PD38 func   CAP_B4
+ * PD39 func   CAP_B3
+ * PD40 func   CAP_B2
+ * PD41 func   CAP_B1
+ * PD42 func   CAP_B0
+ * PD43 func   CAP_DEN
+ * PD44 func   CAP_FID
+ * PD45 out L  PD45
+ * PD46 out L  PD46
+ * PD47 out L  PD47
+ * PD48 input  BTN_MENU
+ * PD49 input  BTN_RETURN
+ * PD50 input  BTN_UP
+ * PD51 input  BTN_DOWN
+ * PD52 out L  PD52
+ * PD53 out L  PD53
+ * PD54 out L  PD54
+ * PD55 out L  PD55
+ * PD56 func   SIN1
+ * PD57 func   SOUT1
+ * PD58 func   XCTS1
+ * PD59 func   XRTS1
+ * PD60 func   SIN2
+ * PD61 func   SOUT2
+ * PD62 func   XCTS2
+ * PD63 func   XRTS2
+ */
+
+	gpio1: mb86s70_gpio1 {
+		compatible = "fujitsu,mb86s70-gpio";
+		reg = <0 0x31010000 0x10000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		clocks = <&clk_alw_2_1>;
+		base = <32>;
+       };
+
+	gpio-revision {
+		compatible = "fujitsu,gpio-revision";
+		gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>; /* PD42 / EA1 */
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		d3 {
+			label = "led3";
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
+		};
+		d4 {
+			label = "led4";
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mmc1";
+		};
+		d5 {
+			label = "led5";
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-keys {
+		status = "disabled"; /* Conflicts with gpio-control-nor */
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		up {
+			label = "Up";
+			gpios = <&gpio1 18 GPIO_ACTIVE_HIGH>;
+			linux,code = <103>;
+			gpio-key;
+		};
+		down {
+			label = "Down";
+			gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+			linux,code = <108>;
+			gpio-key;
+		};
+		return {
+			label = "Return";
+			gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
+			linux,code = <28>;
+			gpio-key;
+		};
+		menu {
+			label = "Menu";
+			gpios = <&gpio1 16 GPIO_ACTIVE_HIGH>;
+			linux,code = <139>;
+			gpio-key;
+		};
+	};
+
+	backlight {
+		compatible = "pwm-backlight";
+		brightness-levels = <0 255>;
+		default-brightness-level = <1>;
+		gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	videomodes@0 {
+		compatible = "video-modes";
+                mode0: mode@0 {
+                        mode  = "640x480x32bpp";
+                        hactive = <640>;
+                        vactive = <480>;
+                        hback-porch = <8>;
+                        hfront-porch = <24>;
+                        hsync-len = <8>;
+                        vback-porch = <2>;
+                        vfront-porch = <4>;
+                        vsync-len = <2>;
+			flags = <0x15>; /* h low, v low, de low */
+                        clock = <125000>;
+                        bpp = <32>;
+                        red_offset      = <16>;
+                        red_length      = <8>;
+                        green_offset    = <8>;
+                        green_length    = <8>;
+                        blue_offset     = <0>;
+                        blue_length     = <8>;
+                        alpha_offset    = <0>;
+                        alpha_length    = <0>;
+                };
+
+		mode1: mode@1 {
+			mode  = "768x1280x32bpp";
+			hactive = <768>; /* panel actually 800 x 1280 */
+			vactive = <1280>;
+			hback-porch = <48>;
+			hfront-porch = <44>; /* missing 32 px went in here */
+			hsync-len = <4>;
+			vback-porch = <3>;
+			vfront-porch = <5>;
+			vsync-len = <1>;
+			flags = <0x26>; /* h high, v low, de high */
+			clock = <1000000>; /* 1GHz link clock */
+			bpp = <32>;
+			width-mm = <92>;
+			height-mm = <150>;
+			/* scanout-rotation = <270>; */
+			red_offset      = <16>;
+			red_length      = <8>;
+			green_offset    = <8>;
+			green_length    = <8>;
+			blue_offset     = <0>;
+			blue_length     = <8>;
+			alpha_offset    = <0>;
+			alpha_length    = <0>;
+		};
+                mode2: mode@2 {
+                        mode  = "768x1280x16bpp";
+                        hactive = <768>; /* panel actually 800 x 1280 */
+                        vactive = <1280>;
+                        hback-porch = <48>;
+                        hfront-porch = <44>; /* missing 32 px went in here */
+                        hsync-len = <4>;
+                        vback-porch = <3>;
+                        vfront-porch = <5>;
+                        vsync-len = <1>;
+                        flags = <0x26>; /* h high, v low, de high */
+                        clock = <1000000>; /* 1GHz link clock */
+                        bpp = <16>;
+                        width-mm = <92>;
+                        height-mm = <150>;
+                        /* scanout-rotation = <270>; */
+                        red_offset      = <11>;
+                        red_length      = <5>;
+                        green_offset    = <5>;
+                        green_length    = <6>;
+                        blue_offset     = <0>;
+                        blue_length     = <5>;
+                        alpha_offset    = <0>;
+                        alpha_length    = <0>;
+                };
+	};
+
+	i2c0 {
+		compatible = "fujitsu,f_i2c";
+		reg = <0 0x31200000 0x10000>;
+		interrupts = <0 312 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <100000>;
+		clocks = <&clk_alw_2_8>;
+
+		wm8973: wm8973@1a {
+                        compatible = "wolfson,wm8973";
+                        reg = <0x1a>;
+                };
+	};
+
+	i2c1 {
+		compatible = "fujitsu,f_i2c";
+		reg = <0 0x31210000 0x10000>;
+		interrupts = <0 313 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clk_alw_2_8>;
+		clock-frequency = <100000>;
+
+	};
+
+	i2c2 {
+		compatible = "fujitsu,f_i2c";
+		reg = <0 0x31220000 0x10000>;
+		interrupts = <0 314 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clk_alw_2_8>;
+		clock-frequency = <100000>;
+	};
+
+	i2c3 {
+		compatible = "fujitsu,f_i2c";
+		reg = <0 0x31230000 0x10000>;
+		interrupts = <0 315 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clk_alw_2_8>;
+		clock-frequency = <100000>;
+	};
+
+	i2c4 {
+		compatible = "fujitsu,f_i2c";
+		reg = <0 0x31240000 0x10000>;
+		interrupts = <0 316 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clk_alw_2_8>;
+		clock-frequency = <100000>;
+
+               egalax_ts: egalax_ts@4 {
+			compatible = "eeti,egalax_ts";
+			reg = <0x4>;
+			interrupts = <0 107 0x4>; /* EXTINT27 */
+			wakeup-gpios = <&gpio0 11 0>; /* same pin as EXTINT27 */
+               };
+	};
+
+	i2c5 {
+		compatible = "fujitsu,f_i2c";
+		reg = <0 0x31250000 0x10000>;
+		interrupts = <0 317 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clk_alw_2_8>;
+		clock-frequency = <100000>;
+
+		/* default to fan always on high, even during suspend */
+		amc6821: amc6821@18 {
+			//status = "ok";
+			status = "disabled";
+                        compatible = "ti,amc6821";
+                        reg = <0x18>;
+			low_temp = <0x10>; // unreasonably low target temp == fan always on high
+			pwminv = <1>;      //  1, inverted PWM output
+			fan_char = <0x25>;
+                };
+		/* alternative fan profile: fan responds to temperature + off in suspend */
+		amc6821a: amc6821a@18 {
+			//status = "disabled";
+                        compatible = "ti,amc6821";
+                        reg = <0x18>;
+			low_temp = <0x41>; // 32 degrees C
+			pwminv = <1>;      //  1, inverted PWM output
+			fan_char = <0x25>;
+			off-in-suspend; // stop fan during suspend
+                };
+	};
+
+	hsspi: hsspi.0 {
+		compatible = "fujitsu,mb86s7x-hsspi";
+		reg = <0 0x30010000 0x1000>,
+		      <0 0x48000000 0x1000000>;
+		interrupts = <0 361 0x4>,
+			     <0 360 0x4>,
+			     <0 362 0x4>;
+		mode = <1>; // HS_SPI_DIRECT_MODE
+		read_operation = <1>; // HS_SPI_NORMAL_READ
+		write_operation = <5>; // HS_SPI_NORMAL_WRITE
+		bank_size = <0x01000000>;	// 16MB flash bank
+		num_chipselect = <1>;
+		addr_width = <3>;
+		dma_rx_dreq = <0x800000>; // XDDES_TF_DREQ6 !!! GUESSED
+		dma_tx_dreq = <0x900000>; // XDDES_TF_DREQ7 !!! GUESSED
+		dma_channel = <0>;
+		sync_on = <1>;
+		clock = <0>; // HS_SPI_HCLK
+		clocks = <&clk_alw_1_0>, <&clk_alw_2_1>;
+		clock-names = "iHCLK", "iPCLK";
+		#address-cells = <1>;
+	        #size-cells = <0>;
+
+		flash@0 {
+			compatible = "spansion,s25fl512s";
+			spi-max-frequency = <31250000>;
+			spi-rx-bus-width = <4>;
+			spi-tx-bus-width = <1>;
+			spi-cpha;
+			spi-cpol;
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			spipart0@0 {
+				label = "scb-spi-firmware";
+				reg = <0 0x200000>;
+			};
+			spipart1@1 {
+				label = "spi-romfs";
+				reg = <0x200000 0xe00000>;
+			};
+		};
+	};
+
+	gpio-flash@xcs4-gpio {
+		status = "disabled";
+		compatible = "gpio-control-nor";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		bank-width = <2>;
+		device-width = <2>;
+		/*pinctrl-names = "default";*/
+		/*pinctrl-0 = <&gpio_nor>;*/
+
+		gpios = <&gpio1 8 0>,	/* rdy 40 */
+			 <&gpio0 19 0>, 	/* nce */
+			 <&gpio0 20 0>, 	/* noe */
+			 <&gpio0 23 0>, 	/* nwe */
+
+			/* 16 data */
+
+			<&gpio0 24 0>,
+			<&gpio0 25 0>,
+			<&gpio0 26 0>,
+			<&gpio0 27 0>,
+			<&gpio0 28 0>,
+			<&gpio0 29 0>,
+			<&gpio0 30 0>,
+			<&gpio0 31 0>,
+			<&gpio1 0 0>,
+			<&gpio1 1 0>,
+			<&gpio1 2 0>,
+			<&gpio1 3 0>,
+			<&gpio1 4 0>,
+			<&gpio1 5 0>,
+			<&gpio1 6 0>,
+			<&gpio1 7 0>,
+
+			/* as many address as we have (22) */
+
+			<&gpio1 10 0>,
+			<&gpio1 11 0>,
+			<&gpio1 12 0>,
+			<&gpio1 13 0>,
+			<&gpio1 14 0>,
+			<&gpio1 15 0>,
+			<&gpio1 16 0>,
+			<&gpio1 17 0>,
+			<&gpio1 18 0>,
+			<&gpio1 19 0>,
+			<&gpio1 20 0>,
+			<&gpio1 21 0>,
+			<&gpio1 22 0>,
+			<&gpio1 23 0>,
+			<&gpio1 24 0>,
+			<&gpio1 25 0>,
+			<&gpio1 26 0>,
+			<&gpio1 27 0>,
+			<&gpio1 28 0>,
+			<&gpio1 29 0>,
+			<&gpio1 30 0>,
+			<&gpio1 31 0>;
+
+		firmware@0 { /* 2MByte firmware region */
+			label = "scb-memcs-firmware";
+			reg = <0 0x200000>;
+		};
+
+		romfs@200000 { /* only 8MByte is addressable by gpio */
+			label = "memcs-romfs";
+			reg = <0x200000 0x600000>;
+		};
+		
+	};
+
+	scb-flash@scb-mtd {
+		status = "disabled";
+		compatible = "mb86s7x-scb-mtd";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * first erase block (256KByte) reserved for
+		 * U-Boot environment and not used in Linux
+		 *
+		 * total size assumed 1.25MByte
+		 */
+
+		identity@0 { /* 1MByte identity ROMFS area starting +1 eb */
+			label = "identity";
+			reg = <0x40000 0x140000>;
+		};
+	};
+
+};
+
+&videophy0 {
+	dsi_lanes = /bits/ 8 <4>; /* "real" number of lanes(PHY_IF_CFG.num_lanes + 1) */
+	virtual_channel = /bits/ 8 <0>;
+
+	txesc_clock_division = /bits/ 8 <4>;
+	to_clock_division = /bits/ 8 <1>;
+
+	/* DPI_CFG */
+	dpi_color_coding = /bits/ 8 <7>;
+	shutd_act_low = /bits/ 8 <1>;
+	colorm_act_low = /bits/ 8 <0>;
+	en18_loosely = /bits/ 8 <0>;
+
+	/* VID_MODE_CFG */
+	vid_mode_type = /bits/ 8 <1>;
+	en_lp_vsa = /bits/ 8 <1>;
+	en_lp_vbp = /bits/ 8 <1>;
+	en_lp_vfp = /bits/ 8 <0>;
+	en_lp_vact = /bits/ 8 <1>;
+	en_lp_hbp = /bits/ 8 <0>;
+	en_lp_hfp = /bits/ 8 <1>;
+	en_multi_pkt = /bits/ 8 <1>;
+	en_null_pkt = /bits/ 8 <1>;
+	lpcmden = /bits/ 8 <0>;
+
+	/* VID_PKT_CFG */
+	vid_pkt_size = /bits/ 16 <32>;
+	num_chunks = /bits/ 16 <25>;
+	null_pkt_size = /bits/ 16 <9>;
+
+	/* TMR_LINE_CFG */
+	hsa_time = /bits/ 16 <4>;
+	hbp_time = /bits/ 16 <48>;
+	hline_time = /bits/ 16 <896>;
+
+	/* VTIMING_CFG */
+	/* calculated with display_timing */
+	/* vsa_lines /bits/ 8 */
+	/* vbp_lines /bits/ 8 */
+	/* vfp_lines /bits/ 8 */
+	v_active_lines = /bits/ 16 <1289>;
+
+	/* PHY_TMR_CFG */
+	phy_lp2hstime = /bits/ 8 <19>;
+	phy_hs2lptime = /bits/ 8 <9>;
+
+	/* TO_CNT_CFG */
+	hstx_to_cnt = /bits/ 16 <0>;
+
+	/* PHY_IF_CFG */
+	phy_stop_wait_time = /bits/ 8 <2>;
+
+	/* PHY_IF_CTRL */
+	phy_txrequestclkhs = /bits/ 8 <1>;
+
+	/* LP_CMD_TIM */
+	invact_lpcmd_time = /bits/ 8 <0>;
+	outvact_lpcmd_time = /bits/ 8 <10>;
+
+	/* PHY_SETUP_CL */
+	sap_tlpx_c = /bits/ 8 <5>;
+	sap_hs0_c = /bits/ 8 <21>;
+	sap_trail_c = /bits/ 8 <6>;
+	sap_pre_c = /bits/ 8 <5>;
+
+	/* PHY_SETUP_DL */
+	sap_tlpx_d = /bits/ 8 <4>;
+	sap_hs0_d = /bits/ 8 <10>;
+	sap_trail_d = /bits/ 8 <5>;
+	sap_pre_d = /bits/ 8 <5>;
+};
+

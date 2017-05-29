@@ -5,6 +5,10 @@
 obj-$(CONFIG_THERMAL)		+= thermal_sys.o
 thermal_sys-y			+= thermal_core.o
 
+# interface to/from other layers providing sensors
+thermal_sys-$(CONFIG_THERMAL_HWMON)		+= thermal_hwmon.o
+thermal_sys-$(CONFIG_THERMAL_OF)		+= of-thermal.o
+
 # governors
 thermal_sys-$(CONFIG_THERMAL_GOV_FAIR_SHARE)	+= fair_share.o
 thermal_sys-$(CONFIG_THERMAL_GOV_STEP_WISE)	+= step_wise.o
@@ -23,4 +27,4 @@ obj-$(CONFIG_DB8500_THERMAL)	+= db8500_thermal.o
 obj-$(CONFIG_ARMADA_THERMAL)	+= armada_thermal.o
 obj-$(CONFIG_DB8500_CPUFREQ_COOLING)	+= db8500_cpufreq_cooling.o
 obj-$(CONFIG_INTEL_POWERCLAMP)	+= intel_powerclamp.o
-
+obj-$(CONFIG_MB86S7X_THERMAL)	+= mb86s7x_thermal.o

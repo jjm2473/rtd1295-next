@@ -35,6 +35,8 @@
 #ifndef _DRM_P_H_
 #define _DRM_P_H_
 
+#define DEBUG 1
+
 #ifdef __KERNEL__
 #ifdef __alpha__
 /* add include of current.h so that "current" is defined
@@ -1646,6 +1648,7 @@ int drm_gem_object_init(struct drm_device *dev,
 int drm_gem_private_object_init(struct drm_device *dev,
 			struct drm_gem_object *obj, size_t size);
 void drm_gem_object_handle_free(struct drm_gem_object *obj);
+void drm_gem_object_exported_dma_buf_free(struct drm_gem_object *obj);
 void drm_gem_vm_open(struct vm_area_struct *vma);
 void drm_gem_vm_close(struct vm_area_struct *vma);
 int drm_gem_mmap(struct file *filp, struct vm_area_struct *vma);
@@ -1701,8 +1704,11 @@ drm_gem_object_handle_unreference(struct drm_gem_object *obj)
 	 * ref, in which case the object would disappear before we
 	 * checked for a name
 	 */
-	if (atomic_dec_and_test(&obj->handle_count))
+	if (atomic_dec_and_test(&obj->handle_count)) {
 		drm_gem_object_handle_free(obj);
+		drm_gem_object_exported_dma_buf_free(obj);
+	}
+
 	drm_gem_object_unreference(obj);
 }
 
@@ -1721,8 +1727,11 @@ drm_gem_object_handle_unreference_unlocked(struct drm_gem_object *obj)
 	* checked for a name
 	*/
 
-	if (atomic_dec_and_test(&obj->handle_count))
+	if (atomic_dec_and_test(&obj->handle_count)) {
 		drm_gem_object_handle_free(obj);
+		drm_gem_object_exported_dma_buf_free(obj);
+	}
+
 	drm_gem_object_unreference_unlocked(obj);
 }
 

@@ -2,6 +2,9 @@
 # modular, meaning we can't build the codec driver in with I2C support.
 # We use an ordered list of conditional defaults to pick the appropriate
 # setting - SPI can't be modular so that case doesn't need to be covered.
+config SND_SOC_WM8973
+	tristate
+
 config SND_SOC_I2C_AND_SPI
 	tristate
 	default m if I2C=m
@@ -14,6 +17,7 @@ config SND_SOC_ALL_CODECS
 	select SND_SOC_L3
 	select SND_SOC_AB8500_CODEC if ABX500_CORE
 	select SND_SOC_AC97_CODEC if SND_SOC_AC97_BUS
+	select SND_SOC_ADAU1761 if SND_SOC_I2C_AND_SPI
 	select SND_SOC_AD1836 if SPI_MASTER
 	select SND_SOC_AD193X if SND_SOC_I2C_AND_SPI
 	select SND_SOC_AD1980 if SND_SOC_AC97_BUS
@@ -51,6 +55,7 @@ config SND_SOC_ALL_CODECS
 	select SND_SOC_MAX9850 if I2C
 	select SND_SOC_MAX9768 if I2C
 	select SND_SOC_MAX9877 if I2C
+	select SND_SOC_MB86S70_HDMI_CODEC
 	select SND_SOC_MC13783 if MFD_MC13XXX
 	select SND_SOC_ML26124 if I2C
 	select SND_SOC_OMAP_HDMI_CODEC if OMAP4_DSS_HDMI
@@ -184,6 +189,14 @@ config SND_SOC_ADAU1701
 config SND_SOC_ADAU1373
 	tristate
 
+config SND_SOC_ADAU17X1
+	select SND_SOC_SIGMADSP
+	tristate
+
+config SND_SOC_ADAU1761
+	select SND_SOC_ADAU17X1
+	tristate
+
 config SND_SOC_ADAV80X
 	tristate
 
@@ -285,6 +298,12 @@ config SND_SOC_MAX98095
        tristate
 
 config SND_SOC_MAX9850
+	tristate
+
+config SND_SOC_HDMI_CODEC
+	tristate
+
+config SND_SOC_MB86S70_HDMI_CODEC
 	tristate
 
 config SND_SOC_OMAP_HDMI_CODEC

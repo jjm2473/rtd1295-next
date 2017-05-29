@@ -708,7 +708,10 @@ int drm_calc_vbltimestamp_from_scanoutpos(struct drm_device *dev, int crtc,
 	/* Subtract time delta from raw timestamp to get final
 	 * vblank_time timestamp for end of vblank.
 	 */
-	etime = ktime_sub_ns(etime, delta_ns);
+	if (delta_ns < 0)
+		etime = ktime_add_ns(etime, -delta_ns);
+	else
+		etime = ktime_sub_ns(etime, delta_ns);
 	*vblank_time = ktime_to_timeval(etime);
 
 	DRM_DEBUG("crtc %d : v %d p(%d,%d)@ %ld.%ld -> %ld.%ld [e %d us, %d rep]\n",
@@ -1326,7 +1329,7 @@ static void drm_handle_vblank_events(struct drm_device *dev, int crtc)
 		if ((seq - e->event.sequence) > (1<<23))
 			continue;
 
-		DRM_DEBUG("vblank event on %d, current %d\n",
+		/*DRM_DEBUG*/pr_err("vblank event on %d, current %d\n",
 			  e->event.sequence, seq);
 
 		list_del(&e->base.link);
@@ -1364,11 +1367,13 @@ bool drm_handle_vblank(struct drm_device *dev, int crtc)
 	spin_lock_irqsave(&dev->vblank_time_lock, irqflags);
 
 	/* Vblank irq handling disabled. Nothing to do. */
-	if (!dev->vblank_enabled[crtc]) {
+/*
+	if (!dev->vblank[crtc].enabled) {
+		//pr_err("%s: disabled for crtc %d\n", __func__, crtc);
 		spin_unlock_irqrestore(&dev->vblank_time_lock, irqflags);
 		return false;
 	}
-
+*/
 	/* Fetch corresponding timestamp for this vblank interval from
 	 * driver and store it in proper slot of timestamp ringbuffer.
 	 */

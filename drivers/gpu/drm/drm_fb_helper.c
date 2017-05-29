@@ -1094,7 +1094,9 @@ static int drm_fb_helper_probe_connector_modes(struct drm_fb_helper *fb_helper,
 	int count = 0;
 	int i;
 
+	pr_debug("[Vivien] %s \n", __func__);
 	for (i = 0; i < fb_helper->connector_count; i++) {
+		pr_debug("[Vivien] i=%d before fill_modes \n", i);
 		connector = fb_helper->connector_info[i]->connector;
 		count += connector->funcs->fill_modes(connector, maxX, maxY);
 	}

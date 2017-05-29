@@ -118,6 +118,12 @@ config GPIO_GENERIC_PLATFORM
 	help
 	  Say yes here to support basic platform_device memory-mapped GPIO controllers.
 
+config GPIO_MB86S7X
+	bool "GPIO support for Fujitsu MB86S7x Platforms"
+	depends on ARCH_MB86S70
+	help
+	  Say yes here to support the GPIO controller in Fujitsu MB86S70 SoCs.
+
 config GPIO_IT8761E
 	tristate "IT8761E GPIO support"
 	depends on X86  # unconditional access to IO space.
@@ -316,6 +322,15 @@ config GPIO_GRGPIO
 	help
 	  Select this to support Aeroflex Gaisler GRGPIO cores from the GRLIB
 	  VHDL IP core library.
+
+config GPIO_MB8AC0300
+	bool "MB8AC0300 GPIO support"
+	depends on ARCH_MB8AC0300
+	help
+	  Say yes here to support the MB8AC0300
+	  GPIO device
+	  The GPIO interrupts are handled by a separate but related
+	  EXIU IP unit.
 
 comment "I2C GPIO expanders:"
 

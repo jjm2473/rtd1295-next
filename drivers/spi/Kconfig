@@ -228,6 +228,24 @@ config SPI_MPC512x_PSC
 	  This enables using the Freescale MPC5121 Programmable Serial
 	  Controller in SPI master mode.
 
+config HS_SPI
+	tristate "Fujitsu's High speed SPI controller"
+	depends on ARCH_MB8AC0300 || ARCH_MB86S70
+	select SPI_BITBANG
+	help
+	  SPI driver for Fujitsu's High speed SPI controller which provides
+	  various operating modes for interfacing to serial peripheral devices
+	  that use the de-facto standard SPI protocol.
+
+	  It also supports the new dual-bit and quad-bit SPI protocol.
+
+config HS_SPI_DEBUG
+	bool "HS SPI Debugging"
+	depends on HS_SPI
+	help
+	  This turns on low-level debugging for the entire HS SPI driver.
+	  Normally, you should say 'N'.
+
 config SPI_FSL_LIB
 	tristate
 	depends on OF

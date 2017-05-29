@@ -439,7 +439,7 @@ void phy_start_machine(struct phy_device *phydev,
 {
 	phydev->adjust_state = handler;
 
-	schedule_delayed_work(&phydev->state_queue, HZ);
+	queue_delayed_work(system_power_efficient_wq, &phydev->state_queue, HZ);
 }
 
 /**
@@ -500,7 +500,7 @@ static irqreturn_t phy_interrupt(int irq, void *phy_dat)
 	disable_irq_nosync(irq);
 	atomic_inc(&phydev->irq_disable);
 
-	schedule_work(&phydev->phy_queue);
+	queue_work(system_power_efficient_wq, &phydev->phy_queue);
 
 	return IRQ_HANDLED;
 }
@@ -655,7 +655,7 @@ static void phy_change(struct work_struct *work)
 
 	/* reschedule state queue work to run as soon as possible */
 	cancel_delayed_work_sync(&phydev->state_queue);
-	schedule_delayed_work(&phydev->state_queue, 0);
+	queue_delayed_work(system_power_efficient_wq, &phydev->state_queue, 0);
 
 	return;
 
@@ -918,7 +918,8 @@ void phy_state_machine(struct work_struct *work)
 	if (err < 0)
 		phy_error(phydev);
 
-	schedule_delayed_work(&phydev->state_queue, PHY_STATE_TIME * HZ);
+	queue_delayed_work(system_power_efficient_wq, &phydev->state_queue,
+			PHY_STATE_TIME * HZ);
 }
 
 static inline void mmd_phy_indirect(struct mii_bus *bus, int prtad, int devad,
@@ -1156,3 +1157,84 @@ void phy_ethtool_get_wol(struct phy_device *phydev, struct ethtool_wolinfo *wol)
 		phydev->drv->get_wol(phydev, wol);
 }
 EXPORT_SYMBOL(phy_ethtool_get_wol);
+
+/**
+ * phy_init_eee_private - init and check the EEE feature
+ * @bus: the target MII bus
+ * @phy_addr: PHY address on the MII bus
+ * @speed: PHY speed
+ * @duplex: PHY duplex
+ * @clk_stop_enable: PHY may stop the clock during LPI
+ *
+ * Description: it checks if the Energy-Efficient Ethernet (EEE)
+ * is supported by looking at the MMD registers 3.20 and 7.60/61
+ * and it programs the MMD register 3.0 setting the "Clock stop enable"
+ * bit if required.
+ */
+int phy_init_eee_private(struct mii_bus *bus, unsigned int phy_addr, int speed,
+		      int duplex, bool clk_stop_enable)
+{
+	int ret = -EPROTONOSUPPORT;
+
+	/* According to 802.3az,the EEE is supported only in full duplex-mode.
+	 * Also EEE feature is active when core is operating with MII, GMII
+	 * or RGMII.
+	 */
+	if (duplex == DUPLEX_FULL) {
+		int eee_lp, eee_cap, eee_adv;
+		u32 lp, cap, adv;
+		int idx;
+
+		/* Check if the EEE ability is supported */
+		eee_cap = phy_read_mmd_indirect(bus, MDIO_PCS_EEE_ABLE,
+						MDIO_MMD_PCS, phy_addr);
+		if (eee_cap < 0)
+			return eee_cap;
+
+		cap = mmd_eee_cap_to_ethtool_sup_t(eee_cap);
+		if (!cap)
+			goto eee_exit;
+
+		/* Check which link settings negotiated and verify it in
+		 * the EEE advertising registers.
+		 */
+		eee_lp = phy_read_mmd_indirect(bus, MDIO_AN_EEE_LPABLE,
+					       MDIO_MMD_AN, phy_addr);
+		if (eee_lp < 0)
+			return eee_lp;
+
+		eee_adv = phy_read_mmd_indirect(bus, MDIO_AN_EEE_ADV,
+						MDIO_MMD_AN, phy_addr);
+		if (eee_adv < 0)
+			return eee_adv;
+
+		adv = mmd_eee_adv_to_ethtool_adv_t(eee_adv);
+		lp = mmd_eee_adv_to_ethtool_adv_t(eee_lp);
+		idx = phy_find_setting(speed, duplex);
+
+		if (!(lp & adv & settings[idx].setting))
+			goto eee_exit;
+
+		if (clk_stop_enable) {
+			/* Configure the PHY to stop receiving xMII
+			 * clock while it is signaling LPI.
+			 */
+			int val = phy_read_mmd_indirect(bus, MDIO_CTRL1,
+							MDIO_MMD_PCS,
+							phy_addr);
+			if (val < 0)
+				return val;
+
+			val |= MDIO_PCS_CTRL1_CLKSTOP_EN;
+			phy_write_mmd_indirect(bus, MDIO_CTRL1,
+					       MDIO_MMD_PCS, phy_addr, val);
+		}
+
+		ret = 0; /* EEE supported */
+	}
+
+eee_exit:
+	return ret;
+}
+EXPORT_SYMBOL(phy_init_eee_private);
+

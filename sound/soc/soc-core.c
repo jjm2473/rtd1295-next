@@ -842,7 +842,7 @@ static int soc_bind_dai_link(struct snd_soc_card *card, int num)
 	}
 
 	if (!rtd->cpu_dai) {
-		dev_err(card->dev, "ASoC: CPU DAI %s not registered\n",
+		dev_info(card->dev, "ASoC: CPU DAI %s not registered\n",
 			dai_link->cpu_dai_name);
 		return -EPROBE_DEFER;
 	}
@@ -880,7 +880,7 @@ static int soc_bind_dai_link(struct snd_soc_card *card, int num)
 	}
 
 	if (!rtd->codec) {
-		dev_err(card->dev, "ASoC: CODEC %s not registered\n",
+		dev_info(card->dev, "ASoC: CODEC %s not registered\n",
 			dai_link->codec_name);
 		return -EPROBE_DEFER;
 	}
@@ -904,7 +904,7 @@ static int soc_bind_dai_link(struct snd_soc_card *card, int num)
 		rtd->platform = platform;
 	}
 	if (!rtd->platform) {
-		dev_err(card->dev, "ASoC: platform %s not registered\n",
+		dev_info(card->dev, "ASoC: platform %s not registered\n",
 			dai_link->platform_name);
 		return -EPROBE_DEFER;
 	}

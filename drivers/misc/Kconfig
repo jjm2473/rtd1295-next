@@ -424,6 +424,10 @@ config TI_DAC7512
 	  This driver can also be built as a module. If so, the module
 	  will be called ti_dac7512.
 
+config UID_STAT
+	bool "UID based statistics tracking exported to /proc/uid_stat"
+	default n
+
 config VMWARE_BALLOON
 	tristate "VMware Balloon Driver"
 	depends on X86 && HYPERVISOR_GUEST
@@ -526,6 +530,20 @@ config SRAM
 	  This driver allows you to declare a memory region to be managed by
 	  the genalloc API. It is supposed to be used for small on-chip SRAM
 	  areas found on many SoCs.
+
+config FUJITSU_MEDIA_SHELL
+	tristate "Support for Fujitsu Media IPs"
+	depends on ARCH_MB86S70
+	default n
+
+config GPIO_REVISION
+	tristate "Make board revision from gpio pullups and pulldowns"
+	default n
+	depends on GPIOLIB
+	help
+	  Makes available in the kernel a board revision index which is
+	  collected from sensing gpios listed in Device Tree.  Other drivers
+	  can enable or disable quirks at runtime based on the information.
 
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"

@@ -30,6 +30,11 @@
 #include <linux/input/mt.h>
 #include <linux/of_gpio.h>
 
+#if defined(CONFIG_ARCH_MB8AC0300)
+/* EXIU defs */
+#include <linux/irqchip/irq-mb8ac0300.h>
+#endif
+
 /*
  * Mouse Mode: some panel may configure the controller to mouse mode,
  * which can only report one point at a given time.
@@ -88,9 +93,10 @@ static irqreturn_t egalax_ts_interrupt(int irq, void *dev_id)
 		return IRQ_HANDLED;
 	}
 
+	/* rotation hack x <-> y !!! */
 	state = buf[1];
-	x = (buf[3] << 8) | buf[2];
-	y = (buf[5] << 8) | buf[4];
+	y = (buf[3] << 8) | buf[2];
+	x = EGALAX_MAX_X - ((buf[5] << 8) | buf[4]);
 	z = (buf[7] << 8) | buf[6];
 
 	valid = state & EVENT_VALID_MASK;
@@ -190,11 +196,11 @@ static int egalax_ts_probe(struct i2c_client *client,
 	ts->input_dev = input_dev;
 
 	/* controller may be in sleep, wake it up. */
-	error = egalax_wake_up_device(client);
+	/*error = egalax_wake_up_device(client);
 	if (error) {
 		dev_err(&client->dev, "Failed to wake up the controller\n");
 		goto err_free_dev;
-	}
+	}*/
 
 	ret = egalax_firmware_version(client);
 	if (ret < 0) {
@@ -207,6 +213,7 @@ static int egalax_ts_probe(struct i2c_client *client,
 	input_dev->id.bustype = BUS_I2C;
 	input_dev->dev.parent = &client->dev;
 
+	__set_bit(INPUT_PROP_DIRECT, input_dev->propbit);
 	__set_bit(EV_ABS, input_dev->evbit);
 	__set_bit(EV_KEY, input_dev->evbit);
 	__set_bit(BTN_TOUCH, input_dev->keybit);
@@ -220,10 +227,17 @@ static int egalax_ts_probe(struct i2c_client *client,
 	input_mt_init_slots(input_dev, MAX_SUPPORT_POINTS, 0);
 
 	input_set_drvdata(input_dev, ts);
-
-	error = request_threaded_irq(client->irq, NULL, egalax_ts_interrupt,
-				     IRQF_TRIGGER_LOW | IRQF_ONESHOT,
-				     "egalax_ts", ts);
+#if defined(CONFIG_ARCH_MB8AC0300)
+	error = exiu_irq_set_type(client->irq, IRQ_TYPE_LEVEL_LOW);
+	if (error) {
+		dev_err(&client->dev, "Failed to set irq type to exiu\n");
+		return error;
+	}
+#endif
+	error = devm_request_threaded_irq(&client->dev, client->irq, NULL,
+					  egalax_ts_interrupt,
+					  IRQF_ONESHOT,
+					  "egalax_ts", ts);
 	if (error < 0) {
 		dev_err(&client->dev, "Failed to register interrupt\n");
 		goto err_free_dev;

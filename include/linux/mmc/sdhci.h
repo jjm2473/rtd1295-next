@@ -95,6 +95,23 @@ struct sdhci_host {
 /* The system physically doesn't support 1.8v, even if the host does */
 #define SDHCI_QUIRK2_NO_1_8_V				(1<<2)
 #define SDHCI_QUIRK2_PRESET_VALUE_BROKEN		(1<<3)
+#define SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON		(1<<4)
+/* Controller has a non-standard host control register */
+#define SDHCI_QUIRK2_BROKEN_HOST_CONTROL		(1<<5)
+/* disable the block count for single block transactions */
+#define SDHCI_QUIRK2_SUPPORT_SINGLE			(1<<6)
+/* don't accept 3.0 or 3.1 voltage negotiation */
+#define SDHCI_QUIRK2_UNSUPPORT_3_0_V			(1<<7)
+/* Do a callback when switching voltages so do controller-specific actions */
+#define SDHCI_QUIRK2_VOLTAGE_SWITCH			(1<<8)
+/* forced tuned clock */
+#define SDHCI_QUIRK2_TUNING_WORK_AROUND			(1<<9)
+/* some controllers have errrata causing harmless extra command irqs */
+#define SDHCI_QUIRK2_IGNORE_UNEXPECTED_IRQ		(1<<10)
+/* retry to detect mmc device when resume */
+#define SDHCI_QUIRK2_RESUME_DETECT_RETRY		(1<<11)
+/* Fixed 1.8V of signal voltage */
+#define SDHCI_QUIRK2_SIG_VOL_FIXED_1_8V			(1<<31)
 
 	int irq;		/* Device IRQ */
 	void __iomem *ioaddr;	/* Mapped address */
@@ -175,6 +192,10 @@ struct sdhci_host {
 	unsigned int		tuning_mode;	/* Re-tuning mode supported by host */
 #define SDHCI_TUNING_MODE_1	0
 	struct timer_list	tuning_timer;	/* Timer for tuning */
+
+	struct workqueue_struct *resume_detect_wq;	/* Workqueue for resume detection */
+	struct delayed_work resume_detect_work;		/* Delayed work for resume detection */
+	unsigned int		resume_detect_count;	/* Count for resume detection */
 
 	unsigned long private[0] ____cacheline_aligned;
 };

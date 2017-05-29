@@ -1,0 +1,36 @@
+menu "PCI host controller drivers"
+	depends on PCI
+
+config PCIE_F_PCIE2_DMXH
+	tristate "Fujitsu f_pcie2_dmxh Support"
+	depends on PCI && (ARCH_MB8AC0300 || ARCH_MB86S70)
+	default y
+	help
+	  Say Y here if you want to enable
+	  Fujitsu F_PCIE2_DMXH PCIe root complex
+	  support.
+	  If unsure say Y.
+
+config SYSOC_F_PCIE_PCIE2_DMXH
+	tristate "Fujitsu F_PCIE2_DMXH System control Support"
+	depends on PCIE_F_PCIE2_DMXH
+	default y
+	help
+	  Say Y here if you want to enable
+	  Fujitsu F_PCIE2_DMXH System control Support.
+	  If unsure say Y.
+
+config PCI_MVEBU
+	bool "Marvell EBU PCIe controller"
+	depends on ARCH_MVEBU || ARCH_KIRKWOOD
+
+config PCIE_DW
+	bool
+
+config PCI_EXYNOS
+	bool "Samsung Exynos PCIe controller"
+	depends on SOC_EXYNOS5440
+	select PCIEPORTBUS
+	select PCIE_DW
+
+endmenu

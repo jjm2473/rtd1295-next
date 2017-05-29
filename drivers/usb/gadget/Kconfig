@@ -353,6 +353,83 @@ config USB_M66592
 	   dynamically linked module called "m66592_udc" and force all
 	   gadget drivers to also be dynamically linked.
 
+config USB_GADGET_F_USB30
+	boolean "F_USB30 USB3.0 Function Controller"
+	depends on ARCH_MB8AC0300 && ((USB_F_USB20HDC_OTG=n)||(USB_F_USB20HDC_OTG=m))
+	select USB_GADGET_DUALSPEED
+	select USB_GADGET_SUPERSPEED
+	help
+	  F_USB30 is an integrated USB3.0 peripheral controller
+	  that supports super, high and full speed data transfers.
+
+	  It has six configurable endpoints, as well as endpoint zero
+	  (for control transfers) and several endpoints with dedicated
+	  functions.
+
+	  Say "y" to link the driver statically, or "m" to build a
+	  dynamically linked module called "f_usb30_udc" and force all
+	  gadget drivers to also be dynamically linked.
+
+config USB_F_USB30
+	tristate
+	depends on USB_GADGET_F_USB30
+	default USB_GADGET
+	select USB_GADGET_SELECTED
+
+config USB_GADGET_F_USB30_USED_BUS_RESET_DUMMY_DISCONNECT_NOTIFY
+	bool "Report a disconnection on bus reset"
+	depends on USB_GADGET_F_USB30
+	default n
+	help
+	  A dummy disconnect event will occur when USB3.0 controller receive
+	  a bus reset.
+	  If you want to be notified and do something, say Y here.
+	  If unsure, say N.
+
+config USB_GADGET_F_USB30_BULK_IN_END_NOTIFY_TIMING_TO_HOST
+	bool "Notify a gadget when bulk IN transfer is acutually completed"
+	depends on USB_GADGET_F_USB30
+	default n
+	help
+	  If you want to be notified when the last Bulk IN data are
+	  transfered to host from endpoint FIFO, say Y here.
+	  otherwise you are notified when the last Bulk IN data are
+	  written into enpoint FIFO.
+	  If unsure, say N.
+
+config USB_GADGET_F_USB30_USED_DMA_TRANSFER
+	bool "Use DMA transfer"
+	depends on USB_GADGET_F_USB30
+	select USB_F_USB30_HF if ARCH_MB8AC0300 || ARCH_MB86S70
+	default y
+	help
+	  If you want to use DMA transfer,
+	  say Y here.
+	  Things will be slow with ths off.
+	  If unsure, say Y.
+
+config USB_GADGET_F_USB30_DMA_USE_BOUNCE_BUF
+	bool "Use bounce buffers"
+	depends on USB_GADGET_F_USB30_USED_DMA_TRANSFER
+	default n
+	help
+	  By default(say n here), F_USB30 driver uses cache-able buffers as
+	  transmit and receive buffers, which directly come from or go to
+	  protocol stack. So no copy is needed, but cache coherency must be
+	  maintained. This configuration gives a choice to use DMA-coherent
+	  memory instead of cache-able buffers (because data must be copied
+	  between them, the former is called a bounce buffer) and eliminate
+	  cache maintenance operations (e.g. invalidate, clean). This would
+	  improve the IO thoughput if such operations are really heavy.
+	  Make sure that system has enough DMA-coherent memory before enabling
+	  this feature. The size of DMA-coherent memory is specified by
+	  CONSISTENT_DMA_SIZE defined in <include/mach/memory.h>. The value
+	  should be between 2M and 14M, in multiples of 2M.
+	  F_USB30 driver requires, at least, 16KB * 2 memory.
+
+	  Say 'y' here if you want to use bounce buffers as transmit and
+	  receive buffers. If unsure, say 'n' here.
+
 #
 # Controllers available only in discrete form (and all PCI controllers)
 #
@@ -607,7 +684,7 @@ config USB_ETH
 	help
 	  This driver implements Ethernet style communication, in one of
 	  several ways:
-	  
+
 	   - The "Communication Device Class" (CDC) Ethernet Control Model.
 	     That protocol is often avoided with pure Ethernet adapters, in
 	     favor of simpler vendor-specific hardware, but is widely
@@ -648,7 +725,7 @@ config USB_ETH_RNDIS
 	   If you say "y" here, the Ethernet gadget driver will try to provide
 	   a second device configuration, supporting RNDIS to talk to such
 	   Microsoft USB hosts.
-	   
+
 	   To make MS-Windows work with this, use Documentation/usb/linux.inf
 	   as the "driver info file".  For versions of MS-Windows older than
 	   XP, you'll need to download drivers from Microsoft's website; a URL
@@ -817,6 +894,24 @@ config USB_G_PRINTER
 
 	  For more information, see Documentation/usb/gadget_printer.txt
 	  which includes sample code for accessing the device file.
+
+config USB_G_ANDROID
+	boolean "Android Composite Gadget"
+	select USB_F_ACM
+	select USB_LIBCOMPOSITE
+	select USB_U_SERIAL
+	help
+	  The Android Composite Gadget supports multiple USB
+	  functions: adb, acm, mass storage, mtp, accessory
+	  and rndis.
+	  Each function can be configured and enabled/disabled
+	  dynamically from userspace through a sysfs interface.
+
+config USB_ANDROID_RNDIS_DWORD_ALIGNED
+	boolean "Use double word aligned"
+	depends on USB_G_ANDROID
+	help
+		Provides dword aligned for DMA controller.
 
 if TTY
 

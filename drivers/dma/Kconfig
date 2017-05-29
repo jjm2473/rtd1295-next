@@ -312,6 +312,26 @@ config MMP_PDMA
 	help
 	  Support the MMP PDMA engine for PXA and MMP platfrom.
 
+config MB8AC0300_HDMAC
+	bool "MB8AC0300 HDMAC support"
+	depends on ARCH_MB8AC0300 || ARCH_MB86S70
+	default y
+	help
+	  Say yes here to support the Fujitsu MB8AC0300
+	  HDMAC device
+	  It provides DMA service to some of the on-chip peripherals
+	  on the SoC
+
+config MB8AC0300_XDMAC
+	bool "MB8AC0300 XDMAC support"
+	depends on ARCH_MB8AC0300 || ARCH_MB86S70
+	default y
+	help
+	  Say yes here to support the Fujitsu MB8AC0300
+	  XDMAC device
+	  It provides DMA service to some of the on-chip peripherals
+	  on the SoC
+
 config DMA_ENGINE
 	bool
 
@@ -333,6 +353,7 @@ config NET_DMA
 	bool "Network: TCP receive copy offload"
 	depends on DMA_ENGINE && NET
 	default (INTEL_IOATDMA || FSL_DMA)
+	depends on BROKEN
 	help
 	  This enables the use of DMA engines in the network stack to
 	  offload receive copy-to-user operations, freeing CPU cycles.

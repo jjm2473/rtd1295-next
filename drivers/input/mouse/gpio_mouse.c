@@ -13,6 +13,7 @@
 #include <linux/platform_device.h>
 #include <linux/input-polldev.h>
 #include <linux/gpio.h>
+#include <linux/slab.h>
 #include <linux/gpio_mouse.h>
 
 
@@ -49,16 +50,49 @@ static void gpio_mouse_scan(struct input_polled_dev *dev)
 static int gpio_mouse_probe(struct platform_device *pdev)
 {
 	struct gpio_mouse_platform_data *pdata = pdev->dev.platform_data;
+	struct device_node *np = pdev->dev.of_node;
+	const unsigned int *iprop;
+	u32 len;
 	struct input_polled_dev *input_poll;
 	struct input_dev *input;
 	int pin, i;
 	int error;
 
-	if (!pdata) {
-		dev_err(&pdev->dev, "no platform data\n");
-		error = -ENXIO;
-		goto out;
-	}
+	if (np) {
+		/* create a pdata struct from device tree properties */
+		pdata = kmalloc(sizeof(*pdata), GFP_KERNEL);
+		if (!pdata) {
+			dev_err(&pdev->dev, "Out of memory\n");
+			return -ENOMEM;
+		}
+		iprop = of_get_property(np, "scan_ms", NULL);
+		if (!iprop) {
+			dev_err(&pdev->dev, "Missing scan_ms property\n");
+			return -EINVAL;
+		}
+		pdata->scan_ms = be32_to_cpu(*iprop);
+		iprop = of_get_property(np, "polarity", NULL);
+		if (!iprop) {
+			dev_err(&pdev->dev, "Missing polarity property\n");
+			return -EINVAL;
+		}
+		pdata->polarity = be32_to_cpu(*iprop);
+		iprop = of_get_property(np, "pins", &len);
+		if (len != sizeof(pdata->pins)) {
+			dev_err(&pdev->dev, "Wrong pin gpio count\n");
+			return -EINVAL;
+		}
+		i = 0;
+		while (len) {
+			pdata->pins[i++] = be32_to_cpu(*iprop++);
+			len -= sizeof(int);
+		}
+	} else
+		if (!pdata) {
+			dev_err(&pdev->dev, "no platform data or DT node\n");
+			error = -ENXIO;
+			goto out;
+		}
 
 	if (pdata->scan_ms < 0) {
 		dev_err(&pdev->dev, "invalid scan time\n");
@@ -147,6 +181,9 @@ static int gpio_mouse_probe(struct platform_device *pdev)
 			gpio_free(pin);
 	}
  out:
+	if (np)
+		kfree(pdata);
+
 	return error;
 }
 
@@ -167,8 +204,18 @@ static int gpio_mouse_remove(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, NULL);
 
+	if (pdev->dev.of_node)
+		kfree(pdata);
+
 	return 0;
 }
+
+static const struct of_device_id mb8ac0300_gpiomouse_dt_ids[] = {
+	{ .compatible = "fujitsu,mb8ac0300-gpiomouse" },
+	{ /* sentinel */ }
+};
+
+MODULE_DEVICE_TABLE(of, mb8ac0300_gpiomouse_dt_ids);
 
 static struct platform_driver gpio_mouse_device_driver = {
 	.probe		= gpio_mouse_probe,
@@ -176,6 +223,7 @@ static struct platform_driver gpio_mouse_device_driver = {
 	.driver		= {
 		.name	= "gpio_mouse",
 		.owner	= THIS_MODULE,
+		.of_match_table = mb8ac0300_gpiomouse_dt_ids,
 	}
 };
 module_platform_driver(gpio_mouse_device_driver);

@@ -1,0 +1,100 @@
+#
+# Fujitsu USB2.0 Dual-Role Controller Drivers
+#
+
+config USB_F_USB20HDC_OTG
+	tristate 'Fujitsu USB 2.0 OTG controller'
+	depends on USB && (ARCH_MB8AC0300 || ARCH_MB86S70)
+	default n
+	help
+	  f_usb20hdc is a dual-role USB controller chip.
+	  that supports both full and high speed USB 2.0 data transfers.
+	  It has nine or more configurable endpoints, and endpoint zero.
+
+	  Say "y" to link the driver statically, or "m" to build a
+	  dynamically linked module called "f_usb20hdc_otg.ko"
+
+
+if USB_F_USB20HDC_OTG
+
+choice
+	bool "F_USB20HDC Mode Selection"
+	default USB_F_USB20HDC_OTG_DUAL_ROLE if (USB && USB_GADGET)
+	default USB_F_USB20HDC_OTG_HOST_ONLY if (USB && !USB_GADGET)
+	default USB_F_USB20HDC_OTG_GADGET_ONLY if (!USB && USB_GADGET)
+
+config USB_F_USB20HDC_OTG_HOST_ONLY
+	bool "Host only mode"
+	depends on USB=y || USB=USB_F_USB20HDC_OTG
+	help
+	  Select this when you want to use F_USB20HDC in
+	  host mode only, thereby the gadget feature will
+	  be regressed. also gadget code will not be included
+	  in this kernel module.
+
+config USB_F_USB20HDC_OTG_GADGET_ONLY
+	bool "Gadget only mode"
+	depends on USB_GADGET=y || USB_GADGET=USB_F_USB20HDC_OTG
+	select USB_GADGET_DUALSPEED
+	select USB_GADGET_SELECTED
+	help
+	  Select this when you want to use F_USB20HDC in
+	  gadget mode only, thereby the host feature will be regressed.
+	  also host mode code will not be included in this kernel
+	  module.
+
+config USB_F_USB20HDC_OTG_DUAL_ROLE
+	bool "Dual Role mode"
+	depends on ((USB=y || USB=USB_F_USB20HDC_OTG) && (USB_GADGET=y || USB_GADGET=USB_F_USB20HDC_OTG))
+	select USB_GADGET_DUALSPEED
+	select USB_GADGET_SELECTED
+	help
+	  This is the default mode of working of F_USB20HDC controller where
+	  both host and gadget features are enabled.
+	  when this mode is selected, dtb also can interfere dynamic decision
+	  to choose host mode only, gadget mode only, or dual mode. but either
+	  of these mode still included all mode function code.
+
+endchoice
+
+config USB_F_USB20HDC_OTG_USED_DMA_TRANSFER
+	bool "Use DMA transfer"
+	depends on USB_F_USB20HDC_OTG
+	default y
+	help
+	  This turns on dma transfer for F_USB20HDC USB
+	  Controller driver in both host mode and device mode
+	  If you want to use a DMA transfer, say Y here.
+	  If unsure, say 'y'.
+
+config USB_F_USB20HDC_OTG_USE_BOUNCE_BUF
+	bool "Use bounce buffers"
+	depends on USB_F_USB20HDC_OTG
+	depends on USB_F_USB20HDC_OTG_USED_DMA_TRANSFER
+	default n
+	help
+	  By default(say n here), F_USB20HDC_HCD driver uses cache-able buffers
+	  as transmit and receive buffers, which directly come from or go to
+	  protocol stack. So no copy is needed, but cache coherency must be
+	  maintained. This configuration gives a choice to use DMA-coherent
+	  memory instead of cache-able buffers (because data must be copied
+	  between them, the former is called a bounce buffer) and eliminate
+	  cache maintenance operations (e.g. invalidate, clean). This would
+	  improve the IO thoughput if such operations are really heavy.
+	  Make sure that system has enough DMA-coherent memory before enabling
+	  this feature. The size of DMA-coherent memory is specified by
+	  CONSISTENT_DMA_SIZE defined in <include/mach/memory.h>. The value
+	  should be between 2M and 14M, in multiples of 2M.
+	  F_USB20HDC driver requires, at least, 64KB * 2 memory.
+	  Say 'y' here if you want to use bounce buffers as transmit and
+	  receive buffers. If unsure, say 'n' here.
+
+config USB_F_USB20HDC_OTG_USE_WAKEUP
+	bool "USB F_USB20HDC_OTG_USE wake up"
+	depends on USB_F_USB20HDC_OTG_USED_DMA_TRANSFER
+	default n
+	help
+	  Make CONFIG_USB_F_USB20HDC_OTG_USE_WAKEUP dependent on
+	  CONFIG_USB_F_USB20HDC_OTG_USED_DMA_TRANSFER in Kconfig
+	  because our solution depends on HDMAC.
+endif

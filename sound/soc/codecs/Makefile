@@ -9,6 +9,13 @@ snd-soc-adau1701-objs := adau1701.o
 snd-soc-adau1373-objs := adau1373.o
 snd-soc-adav80x-objs := adav80x.o
 snd-soc-ads117x-objs := ads117x.o
+
+snd-soc-adau17x1-objs := adau17x1.o
+snd-soc-adau1761-objs := adau1761.o
+
+#audio codec driver for mb86s70
+snd-soc-wm8973-objs := wm8973.o
+
 snd-soc-ak4104-objs := ak4104.o
 snd-soc-ak4535-objs := ak4535.o
 snd-soc-ak4641-objs := ak4641.o
@@ -41,6 +48,8 @@ snd-soc-max98095-objs := max98095.o
 snd-soc-max9850-objs := max9850.o
 snd-soc-mc13783-objs := mc13783.o
 snd-soc-ml26124-objs := ml26124.o
+snd-soc-hdmi-codec-objs := hdmi.o
+snd-soc-mb86s70-hdmi-codec-objs := f_hdmi_codec.o
 snd-soc-omap-hdmi-codec-objs := omap-hdmi.o
 snd-soc-pcm3008-objs := pcm3008.o
 snd-soc-rt5631-objs := rt5631.o
@@ -134,6 +143,10 @@ obj-$(CONFIG_SND_SOC_ADAU1373)	+= snd-soc-adau1373.o
 obj-$(CONFIG_SND_SOC_ADAU1701)  += snd-soc-adau1701.o
 obj-$(CONFIG_SND_SOC_ADAV80X)  += snd-soc-adav80x.o
 obj-$(CONFIG_SND_SOC_ADS117X)	+= snd-soc-ads117x.o
+
+obj-$(CONFIG_SND_SOC_ADAU17X1)	+= snd-soc-adau17x1.o
+obj-$(CONFIG_SND_SOC_ADAU1761)	+= snd-soc-adau1761.o
+
 obj-$(CONFIG_SND_SOC_AK4104)	+= snd-soc-ak4104.o
 obj-$(CONFIG_SND_SOC_AK4535)	+= snd-soc-ak4535.o
 obj-$(CONFIG_SND_SOC_AK4641)	+= snd-soc-ak4641.o
@@ -166,6 +179,7 @@ obj-$(CONFIG_SND_SOC_MAX98088)	+= snd-soc-max98088.o
 obj-$(CONFIG_SND_SOC_MAX98090)	+= snd-soc-max98090.o
 obj-$(CONFIG_SND_SOC_MAX98095)	+= snd-soc-max98095.o
 obj-$(CONFIG_SND_SOC_MAX9850)	+= snd-soc-max9850.o
+obj-$(CONFIG_SND_SOC_MB86S70_HDMI_CODEC) += snd-soc-mb86s70-hdmi-codec.o
 obj-$(CONFIG_SND_SOC_MC13783)	+= snd-soc-mc13783.o
 obj-$(CONFIG_SND_SOC_ML26124)	+= snd-soc-ml26124.o
 obj-$(CONFIG_SND_SOC_OMAP_HDMI_CODEC) += snd-soc-omap-hdmi-codec.o
@@ -225,6 +239,7 @@ obj-$(CONFIG_SND_SOC_WM8960)	+= snd-soc-wm8960.o
 obj-$(CONFIG_SND_SOC_WM8961)	+= snd-soc-wm8961.o
 obj-$(CONFIG_SND_SOC_WM8962)	+= snd-soc-wm8962.o
 obj-$(CONFIG_SND_SOC_WM8971)	+= snd-soc-wm8971.o
+obj-$(CONFIG_SND_SOC_WM8973)    += snd-soc-wm8973.o
 obj-$(CONFIG_SND_SOC_WM8974)	+= snd-soc-wm8974.o
 obj-$(CONFIG_SND_SOC_WM8978)	+= snd-soc-wm8978.o
 obj-$(CONFIG_SND_SOC_WM8983)	+= snd-soc-wm8983.o

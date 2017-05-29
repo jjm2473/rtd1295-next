@@ -1,0 +1,122 @@
+#
+# (C) COPYRIGHT 2012 ARM Limited. All rights reserved.
+#
+# This program is free software and is provided to you under the terms of the
+# GNU General Public License version 2 as published by the Free Software
+# Foundation, and any use by you of this program is subject to the terms
+# of such GNU licence.
+#
+# A copy of the licence is included with the program, and can also be obtained
+# from Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA  02110-1301, USA.
+#
+#
+
+
+menuconfig MALI_T6XX
+	tristate "Mali-T6XX support"
+	default n
+	depends on MALI_T6XX_VERSION_R3P0
+	help
+	  Enable this option to build support for the ARM Mali-T6XX GPU.
+
+	  To compile this driver as a module, choose M here:
+	  this will generate a single module, called mali_kbase.
+
+config MALI_GATOR_SUPPORT
+	bool "Streamline Debug support"
+	depends on MALI_T6XX
+	default n
+	help
+	  Adds diagnostic support for use with the ARM Streamline Performance Analyzer.
+	  You will need the Gator device driver already loaded before loading this driver when enabling
+	  Streamline debug support.
+
+config MALI_T6XX_DVFS
+	bool "Enable DVFS"
+	depends on MALI_T6XX
+	default n
+	help
+	  Choose this option to enable DVFS on MALI T6XX DDK.
+
+config MALI_T6XX_RT_PM
+	bool "Enable Runtime power management"
+	depends on MALI_T6XX
+	depends on PM_RUNTIME
+	default n
+	help
+	  Choose this option to enable runtime power management on MALI T6XX DDK.
+
+config MALI_T6XX_ENABLE_TRACE
+       bool "Enable kbase tracing"
+       depends on MALI_T6XX
+       default n
+       help
+         Enables tracing in kbase.  Trace log available through
+	 the "mali_trace" debugfs file, when the CONFIG_DEBUG_FS is enabled
+
+config MALI_T6XX_DEBUG_SYS
+       bool "Enable sysfs for mali t6xx"
+       depends on MALI_T6XX && SYSFS
+       default n
+       help
+         Enables sysfs for mali t6xx device. Set/Monitor Mali T6xx Device
+
+# MALI_EXPERT configuration options
+
+menuconfig MALI_EXPERT
+	depends on MALI_T6XX
+	bool "Enable Expert Settings"
+	default n
+	help
+	  Enabling this option and modifying the default settings may produce a driver with performance or
+	  other limitations.
+
+config MALI_DEBUG_SHADER_SPLIT_FS
+	bool "Allow mapping of shader cores via sysfs"
+	depends on MALI_T6XX && MALI_T6XX_DEBUG_SYS && MALI_EXPERT
+	default n
+	help
+	  Select this option to provide a sysfs entry for runtime configuration of shader
+	  core affinity masks.
+
+config MALI_PLATFORM_THIRDPARTY_NAME
+	depends on MALI_T6XX && MALI_PLATFORM_THIRDPARTY && MALI_EXPERT
+	string "Third party platform name"
+	help
+	  Enter the name of a third party platform that is supported. The third part configuration
+	  file must be in kbase/src/linux/config/tpip/mali_kbase_config_xxx.c where xxx is the name
+	  specified here.
+
+config MALI_DEBUG
+	bool "Debug build"
+	depends on MALI_T6XX && MALI_EXPERT
+	default n
+	help
+	  Select this option for increased checking and reporting of errors.
+
+config MALI_ERROR_INJECT
+	bool "Error injection"
+	depends on MALI_T6XX && MALI_EXPERT && MALI_NO_MALI
+	default n
+	help
+	  Enables insertion of errors to test module failure and recovery mechanisms.
+
+config MALI_TRACE_TIMELINE
+	bool "Timeline tracing"
+	depends on MALI_T6XX && MALI_EXPERT
+	default n
+	help
+	  Enables timeline tracing through the kernel tracepoint system.
+
+config MALI_SYSTEM_TRACE
+	bool "Enable system event tracing support"
+	depends on MALI_T6XX && MALI_EXPERT
+	default n
+	help
+	  Choose this option to enable system trace events for each
+	  kbase event.	This is typically used for debugging but has
+	  minimal overhead when not in use. Enable only if you know what
+	  you are doing.
+
+source "drivers/gpu/mali-t6xx/r3p0/src/platform/Kconfig"

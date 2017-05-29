@@ -348,6 +348,12 @@ config BACKLIGHT_ADP8870
 	  To compile this driver as a module, choose M here: the module will
 	  be called adp8870_bl.
 
+config BACKLIGHT_APNET_B01
+	tristate "Backlight Driver for Alpha Project B01 Panel"
+	select REGMAP_I2C
+	help
+	  Alpha Project B01 Panel backlight driver
+
 config BACKLIGHT_88PM860X
 	tristate "Backlight Driver for 88PM8606 using WLED"
 	depends on MFD_88PM860X
@@ -424,6 +430,10 @@ config BACKLIGHT_AS3711
 	help
 	  If you have an Austrian Microsystems AS3711 say Y to enable the
 	  backlight driver.
+
+config BACKLIGHT_GPIO
+	tristate "GPIO Backlight Driver"
+	depends on OF_GPIO && BACKLIGHT_GENERIC
 
 endif # BACKLIGHT_CLASS_DEVICE
 

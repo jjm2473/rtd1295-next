@@ -1,0 +1,28 @@
+* Fujitsu SDHCI controller
+
+This file documents differences between the core properties in mmc.txt
+and the properties used by the sdhci_f_sdh30 driver.
+
+Required properties:
+- compatible: "fujitsu,f_sdh30"
+
+Optional properties:
+- revs-no-1v8: bitmap of EVB board revisions lacking 1.8V capability
+  b0 = rev 0, b1 = rev 1, etc
+- gpios: Specify gpios for controlling signal level
+- clocks: Specify clocks used by SDHCI controller
+- clock-names: Specify the clock-names to be used
+
+Example:
+
+	sdhci1: sdio@36600000 {
+		compatible = "fujitsu,f_sdh30";
+		reg = <0 0x36600000 0x1000>;
+		interrupts = <0 172 0x4>,
+			     <0 173 0x4>;
+		gpios = <&gpio0 7 0>;
+		revs-no-1v8 = <1>;
+		clocks = <&clk_hdmi_2_0>, <&clk_hdmi_3_0>;
+		clock-names = "sd_sd4clk", "sd_bclk";
+	};
+

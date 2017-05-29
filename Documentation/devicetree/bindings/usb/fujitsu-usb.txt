@@ -1,0 +1,71 @@
+FUJITSU GLUE AND OTHER SPECIFIC COMPONENTS
+
+F_USB20HDC USB DUAL-ROLE CONTROLLER
+ - compatible : Should be "fujitsu,f_usb20hdc_otg"
+ - reg : Address and length of the register set for the device.
+ - interrupts : The irq number of this device that is used to interrupt the
+   CPU
+ - dma_dreq : handle to use "fujitsu,mb8ac0300-hdmac" DMA controller.
+ - hdmac_channel : handle to use "fujitsu,mb8ac0300-hdmac" DMA controller.
+ - clocks: from common clock binding, handle to usb clock.
+ - clock-names: from common clock binding.
+ - #stream-id-cells : handle to use "arm,mmu-400" ARM IOMMU driver
+
+usb2otg: usb2otg@0x34000000 {
+	compatible = "fujitsu,f_usb20hdc_otg";
+	reg = <0 0x34000000 0x10000>;
+	interrupts = <0 296 0x4>;
+	dma_dreq = <0x10000000 0x11000000>;
+	hdmac_channel = <0 1>;
+	clocks = <&clk_main_2_3>;
+	clock-names = "h_clk";
+	#stream-id-cells = <0>;
+};
+
+
+MB86S7x DWC3 GLUE
+ - compatible : Should be "fujitsu,mb86s70-dwc3"
+ - clocks: from common clock binding, handle to usb clock.
+ - clock-names: from common clock binding.
+ - #address-cells, #size-cells : Must be present if the device has sub-nodes
+ - ranges: the child address space are mapped 1:1 onto the parent address space
+ - #stream-id-cells : handle to use "arm,mmu-400" ARM IOMMU driver
+
+Sub-nodes:
+The dwc3 core should be added as subnode to MB86S7x dwc3 glue.
+- dwc3 :
+   The binding details of dwc3 can be found in:
+   Documentation/devicetree/bindings/usb/dwc3.txt
+
+usb3host: mb86s70_usb3host {
+	compatible = "fujitsu,mb86s70-dwc3";
+	clocks = <&clk_alw_1_1>;
+	clock-names = "bus_clk";
+	#address-cells = <2>;
+	#size-cells = <1>;
+	ranges;
+	#stream-id-cells = <0>;
+};
+
+
+MB86S7x EHCI GLUE
+ - compatible : Should be "fujitsu,f_usb20ho_hcd"
+ - reg : Address and length of the register set for the device.
+ - interrupts : The irq number of this device that is used to interrupt the
+   CPU
+ - clocks: from common clock binding, handle to usb clock.
+ - clock-names: from common clock binding.
+ - #stream-id-cells : handle to use "arm,mmu-400" ARM IOMMU driver
+ - fujitsu,power-domain : pd_usb2h node has to be builded, details can be
+   found in:
+   Documentation/devicetree/bindings/
+
+hcd21: f_usb20ho_hcd {
+	compatible = "fujitsu,f_usb20ho_hcd";
+	reg = <0 0x34200000 0x80000>;
+	interrupts = <0 419 0x4>;
+	clocks = <&clk_main_2_4>, <&clk_main_4_5>, <&clk_usb_0_0>;
+	clock-names = "h_clk", "p_clk", "p_cryclk";
+	#stream-id-cells = <0>;
+	fujitsu,power-domain = <&pd_usb2h>;
+};

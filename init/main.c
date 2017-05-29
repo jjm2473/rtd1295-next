@@ -74,6 +74,7 @@
 #include <linux/ptrace.h>
 #include <linux/blkdev.h>
 #include <linux/elevator.h>
+#include <linux/random.h>
 
 #include <asm/io.h>
 #include <asm/bugs.h>
@@ -546,15 +547,33 @@ asmlinkage void __init start_kernel(void)
 	rcu_init();
 	tick_nohz_init();
 	radix_tree_init();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	/* init some links before init_ISA_irqs() */
 	early_irq_init();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	init_IRQ();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	tick_init();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	init_timers();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	hrtimers_init();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	softirq_init();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	timekeeping_init();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	time_init();
+	if (!irqs_disabled())
+		printk("%s:%d\n", __func__, __LINE__);
 	profile_init();
 	call_function_init();
 	WARN(!irqs_disabled(), "Interrupts were enabled early\n");
@@ -604,6 +623,10 @@ asmlinkage void __init start_kernel(void)
 #ifdef CONFIG_X86
 	if (efi_enabled(EFI_RUNTIME_SERVICES))
 		efi_enter_virtual_mode();
+#endif
+#ifdef CONFIG_X86_ESPFIX64
+	/* Should be run before the first non-init thread is created */
+	init_espfix_bsp();
 #endif
 	thread_info_cache_init();
 	cred_init();
@@ -777,6 +800,7 @@ static void __init do_basic_setup(void)
 	do_ctors();
 	usermodehelper_enable();
 	do_initcalls();
+	random_int_secret_init();
 }
 
 static void __init do_pre_smp_initcalls(void)

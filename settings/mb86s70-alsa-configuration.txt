@@ -1,0 +1,25 @@
+Setting up mb86s70 rootfs for Alsa
+----------------------------------
+
+Copy the file "mb86s70-asound.state"	to	/var/lib/alsa/asound.state
+Copy the file "mb86s70-asoundrc"	to	/home/linaro/.asoundrc
+Copy the file "mb86s70-default.pa"	to 	/etc/pulse/default.pa
+
+Playback
+--------
+ALSA Command :
+$aplay test48.wav
+
+Record
+------
+
+ALSA Command :
+$arecord -r 48000 -f S32_LE r.wav
+
+Example :
+arecord -r (sample rate) -f (format) r.wav
+sample rate : 48000, 44100...
+format : S16_LE, S24_LE, S32_LE.
+
+Duplex (record while playing) is supported
+

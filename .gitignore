@@ -44,6 +44,7 @@ modules.builtin
 /System.map
 /Module.markers
 /Module.symvers
+/staging
 
 #
 # Debian directory (make deb-pkg)
@@ -91,3 +92,30 @@ extra_certificates
 signing_key.priv
 signing_key.x509
 x509.genkey
+
+#
+# Andy's stuff lying around
+#
+README.html
+README.html.cooked
+add-mkimage-header.sh
+bind.sh
+boot.txt
+build
+build-pvr.sh
+build-targets
+combine
+conf.txt
+config
+graph-data
+k-and-dt.axf
+mainline-data
+old-graphs/
+p
+panda/
+plot
+stg-push-repos.config
+stg-uplevel-current-branch.parents
+stg-upstream-list.txt
+update-sdcard-bootpartition.sh
+x.sh

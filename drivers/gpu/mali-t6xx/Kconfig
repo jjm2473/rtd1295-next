@@ -1,0 +1,82 @@
+menuconfig ENABLE_MALI_T6XX
+	bool "Mali-T6XX series support"
+	default n
+	help
+	  Enable this option to build support for a ARM Mali-T6XX GPU
+
+if ENABLE_MALI_T6XX
+choice
+	prompt "Mali driver version"
+	default MALI_T6XX_VERSION_R9P0
+	help
+	  Select the Mali driver version
+
+config MALI_T6XX_VERSION_R3P0
+	bool "Mali-T6XX R3P0 version"
+	help
+	  Enable building Mali T6XX R3P0 version
+	if MALI_T6XX_VERSION_R3P0
+		source "drivers/gpu/mali-t6xx/r3p0/Kconfig"
+	endif
+
+
+config MALI_T6XX_VERSION_R4P1
+	bool "Mali-T6XX R4P1 version"
+	help
+	  Enable building Mali T6XX R4P1 version
+	if MALI_T6XX_VERSION_R4P1
+		source "drivers/gpu/mali-t6xx/r4p1/Kconfig"
+	endif
+
+
+config MALI_T6XX_VERSION_R9P0
+	bool "Mali-T6XX R9P0 version"
+	help
+	  Enable building Mali T6XX R9P0 version
+	if MALI_T6XX_VERSION_R9P0
+		source "drivers/gpu/mali-t6xx/r9p0/Kconfig"
+	endif
+
+endchoice
+endif # ENABLE_MALI_T6XX
+
+menu "Mali Platform configuration"
+if MALI_T6XX_VERSION_R3P0 || MALI_T6XX_VERSION_R4P1 || MALI_T6XX_VERSION_R9P0
+choice
+	prompt "Platform configuration"
+	default MALI_PLATFORM_THIRDPARTY
+	depends on MALI_EXPERT
+	help
+	  Select the SOC platform that contains a Mali-T6XX
+
+config MALI_PLATFORM_DEVICETREE
+	bool "Device Tree platform"
+	depends on OF && MALI_T6XX_VERSION_R9P0
+	help
+	  Select this option to use Device Tree with the Mali driver.
+
+	  When using this option the Mali driver will get the details of the
+	  GPU hardware from the Device Tree. This means that the same driver
+	  binary can run on multiple platforms as long as all the GPU hardware
+	  details are described in the device tree.
+
+	  Device Tree is the recommended method for the Mali driver platform
+	  integration.
+
+config MALI_PLATFORM_VEXPRESS
+	depends on ARCH_VEXPRESS && (ARCH_VEXPRESS_CA9X4 || ARCH_VEXPRESS_CA15X4)
+	bool "Versatile Express"
+config MALI_PLATFORM_VEXPRESS_VIRTEX7_40MHZ
+	depends on ARCH_VEXPRESS && (ARCH_VEXPRESS_CA9X4 || ARCH_VEXPRESS_CA15X4) && MALI_T6XX_VERSION_R9P0
+	bool "Versatile Express w/Virtex7 @ 40Mhz"
+config MALI_PLATFORM_GOLDFISH
+	depends on ARCH_GOLDFISH
+	bool "Android Goldfish virtual CPU"
+config MALI_PLATFORM_PBX
+	depends on ARCH_REALVIEW && REALVIEW_EB_A9MP && MACH_REALVIEW_PBX
+	bool "Realview PBX-A9"
+config MALI_PLATFORM_THIRDPARTY
+	bool "Third Party Platform"
+endchoice
+endif # MALI_T6XX_VERSION_R3P0 || MALI_T6XX_VERSION_R4P1 || MALI_T6XX_VERSION_R9P0
+endmenu

@@ -1,0 +1,28 @@
+* Fujitsu Mali T6xx Graphic Processing Unit
+
+Required properties:
+  - compatible : value should be "fujitsu,malit6xx"
+  - reg : Address and length of the register memory map.
+  - interrupts : interrupt numbers to the CPU.
+  - clocks : Refer
+    Documentation/devicetree/bindings/clock/clock-bindings.txt.
+  - clock-names : Refer
+    Documentation/devicetree/bindings/clock/clock-bindings.txt.
+  - fujistu-powerdomain : this property defined with a phandle to
+    respective power domain.
+  - cci-control-port : a phandle containing the CCI control interface node
+            the master is connected to.
+
+Example:
+	mali0: mali@2d000000 {
+		compatible = "fujitsu,malit6xx";
+		reg = <0 0x2d000000 0x10000>;
+		interrupts = <0 33 4>, /* Mali JOB */
+			     <0 34 4>, /* Mali MMU */
+			     <0 32 4>; /* Mali GPU */
+		clocks = <&clk_main_7_0>, <&clk_main_2_0>, <&clk_main_0_0>, <&clk_main_4_0>;
+		clock-names = "g3d", "aclk_g3d", "mout_gpll", "fout_gpll";
+		#stream-id-cells = <0>;
+		fujitsu,power-domain = <&pd_mali>;
+		cci-control-port = <&cci_control2>;
+	};

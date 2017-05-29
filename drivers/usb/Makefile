@@ -25,6 +25,8 @@ obj-$(CONFIG_USB_HWA_HCD)	+= host/
 obj-$(CONFIG_USB_ISP1760_HCD)	+= host/
 obj-$(CONFIG_USB_IMX21_HCD)	+= host/
 obj-$(CONFIG_USB_FSL_MPH_DR_OF)	+= host/
+obj-$(CONFIG_USB_FUSBH200_HCD)	+= host/
+obj-$(CONFIG_USB_F_USB20HDC_HCD)+= host/
 
 obj-$(CONFIG_USB_C67X00_HCD)	+= c67x00/
 
@@ -56,3 +58,5 @@ obj-$(CONFIG_USB_RENESAS_USBHS)	+= renesas_usbhs/
 obj-$(CONFIG_USB_GADGET)	+= gadget/
 
 obj-$(CONFIG_USB_COMMON)	+= usb-common.o
+
+obj-$(CONFIG_USB_F_USB20HDC_OTG) += fujitsu_otg/

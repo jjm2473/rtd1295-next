@@ -1,0 +1,61 @@
+config SND_SOC_MB8AC0300
+	tristate "SoC Audio for the MB8AC0300"
+	depends on ARCH_MB8AC0300 || ARCH_MB86S70
+	default y
+	select SND_MB8AC0300_PCM
+	select SND_HDMI_PCM
+	select SND_F_SAIF_I2S
+	help
+	  Say Y or M here if you want ALSA SoC support for
+	  audio on MB8AC0300.
+	  Currently it doesn't work perfectly but is able to
+	  play sound through headphone and speaker on EVB, with 32-bit only
+	  record.
+
+config SND_MB8AC0300_PCM
+	tristate
+	depends on MB8AC0300_HDMAC
+
+config SND_HDMI_PCM
+	tristate
+	depends on MB8AC0300_HDMAC
+
+config SND_F_SAIF_I2S
+	tristate
+
+config F_SAIF_MAX_CH_NUM
+	int "Maximum number of I2S channels"
+	depends on SND_F_SAIF_I2S
+	range 1 6
+	default 1 if ARCH_MB8AC0300
+	default 6 if ARCH_MB86S70
+	help
+	  Maximum number of I2S channels this driver supports.
+
+config SND_SOC_MB8AC0300_ADAU1361
+	tristate "SoC Audio support for MB8AC0300 evaluation board with ADAU1361"
+	depends on SND_SOC_MB8AC0300
+	depends on I2C
+	depends on GPIOLIB
+	select SND_SOC_ADAU1761
+	help
+	  Say Y or M here if you want to add support for SoC audio on MB8AC0300 boards using ADAU1361 codec.
+
+config SND_SOC_MB86S70_WM8973
+	tristate "SoC Audio support for MB86S70 evaluation board with WM8973"
+	depends on SND_SOC_MB8AC0300
+	depends on I2C
+	select SND_SOC_WM8973
+	help
+	  Say Y or M here if you want to add support for SoC audio on MB86S70 boards using WM8973 codec.
+
+config SND_SOC_MB86S70_HDMI
+	tristate "SoC Audio support for MB86S70 HDMI"
+	depends on ARCH_MB86S70
+	select SND_SOC_MB86S70_HDMI_DAI
+	select SND_SOC_MB86S70_HDMI_CODEC
+	help
+          Say Y if you want to add support for SoC HDMI audio on MB86S70 chips.
+
+config SND_SOC_MB86S70_HDMI_DAI
+        tristate

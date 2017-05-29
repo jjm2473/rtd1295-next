@@ -1,0 +1,46 @@
+* Fujitsu MIPI-LLI interface
+
+Required properties:
+- compatible: should contain "fujitsu,xxx-yyy" to identify the
+	core, plus an identifier for the specific instance, such
+	as "fujitsu,mb86s70-mipilli".
+- #address-cells: set to <2>
+- #size-cells: set to  <1>
+- llix: x indicate channel number, such as pcie0, pcie1.
+	pciex include themselves base address, id.
+	Below will introduce them.
+- id: it indicate pci channel number, 0 say channel-0, 1 say channel-1.
+- reg: base addresses and lengths of the pcie controller.
+- interrupts: interrupt values for level interrupt,
+	pulse interrupt, special interrupt.
+- irq-name: it will show interrupt name in linux shell.
+- clocks: from common clock binding: handle to pci clock.
+- clock-names: from common clock binding:
+	should be "aclk", "pclk".
+- #stream-id-cells: For iommu stream id.
+
+Example:
+	mipilli {
+		compatible = "fujitsu,mb86s70-mipilli";
+		#address-cells = <2>;
+		#size-cells = <1>;
+		ranges;
+		lli0: mipilli0@0x32400000{
+			id = <0>;
+			reg = <0 0x32400000 0x10000>;
+			interrupts = <0 232 0x4>;
+			irq-name = "lli-0";
+			clocks = <&clk_alw_0_4>, <&clk_alw_2_4>, <&clk_alw_a_0>;
+			clock-names = "aclk", "pclk", "tx_bit_clk";
+			#stream-id-cells = <0>;
+		};
+		lli1: mipilli1@0x32410000{
+			id = <1>;
+			reg = <0 0x32410000 0x10000>;
+			interrupts = <0 236 0x4>;
+			irq-name = "lli-1";
+			clocks = <&clk_alw_0_5>, <&clk_alw_2_5>, <&clk_alw_a_1>;
+			clock-names = "aclk", "pclk", "tx_bit_clk";
+			#stream-id-cells = <0>;
+		};
+	};

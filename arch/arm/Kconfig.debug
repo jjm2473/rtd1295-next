@@ -63,6 +63,27 @@ config DEBUG_USER
 	      8 - SIGSEGV faults
 	     16 - SIGBUS faults
 
+config DEBUG_RODATA
+	bool "Write protect kernel text section"
+	default n
+	depends on DEBUG_KERNEL && MMU
+	---help---
+	  Mark the kernel text section as write-protected in the pagetables,
+	  in order to catch accidental (and incorrect) writes to such const
+	  data. This will cause the size of the kernel, plus up to 4MB, to
+	  be mapped as pages instead of sections, which will increase TLB
+	  pressure.
+	  If in doubt, say "N".
+
+config DEBUG_RODATA_TEST
+	bool "Testcase for the DEBUG_RODATA feature"
+	depends on DEBUG_RODATA
+	default n
+	---help---
+	  This option enables a testcase for the DEBUG_RODATA
+	  feature.
+	  If in doubt, say "N"
+
 # These options are only for real kernel hackers who want to get their hands dirty.
 config DEBUG_LL
 	bool "Kernel low-level debugging functions (read help!)"
@@ -519,6 +540,23 @@ choice
 		  For more details about semihosting, please see
 		  chapter 8 of DUI0203I_rvct_developer_guide.pdf from ARM Ltd.
 
+	config DEBUG_MB8AC0300_UART
+		bool "Fujitsu MB8AC0300 UART0 for low level debug"
+		help
+		  Suitable for debugging early boot problems on Fujitsu's
+		  MB8AC0300 EVB
+		  Only one of these can be selected at a time when using
+		  multiarch kernels
+
+	config DEBUG_MB86S70
+		bool "MB86S70 UART0 for low level debug"
+		help
+		  Suitable for debugging early boot problems on
+		  MB8AA0350 EVB
+		  Only one of these can be selected at a time in a
+		  multiarch kernel.
+
+
 endchoice
 
 config DEBUG_EXYNOS_UART
@@ -633,6 +671,8 @@ config DEBUG_LL_INCLUDE
 				 DEBUG_IMX53_UART ||\
 				 DEBUG_IMX6Q_UART
 	default "debug/mvebu.S" if DEBUG_MVEBU_UART
+	default "debug/mb8ac0300.S" if DEBUG_MB8AC0300_UART
+	default "debug/mb86s70.S" if DEBUG_MB86S70
 	default "debug/mxs.S" if DEBUG_IMX23_UART || DEBUG_IMX28_UART
 	default "debug/nomadik.S" if DEBUG_NOMADIK_UART
 	default "debug/omap2plus.S" if DEBUG_OMAP2PLUS_UART

@@ -242,6 +242,10 @@ struct usb_configuration {
 
 	struct usb_composite_dev	*cdev;
 
+	/* USB 3.0 additions */
+	int			(*get_status)(struct usb_function *);
+	int			(*func_suspend)(struct usb_function *,
+						u8 suspend_opt);
 	/* private: */
 	/* internals */
 	struct list_head	list;

@@ -29,13 +29,14 @@ static int pci_msi_enable = 1;
 
 
 /* Arch hooks */
-
+/*
 #ifndef arch_msi_check_device
 int arch_msi_check_device(struct pci_dev *dev, int nvec, int type)
 {
 	return 0;
 }
 #endif
+*/
 
 #ifndef arch_setup_msi_irqs
 # define arch_setup_msi_irqs default_setup_msi_irqs
@@ -52,9 +53,10 @@ int default_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 	 * If an architecture wants to support multiple MSI, it needs to
 	 * override arch_setup_msi_irqs()
 	 */
+	/*
 	if (type == PCI_CAP_ID_MSI && nvec > 1)
 		return 1;
-
+	*/
 	list_for_each_entry(entry, &dev->msi_list, list) {
 		ret = arch_setup_msi_irq(dev, entry);
 		if (ret < 0)
@@ -222,11 +224,13 @@ void mask_msi_irq(struct irq_data *data)
 {
 	msi_set_mask_bit(data, 1);
 }
+EXPORT_SYMBOL_GPL(mask_msi_irq);
 
 void unmask_msi_irq(struct irq_data *data)
 {
 	msi_set_mask_bit(data, 0);
 }
+EXPORT_SYMBOL_GPL(unmask_msi_irq);
 
 #endif /* CONFIG_GENERIC_HARDIRQS */
 
@@ -530,6 +534,20 @@ out_unroll:
 	return ret;
 }
 
+static int msi_verify_entries(struct pci_dev *dev)
+{
+	struct msi_desc *entry;
+
+	list_for_each_entry(entry, &dev->msi_list, list) {
+		if (!dev->no_64bit_msi || !entry->msg.address_hi)
+			continue;
+		dev_err(&dev->dev, "Device has broken 64-bit MSI but arch"
+			" tried to assign one above 4G\n");
+		return -EIO;
+	}
+	return 0;
+}
+
 /**
  * msi_capability_init - configure device's MSI capability structure
  * @dev: pointer to the pci_dev data structure of MSI device function
@@ -577,6 +595,13 @@ static int msi_capability_init(struct pci_dev *dev, int nvec)
 
 	/* Configure MSI capability structure */
 	ret = arch_setup_msi_irqs(dev, nvec, PCI_CAP_ID_MSI);
+	if (ret) {
+		msi_mask_irq(entry, mask, ~mask);
+		free_msi_irqs(dev);
+		return ret;
+	}
+
+	ret = msi_verify_entries(dev);
 	if (ret) {
 		msi_mask_irq(entry, mask, ~mask);
 		free_msi_irqs(dev);
@@ -695,6 +720,11 @@ static int msix_capability_init(struct pci_dev *dev,
 		return ret;
 
 	ret = arch_setup_msi_irqs(dev, nvec, PCI_CAP_ID_MSIX);
+	if (ret)
+		goto error;
+
+	/* Check if all MSI entries honor device restrictions */
+	ret = msi_verify_entries(dev);
 	if (ret)
 		goto error;
 

@@ -69,7 +69,7 @@ int test__vmlinux_matches_kallsyms(void)
 
 	sym = map__find_symbol_by_name(kallsyms_map, ref_reloc_sym.name, NULL);
 	if (sym == NULL) {
-		pr_debug("dso__find_symbol_by_name ");
+		pr_debug("dso__find_symbol_by_name %s ", ref_reloc_sym.name);
 		goto out;
 	}
 

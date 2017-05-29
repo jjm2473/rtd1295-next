@@ -40,6 +40,11 @@
 /* Section 5.3.3 - MaxPorts */
 #define MAX_HC_PORTS		127
 
+/* platform data of vendor which can be pass to xhci_hcd */
+struct xhci_platform_data {
+	u32 quirks;
+};
+
 /*
  * xHCI register interface.
  * This corresponds to the eXtensible Host Controller Interface (xHCI)
@@ -98,9 +103,13 @@ struct xhci_cap_regs {
 /* bits 16:31, Max U2 to U0 latency for the roothub ports */
 #define HCS_U2_LATENCY(p)	(((p) >> 16) & 0xffff)
 
+#if 0 /* HACK while IOMMU not enabled */
 /* HCCPARAMS - hcc_params - bitmasks */
 /* true: HC can use 64-bit address pointers */
 #define HCC_64BIT_ADDR(p)	((p) & (1 << 0))
+#else
+#define HCC_64BIT_ADDR(p)       (0)
+#endif
 /* true: HC can do bandwidth negotiation */
 #define HCC_BANDWIDTH_NEG(p)	((p) & (1 << 1))
 /* true: HC uses 64-byte Device Context structures
@@ -1516,6 +1525,8 @@ struct xhci_hcd {
 #define XHCI_SPURIOUS_REBOOT	(1 << 13)
 #define XHCI_COMP_MODE_QUIRK	(1 << 14)
 #define XHCI_AVOID_BEI		(1 << 15)
+#define XHCI_PLAT		(1 << 16)
+#define XHCI_DISCONNECT_QUIRK	(1 << 17)
 	unsigned int		num_active_eps;
 	unsigned int		limit_active_eps;
 	/* There are two roothubs to keep track of bus suspend info for */
@@ -1820,6 +1831,7 @@ int xhci_cancel_cmd(struct xhci_hcd *xhci, struct xhci_command *command,
 		union xhci_trb *cmd_trb);
 void xhci_ring_ep_doorbell(struct xhci_hcd *xhci, unsigned int slot_id,
 		unsigned int ep_index, unsigned int stream_id);
+union xhci_trb *xhci_find_next_enqueue(struct xhci_ring *ring);
 
 /* xHCI roothub code */
 void xhci_set_link_state(struct xhci_hcd *xhci, __le32 __iomem **port_array,

@@ -62,7 +62,7 @@ create_package() {
 	fi
 
 	# Create the package
-	dpkg-gencontrol -isp $forcearch -p$pname -P"$pdir"
+	dpkg-gencontrol -isp $forcearch -Vkernel:debarch="${debarch:-$(dpkg --print-architecture)}" -p$pname -P"$pdir"
 	dpkg --build "$pdir" ..
 }
 
@@ -98,6 +98,12 @@ mkdir -p "$libc_headers_dir/usr/share/doc/$libc_headers_packagename"
 mkdir -m 755 -p "$kernel_headers_dir/DEBIAN"
 mkdir -p "$kernel_headers_dir/usr/share/doc/$kernel_headers_packagename"
 mkdir -p "$kernel_headers_dir/lib/modules/$version/"
+
+if grep -q '^CONFIG_OF=y' $KCONFIG_CONFIG ; then
+	mkdir -p "$tmpdir/boot/dtb/$version"
+	INSTALL_DTBS_PATH="$tmpdir/boot/dtb/$version" $MAKE KBUILD_SRC= dtbs_install
+fi
+
 if [ "$ARCH" = "um" ] ; then
 	mkdir -p "$tmpdir/usr/lib/uml/modules/$version" "$tmpdir/usr/bin"
 fi
@@ -113,10 +119,19 @@ else
 	cp System.map "$tmpdir/boot/System.map-$version"
 	cp .config "$tmpdir/boot/config-$version"
 	# Not all arches include the boot path in KBUILD_IMAGE
-	if [ -e $KBUILD_IMAGE ]; then
-		cp $KBUILD_IMAGE "$tmpdir/boot/vmlinuz-$version"
+	if [ -z "$UNCOMPRESSED_IMAGE" ] ; then
+		im=vmlinuz
 	else
-		cp arch/$ARCH/boot/$KBUILD_IMAGE "$tmpdir/boot/vmlinuz-$version"
+		if [ ! -z "$FINAL_IMAGE" ] ; then
+			im=$FINAL_IMAGE
+		else
+			im=Image
+		fi
+	fi
+	if [ -e $KBUILD_IMAGE ]; then
+		cp $KBUILD_IMAGE "$tmpdir/boot/$im-$version"
+	else
+		cp arch/$ARCH/boot/$KBUILD_IMAGE "$tmpdir/boot/$im-$version"
 	fi
 fi
 
@@ -232,6 +247,7 @@ else
 	cat <<EOF >> debian/control
 
 Package: $packagename
+Depends: linux-stubby
 Provides: linux-image, linux-image-2.6, linux-modules-$version
 Suggests: $fwpackagename
 Architecture: any
@@ -252,15 +268,14 @@ mkdir -p "$destdir"
 (cd $objtree; tar -c -f - -T "$objtree/debian/hdrobjfiles") | (cd $destdir; tar -xf -)
 ln -sf "/usr/src/linux-headers-$version" "$kernel_headers_dir/lib/modules/$version/build"
 rm -f "$objtree/debian/hdrsrcfiles" "$objtree/debian/hdrobjfiles"
-arch=$(dpkg --print-architecture)
 
 cat <<EOF >> debian/control
 
 Package: $kernel_headers_packagename
 Provides: linux-headers, linux-headers-2.6
-Architecture: $arch
-Description: Linux kernel headers for $KERNELRELEASE on $arch
- This package provides kernel header files for $KERNELRELEASE on $arch
+Architecture: any
+Description: Linux kernel headers for $KERNELRELEASE on \${kernel:debarch}
+ This package provides kernel header files for $KERNELRELEASE on \${kernel:debarch}
  .
  This is useful for people who need to build external modules
 EOF

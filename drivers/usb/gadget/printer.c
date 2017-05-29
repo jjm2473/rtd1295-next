@@ -222,6 +222,12 @@ static const struct usb_descriptor_header *otg_desc[] = {
 /* maxpacket and other transfer characteristics vary by speed. */
 #define ep_desc(g, hs, fs) (((g)->speed == USB_SPEED_HIGH)?(hs):(fs))
 
+#undef DBG
+#undef VDBG
+
+#define DBG(d,fmt,args...)  printk(fmt,##args)
+#define VDBG(d,fmt,args...) printk(fmt,##args)
+
 /*-------------------------------------------------------------------------*/
 
 /* descriptors that are built on-demand */
@@ -974,6 +980,14 @@ unknown:
 			wValue, wIndex, wLength);
 		break;
 	}
+
+	req->length = value;
+	value = usb_ep_queue(cdev->gadget->ep0, req, GFP_ATOMIC);
+	if (value < 0) {
+		DBG(cdev, "ep_queue --> %d\n", value);
+		req->status = 0;
+	}
+
 	/* host either stalls (value < 0) or reports success */
 	return value;
 }

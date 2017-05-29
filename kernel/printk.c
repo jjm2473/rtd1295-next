@@ -875,6 +875,11 @@ static size_t print_time(u64 ts, char *buf)
 	if (!printk_time)
 		return 0;
 
+	if (!ts && buf) {
+		memcpy(buf, "               ", 15);
+		return 15;
+	}
+
 	rem_nsec = do_div(ts, 1000000000);
 
 	if (!buf)
@@ -1369,9 +1374,9 @@ static int console_trylock_for_printk(unsigned int cpu)
 		}
 	}
 	logbuf_cpu = UINT_MAX;
+	raw_spin_unlock(&logbuf_lock);
 	if (wake)
 		up(&console_sem);
-	raw_spin_unlock(&logbuf_lock);
 	return retval;
 }
 
@@ -2485,7 +2490,7 @@ void wake_up_klogd(void)
 	preempt_enable();
 }
 
-int printk_sched(const char *fmt, ...)
+int printk_deferred(const char *fmt, ...)
 {
 	unsigned long flags;
 	va_list args;

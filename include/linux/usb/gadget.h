@@ -880,6 +880,9 @@ extern void usb_del_gadget_udc(struct usb_gadget *gadget);
 extern int udc_attach_driver(const char *name,
 		struct usb_gadget_driver *driver);
 
+extern int usb_add_gadget_udc(struct device *parent, struct usb_gadget *gadget);
+extern void usb_del_gadget_udc(struct usb_gadget *gadget);
+
 /*-------------------------------------------------------------------------*/
 
 /* utility to simplify dealing with string descriptors */
@@ -973,6 +976,11 @@ extern void usb_gadget_set_state(struct usb_gadget *gadget,
 
 extern struct usb_ep *usb_ep_autoconfig(struct usb_gadget *,
 			struct usb_endpoint_descriptor *);
+
+
+extern struct usb_ep *usb_ep_autoconfig_ss(struct usb_gadget *,
+			struct usb_endpoint_descriptor *,
+			struct usb_ss_ep_comp_descriptor *);
 
 
 extern struct usb_ep *usb_ep_autoconfig_ss(struct usb_gadget *,

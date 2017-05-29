@@ -1,0 +1,149 @@
+* Fujitsu F_PCIE2_DME PCIe interface
+
+Required properties:
+- compatible: should contain "fujitsu,xxx-yyy" to identify the
+       core, plus an identifier for the specific instance, such
+       as "fujitsu,sysoc-f_pcie_dmx".
+- #address-cells: set to <2>
+- #size-cells: set to  <1>
+- reg: base addresses and lengths of the system controller.
+
+
+Sub-nodes:
+- compatible: should contain "fujitsu,xxx-yyy" to identify the
+       core, plus an identifier for the specific instance, such
+       as "fujitsu,f_pcie_dme".
+- PME_INT: This indicates PME interrupt number offset in
+       interrupts field.
+- #address-cells: set to <2>
+- #size-cells: set to  <1>
+- id: it indicate pci channel number, 0 say channel-0, 1 say channel-1.
+- reg:
+      offset 0 :base addresses and lengths of the pcie controller.
+      offset 1 :base addresses and lengths of the bifurcation controller.
+- #interrupt-cells: set to <1>
+- interrupt-map-mask and interrupt-map: standard PCI properties
+	to define the mapping of the PCIe interface to interrupt
+	numbers.
+- clocks: from common clock binding: handle to pci clock.
+- clock-names: from common clock binding:
+       should be "bus_pcie_aclk", "pcie0_aclk", "pcie1_aclk".
+- clock_num: Clock total number.
+- #address-cells: set to <3>
+- #size-cells: set to <2>
+- ranges: ranges for the PCI memory and I/O regions
+
+Example:
+	pcie1_x2len:pcie1_x2len@0x33E00600 {
+		status = "disabled";
+		compatible = "fujitsu,sysoc-f_pcie_dmx";
+		#address-cells = <2>;
+		#size-cells = <1>;
+		ranges;
+		reg = <0 0x33E00600 0x64>, <0 0x33E00168 0x4>;
+
+		pcie1_x2len_core: pcie1_x2len_core@320C0000 {
+			compatible = "fujitsu,mb86s7x-pcie_dme-integration";
+			sysoc = <0 0x33E00100 0x100>;
+			id = <2>;
+			ven_dev_id = <0x10cf 0x2043>;
+			reg = <0 0x320C0000 0x20000>, <0 0x320E0000 0x1000>;
+			interrupts = <0 454 4>;
+			interrupt-map-mask = <0 0 0 15>;
+			interrupt-map = <0 0 0 1 &gic 0 450 4>,
+				<0 0 0 2 &gic 0 451 4>,
+				<0 0 0 3 &gic 0 452 4>,
+				<0 0 0 4 &gic 0 453 4>;
+			pme_int_off = <0>;
+			clocks = <&clk_alw_0_0>,<&clk_alw_0_1>,<&clk_alw_0_2>,
+				<&clk_alw_2_0>,<&clk_alw_2_1>,<&clk_alw_2_2>;
+			clock-names = "bus_pcie_aclk","pcie0_aclk","pcie1_aclk",
+				"pcie_pclk","pcie0_hclk","pcie1_hclk";
+			clock_num = <6>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x01000000 0x0 0x00000000 0x0 0x5C000000 0 0x08000000
+					0x02000000 0x0 0x08000000 0x0 0x78000000 0 0x02000000
+					0x02000000 0x0 0x0A000000 0x0 0x7A000000 0 0x02000000
+					0x02000000 0x0 0x0C000000 0x0 0x7C000000 0 0x02000000
+					0x02000000 0x0 0x0E000000 0x0 0x7E000000 0 0x02000000
+					0x03000000 0x0 0x80000000 0x10 0x80000000 0 0x40000000
+					0x00000000 0x0 0xC0000000 0x0 0x32100000 0 0x00010000>;
+		};
+	};
+
+	pcie1_x4len:pcie1_x4len@0x33E00100 {
+		compatible = "fujitsu,sysoc-f_pcie_dmx";
+		#address-cells = <2>;
+		#size-cells = <1>;
+		ranges;
+		reg = <0 0x33E00100 0x64>;
+
+		pcie1_x4len_core: pcie1_x4len_core@32080000 {
+			compatible = "fujitsu,mb86s7x-pcie_dme-integration";
+			sysoc = <0 0x33E00100 0x100>;
+			id = <1>;
+			ven_dev_id = <0x10cf 0x2044>;
+			reg = <0 32080000 0x20000>, <0 0x320A0000 0x1000>;
+			interrupts = <0 264 4>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 15>;
+			interrupt-map = <0 0 0 1 &gic 0 260 4>,
+				<0 0 0 2 &gic 0 261 4>,
+				<0 0 0 3 &gic 0 262 4>,
+				<0 0 0 4 &gic 0 263 4>;
+			pme_int_off = <0>;
+			clocks = <&clk_alw_0_0>,<&clk_alw_0_1>,<&clk_alw_0_2>,
+				<&clk_alw_2_0>,<&clk_alw_2_1>,<&clk_alw_2_2>;
+			clock-names = "bus_pcie_aclk","pcie0_aclk","pcie1_aclk",
+				"pcie_pclk","pcie0_hclk","pcie1_hclk";
+			clock_num = <6>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x01000000 0x0 0x00000000 0x0 0x58000000 0 0x08000000
+					0x02000000 0x0 0x00000000 0x0 0x70000000 0 0x02000000
+					0x02000000 0x0 0x02000000 0x0 0x72000000 0 0x02000000
+					0x02000000 0x0 0x04000000 0x0 0x74000000 0 0x02000000
+					0x02000000 0x0 0x06000000 0x0 0x76000000 0 0x02000000
+					0x03000000 0x0 0x40000000 0x6 0x40000000 0 0x40000000
+					0x00000000 0x0 0xC0000000 0x0 0x320F0000 0 0x00010000>;
+		};
+	};
+
+	pcie0:pcie0@0x33E00000{
+		compatible = "fujitsu,sysoc-f_pcie_dmx";
+		#address-cells = <2>;
+		#size-cells = <1>;
+		ranges;
+		reg = <0 0x33E00000 0x64>;
+
+		pcie0_core: pcie0_core@32000000 {
+			compatible = "fujitsu,mb86s7x-pcie_dme-integration";
+			sysoc = <0 0x33E00000 0x100>;
+			id = <0>;
+			reg = <0 0x32000000 0x20000>, <0 0x320a0000 0x1000>;
+			interrupts = <0 244 4>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 15>;
+			interrupt-map = <0 0 0 1 &gic 0 240 4>,
+				<0 0 0 2 &gic 0 241 4>,
+				<0 0 0 3 &gic 0 242 4>,
+				<0 0 0 4 &gic 0 243 4>;
+			pme_int_off = <0>;
+			clocks = <&clk_alw_0_0>,<&clk_alw_0_1>,<&clk_alw_0_2>,
+				<&clk_alw_2_0>,<&clk_alw_2_1>,<&clk_alw_2_2>;
+			clock-names = "bus_pcie_aclk","pcie0_aclk","pcie1_aclk",
+				"pcie_pclk","pcie0_hclk","pcie1_hclk";
+			clock_num = <6>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x01000000 0x0 0x00000000 0x0 0x50000000 0 0x08000000
+					0x02000000 0x0 0x00000000 0x0 0x60000000 0 0x04000000
+					0x02000000 0x0 0x02000000 0x0 0x64000000 0 0x04000000
+					0x02000000 0x0 0x08000000 0x0 0x68000000 0 0x04000000
+					0x02000000 0x0 0x0C000000 0x0 0x6C000000 0 0x04000000
+					0x03000000 0x0 0x40000000 0x4 0x40000000 0 0x40000000
+					0x03000000 0x0 0x80000000 0x4 0x80000000 0 0x40000000
+					0x00000000 0x0 0xC0000000 0x0 0x32060000 0 0x00010000>;
+		};
+	};

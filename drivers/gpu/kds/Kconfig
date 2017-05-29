@@ -1,0 +1,6 @@
+config KDS
+	tristate "Arm Mali Kernel Dependency System"
+	default n
+	help
+	  Mali Kernel Dependency System
+

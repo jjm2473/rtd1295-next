@@ -1,0 +1,42 @@
+config FB_PICAPDC
+	tristate "DMC Pica PDC Framebuffer"
+	depends on FB && ARCH_MB8AC0300
+	select FB_CFB_FILLRECT
+	select FB_CFB_COPYAREA
+	select FB_CFB_IMAGEBLIT
+	help
+	  Select 'y' or 'm' to build framebuffer support for the
+	  MDC Pica PDC CRTC IP which is used in, eg, Fujitsu
+	  MB8AC0300 SoC
+
+config FB_MB86S70
+	tristate "Fujitsu MB86S70 Framebuffer"
+	depends on FB && ARCH_MB86S70
+	select FB_CFB_FILLRECT
+	select FB_CFB_COPYAREA
+	select FB_CFB_IMAGEBLIT
+
+config F_MIPIDSI1_LP
+	tristate "Fujitsu MIPI DSI Head support"
+	depends on FB && ARCH_MB86S70
+	help
+	  This supports the MIPI DSI Video Output head found on MB86S70
+
+config SN65DSI84
+	bool "TI SN65DSI84 support"
+	depends on F_MIPIDSI1_LP && I2C
+	help
+	  This supports the TI SN65DSI84 DSI-LVDS bridge device
+
+config F_HDMI_TX14
+	tristate "Fujitsu HDMI 1.4 Head support"
+	depends on FB && ARCH_MB86S70
+	help
+	  This supports the HDMI 1.4 Video Output head found on MB86S70
+
+config F_FPDL_TX
+	tristate "Fujitsu Flat Panel Link Head support"
+	depends on FB && ARCH_MB86S70
+	help
+	  This supports the FPLINK Video Output head found on MB86S73
+

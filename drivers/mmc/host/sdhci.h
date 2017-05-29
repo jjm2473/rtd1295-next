@@ -69,6 +69,7 @@
 #define  SDHCI_SPACE_AVAILABLE	0x00000400
 #define  SDHCI_DATA_AVAILABLE	0x00000800
 #define  SDHCI_CARD_PRESENT	0x00010000
+#define  SDHCI_CARD_STABLE	0x00020000
 #define  SDHCI_WRITE_PROTECT	0x00080000
 #define  SDHCI_DATA_LVL_MASK	0x00F00000
 #define   SDHCI_DATA_LVL_SHIFT	20
@@ -198,6 +199,9 @@
 #define  SDHCI_DRIVER_TYPE_D	0x00000040
 #define  SDHCI_RETUNING_TIMER_COUNT_MASK	0x00000F00
 #define  SDHCI_RETUNING_TIMER_COUNT_SHIFT	8
+#define  SDHCI_RETUNING_TIMER_MAXCOUNT	0x0000000B
+#define  SDHCI_RETUNING_TIMER_DEFAULT	0x0000000B
+#define  SDHCI_RETUNING_TIMER_COUNT_OTHER_SOURCE	0x0000000F
 #define  SDHCI_USE_SDR50_TUNING			0x00002000
 #define  SDHCI_RETUNING_MODE_MASK		0x0000C000
 #define  SDHCI_RETUNING_MODE_SHIFT		14
@@ -294,6 +298,8 @@ struct sdhci_ops {
 	void	(*platform_resume)(struct sdhci_host *host);
 	void    (*adma_workaround)(struct sdhci_host *host, u32 intmask);
 	void	(*platform_init)(struct sdhci_host *host);
+	void    (*card_event)(struct sdhci_host *host);
+	void	(*voltage_switch)(struct sdhci_host *host);
 };
 
 #ifdef CONFIG_MMC_SDHCI_IO_ACCESSORS

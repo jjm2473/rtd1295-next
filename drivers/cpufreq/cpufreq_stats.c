@@ -21,6 +21,9 @@
 #include <linux/spinlock.h>
 #include <linux/notifier.h>
 #include <asm/cputime.h>
+#ifdef CONFIG_BL_SWITCHER
+#include <asm/bL_switcher.h>
+#endif
 
 static spinlock_t cpufreq_stats_lock;
 
@@ -81,7 +84,7 @@ static ssize_t show_time_in_state(struct cpufreq_policy *policy, char *buf)
 	for (i = 0; i < stat->state_num; i++) {
 		len += sprintf(buf + len, "%u %llu\n", stat->freq_table[i],
 			(unsigned long long)
-			cputime64_to_clock_t(stat->time_in_state[i]));
+			jiffies_64_to_clock_t(stat->time_in_state[i]));
 	}
 	return len;
 }
@@ -341,6 +344,27 @@ static int cpufreq_stat_notifier_trans(struct notifier_block *nb,
 	return 0;
 }
 
+static int cpufreq_stats_create_table_cpu(unsigned int cpu)
+{
+	struct cpufreq_policy *policy;
+	struct cpufreq_frequency_table *table;
+	int ret = -ENODEV;
+
+	policy = cpufreq_cpu_get(cpu);
+	if (!policy)
+		return -ENODEV;
+
+	table = cpufreq_frequency_get_table(cpu);
+	if (!table)
+		goto out;
+
+	ret = cpufreq_stats_create_table(policy, table);
+
+out:
+	cpufreq_cpu_put(policy);
+	return ret;
+}
+
 static int __cpuinit cpufreq_stat_cpu_callback(struct notifier_block *nfb,
 					       unsigned long action,
 					       void *hcpu)
@@ -348,18 +372,14 @@ static int __cpuinit cpufreq_stat_cpu_callback(struct notifier_block *nfb,
 	unsigned int cpu = (unsigned long)hcpu;
 
 	switch (action) {
-	case CPU_ONLINE:
-		cpufreq_update_policy(cpu);
-		break;
 	case CPU_DOWN_PREPARE:
 		cpufreq_stats_free_sysfs(cpu);
 		break;
 	case CPU_DEAD:
 		cpufreq_stats_free_table(cpu);
 		break;
-	case CPU_UP_CANCELED_FROZEN:
-		cpufreq_stats_free_sysfs(cpu);
-		cpufreq_stats_free_table(cpu);
+	case CPU_DOWN_FAILED:
+		cpufreq_stats_create_table_cpu(cpu);
 		break;
 	}
 	return NOTIFY_OK;
@@ -379,7 +399,7 @@ static struct notifier_block notifier_trans_block = {
 	.notifier_call = cpufreq_stat_notifier_trans
 };
 
-static int __init cpufreq_stats_init(void)
+static int cpufreq_stats_setup(void)
 {
 	int ret;
 	unsigned int cpu;
@@ -391,8 +411,6 @@ static int __init cpufreq_stats_init(void)
 		return ret;
 
 	register_hotcpu_notifier(&cpufreq_stat_cpu_notifier);
-	for_each_online_cpu(cpu)
-		cpufreq_update_policy(cpu);
 
 	ret = cpufreq_register_notifier(&notifier_trans_block,
 				CPUFREQ_TRANSITION_NOTIFIER);
@@ -407,7 +425,8 @@ static int __init cpufreq_stats_init(void)
 
 	return 0;
 }
-static void __exit cpufreq_stats_exit(void)
+
+static void cpufreq_stats_cleanup(void)
 {
 	unsigned int cpu;
 
@@ -420,6 +439,54 @@ static void __exit cpufreq_stats_exit(void)
 		cpufreq_stats_free_table(cpu);
 		cpufreq_stats_free_sysfs(cpu);
 	}
+}
+
+#ifdef CONFIG_BL_SWITCHER
+static int cpufreq_stats_switcher_notifier(struct notifier_block *nfb,
+					unsigned long action, void *_arg)
+{
+	switch (action) {
+	case BL_NOTIFY_PRE_ENABLE:
+	case BL_NOTIFY_PRE_DISABLE:
+		cpufreq_stats_cleanup();
+		break;
+
+	case BL_NOTIFY_POST_ENABLE:
+	case BL_NOTIFY_POST_DISABLE:
+		cpufreq_stats_setup();
+		break;
+
+	default:
+		return NOTIFY_DONE;
+	}
+
+	return NOTIFY_OK;
+}
+
+static struct notifier_block switcher_notifier = {
+	.notifier_call = cpufreq_stats_switcher_notifier,
+};
+#endif
+
+static int __init cpufreq_stats_init(void)
+{
+	int ret;
+	spin_lock_init(&cpufreq_stats_lock);
+
+	ret = cpufreq_stats_setup();
+#ifdef CONFIG_BL_SWITCHER
+	if (!ret)
+		bL_switcher_register_notifier(&switcher_notifier);
+#endif
+	return ret;
+}
+
+static void __exit cpufreq_stats_exit(void)
+{
+#ifdef CONFIG_BL_SWITCHER
+	bL_switcher_unregister_notifier(&switcher_notifier);
+#endif
+	cpufreq_stats_cleanup();
 }
 
 MODULE_AUTHOR("Zou Nan hai <nanhai.zou@intel.com>");

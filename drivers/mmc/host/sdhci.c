@@ -69,6 +69,37 @@ static inline int sdhci_runtime_pm_put(struct sdhci_host *host)
 }
 #endif
 
+/*****************************************************************************\
+ *                                                                           *
+ * Resume detection functions                                                *
+ *                                                                           *
+\*****************************************************************************/
+
+#define RESUME_DETECT_TIME	50
+#define RESUME_DETECT_JIFFIES	msecs_to_jiffies(RESUME_DETECT_TIME)
+static void sdhci_resume_detect_work_func(struct work_struct *work)
+{
+	struct sdhci_host *host = container_of(work, struct sdhci_host, resume_detect_work.work);
+	int err = 0;
+	if (mmc_bus_manual_resume(host->mmc))
+		mmc_set_bus_resume_policy(host->mmc, 0);
+	err = mmc_resume_host(host->mmc);
+	if (host->resume_detect_count-- && err)
+		queue_delayed_work(host->resume_detect_wq, &host->resume_detect_work, RESUME_DETECT_JIFFIES);
+	else
+		pr_info("%s: resume detection done (count:%d, err:%d)\n",
+			mmc_hostname(host->mmc),host->resume_detect_count, err);
+}
+
+static int sdhci_start_resume_detection(struct mmc_host *mmc, int count)
+{
+	struct sdhci_host *host = mmc_priv(mmc);
+	mmc_set_bus_resume_policy(mmc, 1);
+	host->resume_detect_count = count;
+	queue_delayed_work(host->resume_detect_wq, &host->resume_detect_work, RESUME_DETECT_JIFFIES);
+	return 0;
+}
+
 static void sdhci_dumpregs(struct sdhci_host *host)
 {
 	pr_debug(DRIVER_NAME ": =========== REGISTER DUMP (%s)===========\n",
@@ -884,7 +915,7 @@ static void sdhci_prepare_data(struct sdhci_host *host, struct mmc_command *cmd)
 static void sdhci_set_transfer_mode(struct sdhci_host *host,
 	struct mmc_command *cmd)
 {
-	u16 mode;
+	u16 mode = 0;
 	struct mmc_data *data = cmd->data;
 
 	if (data == NULL)
@@ -892,9 +923,11 @@ static void sdhci_set_transfer_mode(struct sdhci_host *host,
 
 	WARN_ON(!host->data);
 
-	mode = SDHCI_TRNS_BLK_CNT_EN;
+	if (!(host->quirks2 & SDHCI_QUIRK2_SUPPORT_SINGLE))
+		mode = SDHCI_TRNS_BLK_CNT_EN;
+
 	if (mmc_op_multi(cmd->opcode) || data->blocks > 1) {
-		mode |= SDHCI_TRNS_MULTI;
+		mode = SDHCI_TRNS_BLK_CNT_EN | SDHCI_TRNS_MULTI;
 		/*
 		 * If we are sending CMD23, CMD12 never gets sent
 		 * on successful completion (so no Auto-CMD12).
@@ -1250,8 +1283,10 @@ static int sdhci_set_power(struct sdhci_host *host, unsigned short power)
 			break;
 		case MMC_VDD_29_30:
 		case MMC_VDD_30_31:
+		if (!(host->quirks2 & SDHCI_QUIRK2_UNSUPPORT_3_0_V)) {
 			pwr = SDHCI_POWER_300;
 			break;
+		}
 		case MMC_VDD_32_33:
 		case MMC_VDD_33_34:
 			pwr = SDHCI_POWER_330;
@@ -1316,6 +1351,8 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
 
 	sdhci_runtime_pm_get(host);
 
+	present = mmc_gpio_get_cd(host->mmc);
+
 	spin_lock_irqsave(&host->lock, flags);
 
 	WARN_ON(host->mrq != NULL);
@@ -1344,7 +1381,6 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
 	 *     zero: cd-gpio is used, and card is removed
 	 *     one: cd-gpio is used, and card is present
 	 */
-	present = mmc_gpio_get_cd(host->mmc);
 	if (present < 0) {
 		/* If polling, assume that the card is always present. */
 		if (host->quirks & SDHCI_QUIRK_BROKEN_CARD_DETECTION)
@@ -1764,6 +1800,11 @@ static int sdhci_do_start_signal_voltage_switch(struct sdhci_host *host,
 		ctrl |= SDHCI_CTRL_VDD_180;
 		sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
 
+		/* Some controller need to do more when switching */
+		if ((host->quirks2 & SDHCI_QUIRK2_VOLTAGE_SWITCH) &&
+						host->ops->voltage_switch)
+			host->ops->voltage_switch(host);
+
 		/* Wait for 5ms */
 		usleep_range(5000, 5500);
 
@@ -1828,12 +1869,13 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 	unsigned long timeout;
 	int err = 0;
 	bool requires_tuning_nonuhs = false;
+	unsigned long flags;
 
 	host = mmc_priv(mmc);
 
 	sdhci_runtime_pm_get(host);
 	disable_irq(host->irq);
-	spin_lock(&host->lock);
+	spin_lock_irqsave(&host->lock, flags);
 
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 
@@ -1850,10 +1892,13 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 		requires_tuning_nonuhs = true;
 
 	if (((ctrl & SDHCI_CTRL_UHS_MASK) == SDHCI_CTRL_UHS_SDR104) ||
-	    requires_tuning_nonuhs)
+		((ctrl & SDHCI_CTRL_UHS_MASK) == SDHCI_CTRL_HS_SDR200) ||
+			requires_tuning_nonuhs) {
 		ctrl |= SDHCI_CTRL_EXEC_TUNING;
-	else {
-		spin_unlock(&host->lock);
+		if (host->quirks2 & SDHCI_QUIRK2_TUNING_WORK_AROUND)
+			ctrl |= SDHCI_CTRL_TUNED_CLK;
+	} else {
+		spin_unlock_irqrestore(&host->lock, flags);
 		enable_irq(host->irq);
 		sdhci_runtime_pm_put(host);
 		return 0;
@@ -1878,7 +1923,7 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 	 * Issue CMD19 repeatedly till Execute Tuning is set to 0 or the number
 	 * of loops reaches 40 times or a timeout of 150ms occurs.
 	 */
-	timeout = 150;
+	timeout = 75;
 	do {
 		struct mmc_command cmd = {0};
 		struct mmc_request mrq = {NULL};
@@ -1926,7 +1971,7 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 		host->cmd = NULL;
 		host->mrq = NULL;
 
-		spin_unlock(&host->lock);
+		spin_unlock_irqrestore(&host->lock, flags);
 		enable_irq(host->irq);
 
 		/* Wait for Buffer Read Ready interrupt */
@@ -1934,7 +1979,7 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 					(host->tuning_done == 1),
 					msecs_to_jiffies(50));
 		disable_irq(host->irq);
-		spin_lock(&host->lock);
+		spin_lock_irqsave(&host->lock, flags);
 
 		if (!host->tuning_done) {
 			pr_info(DRIVER_NAME ": Timeout waiting for "
@@ -1955,7 +2000,7 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
 		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 		tuning_loop_counter--;
 		timeout--;
-		mdelay(1);
+		mdelay(2);
 	} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
 
 	/*
@@ -1981,6 +2026,9 @@ out:
 	 * flag won't be set, we check this condition before actually starting
 	 * the timer.
 	 */
+	pr_info("%s(%d) %s :tuning_count=0x%08x:HZ=0x%08x\n",
+		__func__,__LINE__,mmc_hostname(host->mmc),host->tuning_count,HZ);
+
 	if (!(host->flags & SDHCI_NEEDS_RETUNING) && host->tuning_count &&
 	    (host->tuning_mode == SDHCI_TUNING_MODE_1)) {
 		host->flags |= SDHCI_USING_RETUNING_TIMER;
@@ -2008,7 +2056,7 @@ out:
 		err = 0;
 
 	sdhci_clear_set_irqs(host, SDHCI_INT_DATA_AVAIL, ier);
-	spin_unlock(&host->lock);
+	spin_unlock_irqrestore(&host->lock, flags);
 	enable_irq(host->irq);
 	sdhci_runtime_pm_put(host);
 
@@ -2209,7 +2257,7 @@ static void sdhci_cmd_irq(struct sdhci_host *host, u32 intmask)
 	BUG_ON(intmask == 0);
 
 	if (!host->cmd) {
-		pr_err("%s: Got command interrupt 0x%08x even "
+		pr_info("%s: Got command interrupt 0x%08x even "
 			"though no command operation was in progress.\n",
 			mmc_hostname(host->mmc), (unsigned)intmask);
 		sdhci_dumpregs(host);
@@ -2565,6 +2613,7 @@ int sdhci_suspend_host(struct sdhci_host *host)
 
 EXPORT_SYMBOL_GPL(sdhci_suspend_host);
 
+#define RESUME_DETECT_COUNT	16
 int sdhci_resume_host(struct sdhci_host *host)
 {
 	int ret;
@@ -2597,6 +2646,10 @@ int sdhci_resume_host(struct sdhci_host *host)
 	}
 
 	ret = mmc_resume_host(host->mmc);
+	if (host->quirks2 & SDHCI_QUIRK2_RESUME_DETECT_RETRY && ret) {
+		sdhci_start_resume_detection(host->mmc, RESUME_DETECT_COUNT);
+		ret = 0;
+	}
 	sdhci_enable_card_detection(host);
 
 	if (host->ops->platform_resume)
@@ -2731,6 +2784,7 @@ int sdhci_add_host(struct sdhci_host *host)
 	u32 max_current_caps;
 	unsigned int ocr_avail;
 	int ret;
+	u32 tuning_count;
 
 	WARN_ON(host == NULL);
 	if (host == NULL)
@@ -2987,8 +3041,17 @@ int sdhci_add_host(struct sdhci_host *host)
 		mmc->caps |= MMC_CAP_DRIVER_TYPE_D;
 
 	/* Initial value for re-tuning timer count */
-	host->tuning_count = (caps[1] & SDHCI_RETUNING_TIMER_COUNT_MASK) >>
+	/* host->tuning_count has been already set dts value. */
+	tuning_count = (caps[1] & SDHCI_RETUNING_TIMER_COUNT_MASK) >>
 			      SDHCI_RETUNING_TIMER_COUNT_SHIFT;
+	if (tuning_count == SDHCI_RETUNING_TIMER_COUNT_OTHER_SOURCE) {
+		/* Get information from other source. */
+	} else if(tuning_count > SDHCI_RETUNING_TIMER_MAXCOUNT){
+		/* Reserved. Do nothing. */
+	} else {
+		/* Update host->tuning_count to caps[1] value. */
+		host->tuning_count = tuning_count;
+	}
 
 	/*
 	 * In case Re-tuning Timer is not disabled, the actual value of
@@ -2997,6 +3060,7 @@ int sdhci_add_host(struct sdhci_host *host)
 	if (host->tuning_count)
 		host->tuning_count = 1 << (host->tuning_count - 1);
 
+	pr_info("%s(%d):tuning_count=0x%08x\n",__func__,__LINE__,host->tuning_count);
 	/* Re-tuning mode supported by the Host Controller */
 	host->tuning_mode = (caps[1] & SDHCI_RETUNING_MODE_MASK) >>
 			     SDHCI_RETUNING_MODE_SHIFT;
@@ -3174,6 +3238,19 @@ int sdhci_add_host(struct sdhci_host *host)
 		host->tuning_timer.function = sdhci_tuning_timer;
 	}
 
+	/*
+	 * Init workqueue.
+	 */
+	if (host->quirks2 & SDHCI_QUIRK2_RESUME_DETECT_RETRY) {
+		host->resume_detect_wq = create_workqueue("sdhci_resume_detection");
+		if (host->resume_detect_wq == NULL) {
+			ret = -ENOMEM;
+			pr_err("%s: Failed to create resume detection workqueue: %d\n",
+			       mmc_hostname(mmc), ret);
+		}
+	}
+	INIT_DELAYED_WORK(&host->resume_detect_work, sdhci_resume_detect_work_func);
+
 	ret = request_irq(host->irq, sdhci_irq, IRQF_SHARED,
 		mmc_hostname(mmc), host);
 	if (ret) {
@@ -3226,6 +3303,8 @@ reset:
 untasklet:
 	tasklet_kill(&host->card_tasklet);
 	tasklet_kill(&host->finish_tasklet);
+	if (host->quirks2 & SDHCI_QUIRK2_RESUME_DETECT_RETRY)
+		destroy_workqueue(host->resume_detect_wq);
 
 	return ret;
 }
@@ -3270,6 +3349,9 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
 
 	tasklet_kill(&host->card_tasklet);
 	tasklet_kill(&host->finish_tasklet);
+
+	if (host->quirks2 & SDHCI_QUIRK2_RESUME_DETECT_RETRY)
+		destroy_workqueue(host->resume_detect_wq);
 
 	if (host->vmmc) {
 		regulator_disable(host->vmmc);

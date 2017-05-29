@@ -5,7 +5,6 @@
 #include <linux/input.h>
 #include <linux/input/mt.h>
 #include <linux/delay.h>
-#include <linux/workqueue.h>
 #include <linux/input/ili210x.h>
 
 #define MAX_TOUCHES		2
@@ -46,7 +45,6 @@ struct ili210x {
 	struct input_dev *input;
 	bool (*get_pendown_state)(void);
 	unsigned int poll_period;
-	struct delayed_work dwork;
 };
 
 static int ili210x_read_reg(struct i2c_client *client, u8 reg, void *buf,
@@ -102,7 +100,7 @@ static void ili210x_report_events(struct input_dev *input,
 	input_mt_report_pointer_emulation(input, false);
 	input_sync(input);
 }
-
+#if 0
 static bool get_pendown_state(const struct ili210x *priv)
 {
 	bool state = false;
@@ -112,11 +110,10 @@ static bool get_pendown_state(const struct ili210x *priv)
 
 	return state;
 }
-
-static void ili210x_work(struct work_struct *work)
+#endif
+static irqreturn_t ili210x_irq(int irq, void *irq_data)
 {
-	struct ili210x *priv = container_of(work, struct ili210x,
-					    dwork.work);
+	struct ili210x *priv = irq_data;
 	struct i2c_client *client = priv->client;
 	struct touchdata touchdata;
 	int error;
@@ -126,22 +123,14 @@ static void ili210x_work(struct work_struct *work)
 	if (error) {
 		dev_err(&client->dev,
 			"Unable to get touchdata, err = %d\n", error);
-		return;
+		goto bail;
 	}
+
+	//pr_err("%s: %d\n", __func__, touchdata.status);
 
 	ili210x_report_events(priv->input, &touchdata);
 
-	if ((touchdata.status & 0xf3) || get_pendown_state(priv))
-		schedule_delayed_work(&priv->dwork,
-				      msecs_to_jiffies(priv->poll_period));
-}
-
-static irqreturn_t ili210x_irq(int irq, void *irq_data)
-{
-	struct ili210x *priv = irq_data;
-
-	schedule_delayed_work(&priv->dwork, 0);
-
+bail:
 	return IRQ_HANDLED;
 }
 
@@ -185,6 +174,7 @@ static int ili210x_i2c_probe(struct i2c_client *client,
 {
 	struct device *dev = &client->dev;
 	const struct ili210x_platform_data *pdata = dev->platform_data;
+	struct ili210x_platform_data default_pdata;
 	struct ili210x *priv;
 	struct input_dev *input;
 	struct panel_info panel;
@@ -195,8 +185,10 @@ static int ili210x_i2c_probe(struct i2c_client *client,
 	dev_dbg(dev, "Probing for ILI210X I2C Touschreen driver");
 
 	if (!pdata) {
-		dev_err(dev, "No platform data!\n");
-		return -EINVAL;
+		pdata = &default_pdata;
+		default_pdata.irq_flags = IRQF_TRIGGER_HIGH | IRQF_ONESHOT;
+		default_pdata.poll_period = 0; /* default */
+		default_pdata.get_pendown_state = NULL;
 	}
 
 	if (client->irq <= 0) {
@@ -235,7 +227,6 @@ static int ili210x_i2c_probe(struct i2c_client *client,
 	priv->input = input;
 	priv->get_pendown_state = pdata->get_pendown_state;
 	priv->poll_period = pdata->poll_period ? : DEFAULT_POLL_PERIOD;
-	INIT_DELAYED_WORK(&priv->dwork, ili210x_work);
 
 	/* Setup input device */
 	input->name = "ILI210x Touchscreen";
@@ -246,6 +237,7 @@ static int ili210x_i2c_probe(struct i2c_client *client,
 	__set_bit(EV_KEY, input->evbit);
 	__set_bit(EV_ABS, input->evbit);
 	__set_bit(BTN_TOUCH, input->keybit);
+	__set_bit(INPUT_PROP_DIRECT, input->propbit);
 
 	/* Single touch */
 	input_set_abs_params(input, ABS_X, 0, xmax, 0, 0);
@@ -259,11 +251,13 @@ static int ili210x_i2c_probe(struct i2c_client *client,
 	input_set_drvdata(input, priv);
 	i2c_set_clientdata(client, priv);
 
-	error = request_irq(client->irq, ili210x_irq, pdata->irq_flags,
-			    client->name, priv);
-	if (error) {
-		dev_err(dev, "Unable to request touchscreen IRQ, err: %d\n",
-			error);
+	error = devm_request_threaded_irq(
+		&client->dev, client->irq, NULL, ili210x_irq,
+			pdata->irq_flags | IRQF_ONESHOT | IRQF_SHARED,
+							 client->name, priv);
+	if (error < 0) {
+		dev_err(&client->dev, "Unable to request irq %d\n",
+								client->irq);
 		goto err_free_mem;
 	}
 
@@ -282,7 +276,7 @@ static int ili210x_i2c_probe(struct i2c_client *client,
 
 	device_init_wakeup(&client->dev, 1);
 
-	dev_dbg(dev,
+	dev_info(dev,
 		"ILI210x initialized (IRQ: %d), firmware version %d.%d.%d",
 		client->irq, firmware.id, firmware.major, firmware.minor);
 
@@ -291,7 +285,6 @@ static int ili210x_i2c_probe(struct i2c_client *client,
 err_remove_sysfs:
 	sysfs_remove_group(&dev->kobj, &ili210x_attr_group);
 err_free_irq:
-	free_irq(client->irq, priv);
 err_free_mem:
 	input_free_device(input);
 	kfree(priv);
@@ -304,7 +297,6 @@ static int ili210x_i2c_remove(struct i2c_client *client)
 
 	sysfs_remove_group(&client->dev.kobj, &ili210x_attr_group);
 	free_irq(priv->client->irq, priv);
-	cancel_delayed_work_sync(&priv->dwork);
 	input_unregister_device(priv->input);
 	kfree(priv);
 
@@ -342,11 +334,17 @@ static const struct i2c_device_id ili210x_i2c_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, ili210x_i2c_id);
 
+static const struct of_device_id ili210_dt_ids[] = {
+	{ .compatible = "ili,ili210x" },
+	{ /* sentinel */ }
+};
+
 static struct i2c_driver ili210x_ts_driver = {
 	.driver = {
 		.name = "ili210x_i2c",
 		.owner = THIS_MODULE,
 		.pm = &ili210x_i2c_pm,
+		.of_match_table = ili210_dt_ids,
 	},
 	.id_table = ili210x_i2c_id,
 	.probe = ili210x_i2c_probe,
@@ -358,3 +356,4 @@ module_i2c_driver(ili210x_ts_driver);
 MODULE_AUTHOR("Olivier Sobrie <olivier@sobrie.be>");
 MODULE_DESCRIPTION("ILI210X I2C Touchscreen Driver");
 MODULE_LICENSE("GPL");
+MODULE_ALIAS("*ili210*");

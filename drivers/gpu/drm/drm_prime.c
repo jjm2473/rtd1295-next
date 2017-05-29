@@ -63,6 +63,7 @@ struct drm_prime_member {
 	uint32_t handle;
 };
 static int drm_prime_add_buf_handle(struct drm_prime_file_private *prime_fpriv, struct dma_buf *dma_buf, uint32_t handle);
+static struct dma_buf *drm_prime_lookup_buf_by_handle(struct drm_prime_file_private *prime_fpriv, uint32_t handle);
 
 static struct sg_table *drm_gem_map_dma_buf(struct dma_buf_attachment *attach,
 		enum dma_data_direction dir)
@@ -194,12 +195,44 @@ struct dma_buf *drm_gem_prime_export(struct drm_device *dev,
 }
 EXPORT_SYMBOL(drm_gem_prime_export);
 
+static struct dma_buf *export_and_register_object(struct drm_device *dev,
+						  struct drm_gem_object *obj,
+						  uint32_t flags)
+{
+	struct dma_buf *dmabuf;
+
+	/* prevent races with concurrent gem_close. */
+	if (atomic_read(&obj->handle_count) == 0) {
+		dmabuf = ERR_PTR(-ENOENT);
+		return dmabuf;
+	}
+
+	dmabuf = dev->driver->gem_prime_export(dev, obj, flags);
+	if (IS_ERR(dmabuf)) {
+		/* normally the created dma-buf takes ownership of the ref,
+		 * but if that fails then drop the ref
+		 */
+		return dmabuf;
+	}
+
+	/*
+	 * Note that callers do not need to clean up the export cache
+	 * since the check for obj->handle_count guarantees that someone
+	 * will clean it up.
+	 */
+	obj->export_dma_buf = dmabuf;
+	get_dma_buf(obj->export_dma_buf);
+	/* Grab a new ref since the callers is now used by the dma-buf */
+	drm_gem_object_reference(obj);
+
+	return dmabuf;
+}
+
 int drm_gem_prime_handle_to_fd(struct drm_device *dev,
 		struct drm_file *file_priv, uint32_t handle, uint32_t flags,
 		int *prime_fd)
 {
 	struct drm_gem_object *obj;
-	void *buf;
 	int ret = 0;
 	struct dma_buf *dmabuf;
 
@@ -208,42 +241,60 @@ int drm_gem_prime_handle_to_fd(struct drm_device *dev,
 		return -ENOENT;
 
 	mutex_lock(&file_priv->prime.lock);
+	dmabuf = drm_prime_lookup_buf_by_handle(&file_priv->prime, handle);
+	if (dmabuf) {
+		get_dma_buf(dmabuf);
+		goto out_have_handle;
+	}
+
 	/* re-export the original imported object */
+	spin_lock(&dev->object_name_lock);
 	if (obj->import_attach) {
+		/*
+		 * XXX: obj->import_attach should be protected with dev->object_name_lock,
+		 *      but we do not care about it because we do not use obj->import_attach.
+		 *      Well, we hold dev->object_name_lock in this function, but it is
+		 *      ineffective to protect obj->import_attach.
+		 *      (see drm_gem_prime_import, fdb_gem_prime_import and upstream kernel code)
+		 */
+
 		dmabuf = obj->import_attach->dmabuf;
+		get_dma_buf(dmabuf);
 		goto out_have_obj;
 	}
 
 	if (obj->export_dma_buf) {
 		dmabuf = obj->export_dma_buf;
+		get_dma_buf(dmabuf);
 		goto out_have_obj;
 	}
 
-	buf = dev->driver->gem_prime_export(dev, obj, flags);
-	if (IS_ERR(buf)) {
+	dmabuf = export_and_register_object(dev, obj, flags);
+	if (IS_ERR(dmabuf)) {
 		/* normally the created dma-buf takes ownership of the ref,
 		 * but if that fails then drop the ref
 		 */
-		ret = PTR_ERR(buf);
+		ret = PTR_ERR(dmabuf);
+		spin_unlock(&dev->object_name_lock);
 		goto out;
 	}
-	obj->export_dma_buf = buf;
 
+out_have_obj:
 	/* if we've exported this buffer the cheat and add it to the import list
 	 * so we get the correct handle back
 	 */
 	ret = drm_prime_add_buf_handle(&file_priv->prime,
 				       obj->export_dma_buf, handle);
+	spin_unlock(&dev->object_name_lock);
 	if (ret)
-		goto out;
+		goto fail_put_dmabuf;
 
-	*prime_fd = dma_buf_fd(buf, flags);
-	mutex_unlock(&file_priv->prime.lock);
-	return 0;
-
-out_have_obj:
-	get_dma_buf(dmabuf);
+out_have_handle:
 	*prime_fd = dma_buf_fd(dmabuf, flags);
+	goto out;
+
+fail_put_dmabuf:
+	dma_buf_put(dmabuf);
 out:
 	drm_gem_object_unreference_unlocked(obj);
 	mutex_unlock(&file_priv->prime.lock);
@@ -505,6 +556,19 @@ static int drm_prime_add_buf_handle(struct drm_prime_file_private *prime_fpriv, 
 	member->handle = handle;
 	list_add(&member->entry, &prime_fpriv->head);
 	return 0;
+}
+
+static struct dma_buf *drm_prime_lookup_buf_by_handle(struct drm_prime_file_private *prime_fpriv,
+						      uint32_t handle)
+{
+	struct drm_prime_member *member;
+
+	list_for_each_entry(member, &prime_fpriv->head, entry) {
+		if (member->handle == handle)
+			return member->dma_buf;
+	}
+
+	return NULL;
 }
 
 int drm_prime_lookup_buf_handle(struct drm_prime_file_private *prime_fpriv, struct dma_buf *dma_buf, uint32_t *handle)

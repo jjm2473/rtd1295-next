@@ -1,0 +1,517 @@
+/*
+ * Copyright (C) 2013-2015 Linaro, LTD for FUJITSU SEMICONDUCTOR LIMITED
+ * Copyright (C) 2015-2016 Socionext Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/ {
+	compatible = "fujitsu,mb8ac0300";
+	interrupt-parent = <&gic>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <0>;
+			next-level-cache = <&L2>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <1>;
+			next-level-cache = <&L2>;
+		};
+	};
+
+	clocks {
+		crg11_main: crg11_main {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_mux";
+			index = <0>; /* Main */
+			clock_rate = <25000000>;
+			phys_addr = <0xfff60000>;
+		};
+
+		crg11_dmc: crg11_dmc {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_mux";
+			index = <1>; /* DMC */
+			clock_rate = <25000000>;
+			phys_addr = <0xfff4b000>;
+		};
+
+		crg11_gmac: crg11_gmac {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_mux";
+			index = <2>; /* GMAC */
+			clock_rate = <25000000>;
+			phys_addr = <0xfff4d000>;
+		};
+
+		clk_main_2_0: clk_main_2_0 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x2>;
+			port = <0x0>;
+		};
+
+		clk_main_2_7: clk_main_2_7 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x2>;
+			port = <0x7>;
+		};
+
+		clk_main_3_0: clk_main_3_0 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x3>;
+			port = <0x0>;
+		};
+
+		clk_main_3_1: clk_main_3_1 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x3>;
+			port = <0x1>;
+		};
+
+		clk_main_3_2: clk_main_3_2 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x3>;
+			port = <0x2>;
+		};
+
+		clk_main_3_3: clk_main_3_3 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x3>;
+			port = <0x3>;
+		};
+
+		clk_main_4_3: clk_main_4_3 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x4>;
+			port = <0x3>;
+		};
+
+		clk_main_6_0: clk_main_6_0 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x6>;
+			port = <0x0>;
+		};
+
+		clk_main_6_1: clk_main_6_1 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x6>;
+			port = <0x1>;
+		};
+
+		clk_main_7_3: clk_main_7_3 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x7>;
+			port = <0x3>;
+		};
+
+		clk_main_7_6: clk_main_7_6 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x7>;
+			port = <0x6>;
+		};
+
+		clk_main_8_3: clk_main_8_3 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0x8>;
+			port = <0x3>;
+		};
+
+
+		clk_main_c_0: clk_main_c_0 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0xc>;
+			port = <0x0>;
+		};
+
+		clk_main_c_2: clk_main_c_2 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0xc>;
+			port = <0x2>;
+		};
+
+		clk_main_e_2: clk_main_e_2 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0xe>;
+			port = <0x2>;
+		};
+
+		clk_main_e_5: clk_main_e_5 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0xe>;
+			port = <0x5>;
+		};
+
+		clk_main_e_6: clk_main_e_6 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <0>; /* Main */
+			domain = <0xe>;
+			port = <0x6>;
+		};
+
+		clk_dmc_6_0: clk_dmc_6_0 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <1>; /* DMC */
+			domain = <0x6>;
+			port = <0x0>;
+		};
+		clk_dmc_6_1: clk_dmc_6_1 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <1>; /* DMC */
+			domain = <0x6>;
+			port = <0x1>;
+		};
+		clk_gmac_0_0: clk_gmac_0_0 {
+			#clock-cells = <0>;
+			compatible = "mb8ac0300,crg11_gate";
+			cntrlr = <2>; /* GMAC */
+			domain = <0x0>;
+			port = <0x0>;
+		};
+	};
+
+	mrbc-controller@0xfff68000 {
+		compatible = "fujitsu,mb8ac0300-mrbc";
+		reg = <0xfff68000 0x1000>;
+	};
+
+	gic: interrupt-controller@f8100100 {
+		compatible = "arm,cortex-a9-gic";
+		interrupt-controller;
+		#interrupt-cells = <3>;
+		reg = <0xf8101000 0x1000>,
+		      <0xf8100100 0x0100>;
+	};
+
+	exiu: interrupt-controller@fff6f000 {
+		compatible = "fujitsu,mb8ac0300-exiu";
+		reg = <0xfff6f000 0x1000>;
+		exiu_irq_base0 = <56>;
+		exiu_irq_base1 = <144>;
+	};
+
+	L2: l2-cache-controller@f8102000 {
+		compatible = "arm,pl310-cache";
+		reg = <0xf8102000 0x1000>;
+		interrupts = <0 8 4>;
+		cache-unified;
+		cache-level = <2>;
+	};
+
+	timer@f8100600 {
+		#clock-cells = <1>;
+		compatible = "arm,cortex-a9-twd-timer";
+		reg = <0xf8100600 0x20>;
+		interrupts = <1 13 0x304>;
+		clocks = <&clk_main_8_3>;
+	};
+
+	timer@fff6d000 {
+		#clock-cells = <1>;
+		compatible = "arm,sp804", "arm,primecell";
+		reg = <0xfff6d000 0x1000>;
+		interrupts = <0 9 4>,
+			     <0 10 4>;
+		clocks = <&clk_main_e_2>;
+	};
+
+	timer@f8100200 {
+		compatible = "arm,cortex-a9-global-timer";
+		reg = <0xf8100200 0x100>;
+		interrupts = <1 11 0x304>;
+		clocks = <&clk_main_8_3>;
+	};
+
+	ipcu@fff43000 {
+		#clock-cells = <1>;
+		compatible = "fujitsu,ipcu";
+		mboxes = <8>;
+		reg = <0xfff43000 0x960>;
+		interrupts = <0 40 4>,
+			<0 41 4>,
+			<0 42 4>,
+			<0 43 4>,
+			<0 44 4>,
+			<0 45 4>,
+			<0 46 4>,
+			<0 47 4>;
+		clocks = <&clk_main_7_3>;
+	};
+
+	/*
+	 * The soc node represents the soc top level view. It is uses for IPs
+	 * that are not memory mapped in the MPU view or for the MPU itself.
+	 */
+	soc {
+		compatible = "fujitsu,mb8ac0300-infra";
+		mpu {
+			compatible = "fujitsu,mb8ac0300-mpu";
+		};
+
+		m3 {
+			compatible = "fujitsu,mb8ac0300-m3";
+		};
+	};
+
+	uart0: serial@0xfff6b000 {
+		#clock-cells = <1>;
+		compatible = "snps,dw-apb-uart";
+		reg = <0xfff6b000 0x100>;
+		interrupts = <0 12 0x4>;
+		clock-frequency = <48000000>;
+		reg-io-width = <4>;
+		reg-shift = <2>;
+		clocks = <&clk_main_6_0>;
+		clock-names = "sclk";
+	};
+
+	uart1: serial@0xfff6c000 {
+		#clock-cells = <1>;
+		compatible = "snps,dw-apb-uart";
+		reg = <0xfff6c000 0x100>;
+		interrupts = <0 13 0x4>;
+		clock-frequency = <48000000>;
+		reg-io-width = <4>;
+		reg-shift = <2>;
+		clocks = <&clk_main_6_0>;
+		clock-names = "sclk";
+	};
+
+	hdmac0: hdmac0_cm3 {
+		compatible = "fujitsu,mb8ac0300-hdmac";
+		reg = <0xfff45000 0x1000>;
+		interrupts = <0 100 0x4>,
+			     <0 101 0x4>,
+			     <0 102 0x4>,
+			     <0 103 0x4>;
+		channels = <4>;
+		chip = <0>;
+		rotation = <1>;
+		clocks = <&clk_main_3_3>;
+	};
+
+	hdmac1: hdmac1_msio {
+		compatible = "fujitsu,mb8ac0300-hdmac";
+		reg = <0xf4003000 0x1000>;
+		interrupts = <0 108 0x4>,
+			     <0 109 0x4>;
+		channels = <2>;
+		chip = <1>;
+		rotation = <1>;
+		clocks = <&clk_main_7_6>;
+	};
+
+	xdmac0: xdmac0 {
+		compatible = "fujitsu,mb8ac0300-xdmac";
+		reg = <0xfff42000 0x1000>;
+		channels = <2>;
+		interrupts = <0 93 0x4>,
+			     <0 94 0x4>;
+		low_power = <1>;
+		rotation = <1>;
+		clocks = <&clk_main_2_7>;
+	};
+
+	i2s0: f_saif {
+		compatible = "fujitsu,f_saif";
+		reg = <0xfff44000 0x1000>;
+		interrupts = <0 90 0x4>;
+		clocks = <&clk_main_7_6>;
+	};
+
+	pcm0: mb8ac0300_pcm@0 {
+		compatible = "fujitsu,mb8ac0300_pcm";
+	};
+
+	/* for Xorg: 24bpp, DRM */
+
+	fdb0: fdb.0 {
+		compatible = "fujitsu,f_fdb",
+			     "simple-bus";
+		id = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		videophy0: dpi@0 {
+			compatible = "fujitsu,f_mb8ac0300_dpi";
+			sources = <1>; /* bitfield of fbs can be driven by */
+		};
+
+		/* set SW7.8 ON to see fb1 on dvi */
+
+		videophy1: dvi@1 {
+			compatible = "fujitsu,f_mb8ac0300_dvi";
+			sources = <2>; /* bitfield of fbs can be driven by */
+		};
+
+
+		fb0: framebuffer@f0100400 {
+			compatible = "dmp,picapdc-fb";
+			reg = <0xf0100400 0x100>;
+			interrupts = <0 83 0x4>;
+			id = <0>;
+			simple = <0>;
+			mode = "800x430x24bpp";
+		};
+
+		fb1: framebuffer@f0100500 {
+			compatible = "dmp,picapdc-fb";
+			reg = <0xf0100500 0x100>;
+			interrupts = <0 84 0x4>;
+			id = <1>;
+			simple = <0>;
+			mode = "800x480x24bpp";
+		};
+
+		fdbdrm0: fdbdrm.0 {
+			status = "okay";
+			compatible = "fujitsu,fdb-drm";
+			bind = <&fb0>, <&fb1>;
+			registrations = <4>; /* wait for this many children */
+			default-bpp = <24>; /* set to 16 if 16-bit LCD mode selected */
+		};
+	};
+
+	touch: tpif.0 {
+		#clock-cells = <1>;
+		compatible = "fujitsu,mb8ac0300-tpif";
+		reg = <0xfff74000 0x1000>;
+		interrupts = <0 87 0x4>;
+		clocks = <&clk_dmc_6_0>;
+		clock-names = "tpif";
+	};
+
+	sdhci: sdhci.0 {
+		compatible = "fujitsu,f_sdh30";
+		reg = <0xf4002000 0x1000>;
+		interrupts = <0 70 0x4>,
+			     <0 71 0x4>;
+		/*
+		 * bitmap of EVB board revisions lacking 1.8V capability
+		 * b0 = rev 0, b1 = rev 1, etc
+		 */
+		revs-no-1v8 = <0xFFFFFFFF>;
+		inverted-write-protect;
+		clocks = <&clk_main_3_2>, <&clk_main_e_5>, <&clk_main_e_6>;
+		clock-names = "h_clk", "cd_clk", "to_clk";
+	};
+
+	ethernet: fgmac4 {
+		compatible = "fujitsu,fgmac4";
+		reg = <0xf4000000 0x2000>;
+		interrupts = <0 73 0x4>,
+			     <0 72 0x4>,
+			     <0 74 0x4>;
+		default_mac = < 0xa4 0x17 0x31 0x02 0x00 0xed >;
+		clocks = <&clk_main_3_0>, <&clk_gmac_0_0>;
+		clock-names = "h_clk", "osc_clk";
+	};
+
+	ahci: fahci.0 {
+		compatible = "snps,spear-ahci";
+		reg = <0xf2022000 0x1000>;
+		interrupts = <0 68 0x4>;
+		clocks = <&clk_main_c_0>;
+	};
+
+	otg2: f_usb20hdc_otg {
+		compatible = "fujitsu,f_usb20hdc_otg";
+		reg = <0xf4010000 0x10000>;
+		interrupts = <0 75 0x4>;
+		dma_dreq = <0x10000000 0x11000000>;
+		hdmac_channel = <8 9>;
+		clocks = <&clk_main_3_1>, <&clk_main_2_0>;
+		clock-names = "h_clk", "p_cry_clk";
+	};
+
+	udc3: usb30udc {
+		compatible = "fujitsu,f_usb30_udc";
+		reg = <0xf2020000 0x2000>;
+		interrupts = <0 64 0x4>, /* hs_irq */
+			     <0 65 0x4>, /* ss_irq */
+			     <0 66 0x4>, /* dmac_in_irq */
+			     <0 67 0x4>, /* dmac_out_irq */
+			     <0 30 0x4>, /* vbus_on_hwirq */
+			     <0 32 0x4>; /* vbus_off_hwirq */
+		vbus_on_hwirq = <62>;
+		vbus_off_hwirq = <64>;
+		clocks = <&clk_main_c_2>, <&clk_main_3_2>;
+		clock-names = "usb3_clk", "h_clk";
+	};
+
+	gpio0: mb8ac0300_gpio0 {
+		compatible = "fujitsu,mb8ac0300-gpio";
+		reg = <0xfff69000 0x1000>;
+		gpio_base = <0>;
+		irq_base = <112>; // EXTINT16
+		irq_gpio_min = <16>;
+		irq_gpio_max = <23>;
+			/* 7-0,   15-8,  23-16, 31-24 */
+		directions = <0x00 0xFF 0x00 0xC5>;
+		values =     <0x00 0x00 0x00 0x00>;
+		functions =  <0x00 0x00 0x20 0xF8>;
+		clocks = <&clk_main_6_0>;
+	};
+
+	gpio1: mb8ac0300_gpio1 {
+		compatible = "fujitsu,mb8ac0300-gpio";
+		reg = <0xfff6a000 0x1000>;
+		gpio_base = <32>;
+		irq_base = <120>; // EXTINT24
+		irq_gpio_min = <40>;
+		irq_gpio_max = <47>;
+			/* 39-32,  47-40,  55-48, 63-56 */
+		directions = <0xF0 0xFF 0xFF 0xFF>;
+		values =     <0x00 0x00 0x00 0x00>;
+		functions =  <0xFF 0xFF 0xFF 0xFF>;
+		clocks = <&clk_main_6_0>;
+	};
+};

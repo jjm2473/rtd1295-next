@@ -127,6 +127,7 @@ static int ehci_platform_probe(struct platform_device *dev)
 		goto err_put_hcd;
 
 	platform_set_drvdata(dev, hcd);
+	device_set_wakeup_capable(&dev->dev, 1);
 
 	return err;
 

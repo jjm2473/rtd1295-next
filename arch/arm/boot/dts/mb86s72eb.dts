@@ -1,0 +1,381 @@
+/*
+ * Copyright (C) 2014-2015 Linaro, LTD for FUJITSU SEMICONDUCTOR LIMITED
+ * Copyright (C) 2015-2016 Socionext Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/thermal/thermal.h>
+
+#include "mb86s72.dtsi"
+
+/ {
+	model = "Socionext MB86S72 EVB";
+	compatible = "fujitsu,mb86s72eb","fujitsu,mb86s72";
+
+	memory {
+		device_type = "memory";
+		reg = <0 0x80000000 0x40000000>;
+	};
+
+	chosen {
+		bootargs = "shm_offset=2048 loglevel=4 console=ttyAMA0,115200 root=/dev/mmcblk1p1 rootfstype=ext4 rootwait rw pcie_ports=native ";
+
+		linux,initrd-start = <0x88000000>;
+		linux,initrd-end =   <0x88800000>;
+		/* Backward compatibility for 2016.03-1-1 */
+		/* linux,initrd-start = <0xc0000000>; */
+		/* linux,initrd-end =   <0xc0800000>; */
+	};
+
+	gpio0: mb86s70_gpio0 {
+		compatible = "fujitsu,mb86s70-gpio";
+		reg = <0 0x31000000 0x10000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		clocks = <&clk_alw_5_8>;
+		base = <0>;
+		resume_function_enabled = <24>, <25> , <26>, <27>, <28>, <29>,
+			<30>, <31>;
+		power-domains = <&power 1>;
+	};
+	gpio1: mb86s70_gpio1 {
+		compatible = "fujitsu,mb86s70-gpio";
+		reg = <0 0x31010000 0x10000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		clocks = <&clk_alw_5_8>;
+		base = <32>;
+		resume_function_enabled = <36>, <37>, <38>, <39>;
+		power-domains = <&power 1>;
+       };
+
+	gpio-keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		home {
+			label = "Home";
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			linux,code = <102>;
+			gpio-key;
+		};
+		power {
+			label = "Power";
+			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+			linux,code = <28>;
+			gpio-key;
+		};
+		up {
+			label = "Up";
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			linux,code = <103>;
+			gpio-key;
+		};
+		down {
+			label = "Down";
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			linux,code = <108>;
+			gpio-key;
+		};
+	};
+
+	videomodes@0 {
+		compatible = "video-modes";
+		mode0: mode@0 {
+			mode  = "800x480x32bpp";
+			hactive = <800>; /* htotal 928 (+128) */
+			vactive = <480>; /* Vtotal 525 (+95) */
+			hback-porch = <96>;
+			hfront-porch = <1>;
+			hsync-len = <31>;
+			vback-porch = <37>;
+			vfront-porch = <55>;
+			vsync-len = <3>;
+			flags = <0x25>; /* h low, v low, de high */
+			clock = <32800>; /* 32.8MHz link clock */
+			bpp = <32>;
+			width-mm = <163>;
+			height-mm = <92>;
+			/* scanout-rotation = <0>; */
+			red_offset      = <16>;
+			red_length      = <8>;
+			green_offset    = <8>;
+			green_length    = <8>;
+			blue_offset     = <0>;
+			blue_length     = <8>;
+			alpha_offset    = <0>;
+			alpha_length    = <0>;
+		};
+
+		mode1: mode@1 {
+			mode  = "800x480x16bpp";
+			hactive = <800>; /* htotal 928 (+128) */
+			vactive = <480>; /* Vtotal 525 (+95) */
+			hback-porch = <96>;
+			hfront-porch = <1>;
+			hsync-len = <31>;
+			vback-porch = <37>;
+			vfront-porch = <55>;
+			vsync-len = <3>;
+			flags = <0x25>; /* h low, v low, de high */
+			clock = <32800>; /* 32.8MHz link clock */
+			bpp = <16>;
+			width-mm = <163>;
+			height-mm = <92>;
+			/* scanout-rotation = <0>; */
+                        red_offset      = <11>;
+                        red_length      = <5>;
+                        green_offset    = <5>;
+                        green_length    = <6>;
+                        blue_offset     = <0>;
+                        blue_length     = <5>;
+                        alpha_offset    = <0>;
+                        alpha_length    = <0>;
+		}; 
+	};
+
+	i2c0 {
+		compatible = "fujitsu,f_i2c";
+		reg = <0 0x31200000 0x10000>;
+		interrupts = <0 312 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <100000>;
+		clocks = <&clk_alw_5_8>;
+		power-domains = <&power 1>;
+
+		wm8973: wm8973@1a {
+                        compatible = "wolfson,wm8973";
+                        reg = <0x1a>;
+                };
+
+		/* default to fan always on high, even during suspend */
+		amc6821: amc6821@2e {
+			status = "ok";
+                        compatible = "ti,amc6821";
+                        reg = <0x2e>;
+			low_temp = <0x10>; // unreasonably low target temp == fan always on high
+			pwminv = <1>;      //  1, inverted PWM output
+			fan_char = <0x25>;
+                };
+		/* alternative fan profile: fan responds to temperature + off in suspend */
+		amc6821a: amc6821a@2e {
+			status = "disabled";
+                        compatible = "ti,amc6821";
+                        reg = <0x2e>;
+			low_temp = <0x41>; // 32 degrees C
+			pwminv = <1>;      //  1, inverted PWM output
+			fan_char = <0x25>;
+			off-in-suspend; // stop fan during suspend
+                };
+
+	};
+
+	i2c1 {
+		compatible = "fujitsu,f_i2c";
+
+		reg = <0 0x31210000 0x10000>;
+		interrupts = <0 313 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clk_alw_5_8>;
+		clock-frequency = <100000>;
+		power-domains = <&power 1>;
+
+		touch: ili210x@41 {
+			compatible = "ili,ili210x", "ili210x";
+			reg = <0x41>;
+			interrupts = <0 102 0x4>; /* PD54 - EXTINT22 shared */
+		};
+
+		backlight: backlight@42 {
+			compatible = "apnet,b01-bl";
+			reg = <0x42>;
+			interrupts = <0 102 0x4>; /* PD54 - EXTINT22 shared */
+			key1 = <1>; /* KEY_ESC */
+			key2 = <59>; /* KEY_F1 */
+			key3 = <240>;  /* KEY_UNKNOWN */
+		};
+
+	};
+
+	hsspi: hsspi.0 {
+		compatible = "fujitsu,mb86s7x-hsspi";
+		reg = <0 0x30010000 0x1000>,
+		      <0 0x48000000 0x1000000>;
+		interrupts = <0 361 0x4>,
+			     <0 360 0x4>,
+			     <0 362 0x4>;
+		mode = <1>; // HS_SPI_DIRECT_MODE
+		read_operation = <1>; // HS_SPI_NORMAL_READ
+		write_operation = <5>; // HS_SPI_NORMAL_WRITE
+		active_clk_edges;
+		bank_size = <0x01000000>;	// 16MB flash bank
+		num_chipselect = <2>;
+		addr_width = <3>;
+		dma_rx_dreq = <0x800000>; // XDDES_TF_DREQ6 !!! GUESSED
+		dma_tx_dreq = <0x900000>; // XDDES_TF_DREQ7 !!! GUESSED
+		dma_channel = <0>;
+		sync_on = <1>;
+		clock = <0>; // HS_SPI_HCLK
+		clocks = <&clk_alw_1_8>, <&clk_main_6_8>;
+		clock-names = "iHCLK", "iPCLK";
+		#address-cells = <1>;
+	        #size-cells = <0>;
+
+		flash@0 {
+			compatible = "n25q512a";
+			spi-max-frequency = <62500000>;
+			spi-rx-bus-width = <4>;
+			spi-tx-bus-width = <4>;
+			reg = <0>;
+			spi-cpha;
+			spi-cpol;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			spipart0@0 {
+				label = "scb-spi-firmware";
+				reg = <0 0x200000>;
+			};
+			spipart1@1 {
+				label = "spi-romfs";
+				reg = <0x200000 0x100000>;
+			};
+			spipart2@2 {
+				label = "spi-user0";
+				reg = <0x300000 0xd00000>;
+			};
+		};
+
+		flash@1 {
+			compatible = "n25q512a";
+			spi-max-frequency = <62500000>;
+			spi-rx-bus-width = <4>;
+			spi-tx-bus-width = <4>;
+			spi-cpha;
+			spi-cpol;
+			reg = <1>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			spipart0@0 {
+				label = "spi-user1";
+				reg = <0 0x1000000>;
+			};
+		};
+	};
+
+	gpio-flash@xcs4-gpio {
+		status = "disabled";
+		compatible = "gpio-control-nor";
+		reg = <0 0x2a4d0000 0x10000>; /* prmux */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		bank-width = <2>;
+		device-width = <2>;
+		power-domains = <&power 1>;
+
+		gpios = <&gpio0 30 0>,	/* rdy PD30 */
+			 <&gpio0 8 0>, 	/* nce */
+			 <&gpio0 10 0>, 	/* noe */
+			 <&gpio0 13 0>, 	/* nwe */
+
+			/* 16 data */
+
+			<&gpio0 14 0>,
+			<&gpio0 15 0>,
+			<&gpio0 16 0>,
+			<&gpio0 17 0>,
+			<&gpio0 18 0>,
+			<&gpio0 19 0>,
+			<&gpio0 20 0>,
+			<&gpio0 21 0>,
+			<&gpio0 22 0>,
+			<&gpio0 23 0>,
+			<&gpio0 24 0>,
+			<&gpio0 25 0>,
+			<&gpio0 26 0>,
+			<&gpio0 27 0>,
+			<&gpio0 28 0>,
+			<&gpio0 29 0>,
+
+			/* as many address as we have (22) */
+
+			<&gpio1 0 0>,
+			<&gpio1 1 0>,
+			<&gpio1 2 0>,
+			<&gpio1 3 0>,
+			<&gpio1 4 0>,
+			<&gpio1 5 0>,
+			<&gpio1 6 0>,
+			<&gpio1 7 0>,
+			<&gpio1 8 0>,
+			<&gpio1 9 0>,
+			<&gpio1 10 0>,
+			<&gpio1 11 0>,
+			<&gpio1 12 0>,
+			<&gpio1 13 0>,
+			<&gpio1 14 0>,
+			<&gpio1 15 0>,
+			<&gpio1 16 0>,
+			<&gpio1 17 0>,
+			<&gpio1 18 0>,
+			<&gpio1 19 0>,
+			<&gpio1 20 0>,
+			<&gpio1 21 0>;
+
+		firmware@0 { /* 2MByte firmware region */
+			label = "firmware";
+			reg = <0 0x200000>;
+		};
+
+		romfs@200000 { /* only 8MByte is addressable by gpio */
+			label = "romfs";
+			reg = <0x200000 0x5e0000>;
+		};
+		
+	};
+
+	flash@XSC4 {
+		status = "disabled";
+		compatible = "spansion,s29gl128p", "cfi-flash";
+		reg = <0 0x40000000 0x01000000>;
+		bank-width = <2>;
+		device-width = <2>;
+		power-domains = <&power 1>;
+	};
+
+	/* Enable only UART0 of S73-evb */
+	serial@0x31040000 {
+		status = "okay";
+	};
+	serial@0x31050000 {
+		status = "disabled";
+	};
+	serial@0x31060000 {
+		status = "disabled";
+	};
+
+	timer0: timer0@31080000 {
+		#clock-cells = <1>;
+		compatible = "arm,sp804";
+		reg = <0 0x31080000 0x10000>;
+		interrupts = <0 324 4>,
+			     <0 325 4>;
+		clocks = <&clk_alw_6_8>;
+	};
+
+	timer {
+		compatible = "arm,armv7-timer";
+		clock-frequency = <125000000>;
+		interrupts = <1 13 0xf08>, /* PHYS Secure */
+			     <1 14 0xf08>; /* PHYS Non-Secure */
+	};
+};

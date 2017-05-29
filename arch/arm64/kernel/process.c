@@ -20,6 +20,7 @@
 
 #include <stdarg.h>
 
+#include <linux/compat.h>
 #include <linux/export.h>
 #include <linux/sched.h>
 #include <linux/kernel.h>
@@ -33,6 +34,7 @@
 #include <linux/kallsyms.h>
 #include <linux/init.h>
 #include <linux/cpu.h>
+#include <linux/cpuidle.h>
 #include <linux/elfcore.h>
 #include <linux/pm.h>
 #include <linux/tick.h>
@@ -71,8 +73,17 @@ static void setup_restart(void)
 
 void soft_restart(unsigned long addr)
 {
+	typedef void (*phys_reset_t)(unsigned long);
+	phys_reset_t phys_reset;
+
 	setup_restart();
-	cpu_reset(addr);
+
+	/* Switch to the identity mapping */
+	phys_reset = (phys_reset_t)virt_to_phys(cpu_reset);
+	phys_reset(addr);
+
+	/* Should never get here */
+	BUG();
 }
 
 /*
@@ -98,9 +109,18 @@ void arch_cpu_idle(void)
 	 * This should do all the clock switching and wait for interrupt
 	 * tricks
 	 */
-	cpu_do_idle();
-	local_irq_enable();
+	if (cpuidle_idle_call()) {
+		cpu_do_idle();
+		local_irq_enable();
+	}
 }
+
+#ifdef CONFIG_HOTPLUG_CPU
+void arch_cpu_idle_dead(void)
+{
+       cpu_die();
+}
+#endif
 
 void machine_shutdown(void)
 {
@@ -143,15 +163,26 @@ void machine_restart(char *cmd)
 
 void __show_regs(struct pt_regs *regs)
 {
-	int i;
+	int i, top_reg;
+	u64 lr, sp;
+
+	if (compat_user_mode(regs)) {
+		lr = regs->compat_lr;
+		sp = regs->compat_sp;
+		top_reg = 12;
+	} else {
+		lr = regs->regs[30];
+		sp = regs->sp;
+		top_reg = 29;
+	}
 
 	show_regs_print_info(KERN_DEFAULT);
 	print_symbol("PC is at %s\n", instruction_pointer(regs));
-	print_symbol("LR is at %s\n", regs->regs[30]);
+	print_symbol("LR is at %s\n", lr);
 	printk("pc : [<%016llx>] lr : [<%016llx>] pstate: %08llx\n",
-	       regs->pc, regs->regs[30], regs->pstate);
-	printk("sp : %016llx\n", regs->sp);
-	for (i = 29; i >= 0; i--) {
+	       regs->pc, lr, regs->pstate);
+	printk("sp : %016llx\n", sp);
+	for (i = top_reg; i >= 0; i--) {
 		printk("x%-2d: %016llx ", i, regs->regs[i]);
 		if (i % 2 == 0)
 			printk("\n");
@@ -172,9 +203,27 @@ void exit_thread(void)
 {
 }
 
+static void tls_thread_flush(void)
+{
+	asm ("msr tpidr_el0, xzr");
+
+	if (is_compat_task()) {
+		current->thread.tp_value = 0;
+
+		/*
+		 * We need to ensure ordering between the shadow state and the
+		 * hardware state, so that we don't corrupt the hardware state
+		 * with a stale shadow state during context switch.
+		 */
+		barrier();
+		asm ("msr tpidrro_el0, xzr");
+	}
+}
+
 void flush_thread(void)
 {
 	fpsimd_flush_thread();
+	tls_thread_flush();
 	flush_ptrace_hw_breakpoint(current);
 }
 
@@ -279,7 +328,7 @@ struct task_struct *__switch_to(struct task_struct *prev,
 	 * Complete any pending TLB or cache maintenance on this CPU in case
 	 * the thread migrates to a different CPU.
 	 */
-	dsb();
+	dsb(ish);
 
 	/* the actual thread switch */
 	last = cpu_switch_to(prev, next);
@@ -290,6 +339,7 @@ struct task_struct *__switch_to(struct task_struct *prev,
 unsigned long get_wchan(struct task_struct *p)
 {
 	struct stackframe frame;
+	unsigned long stack_page;
 	int count = 0;
 	if (!p || p == current || p->state == TASK_RUNNING)
 		return 0;
@@ -297,9 +347,11 @@ unsigned long get_wchan(struct task_struct *p)
 	frame.fp = thread_saved_fp(p);
 	frame.sp = thread_saved_sp(p);
 	frame.pc = thread_saved_pc(p);
+	stack_page = (unsigned long)task_stack_page(p);
 	do {
-		int ret = unwind_frame(&frame);
-		if (ret < 0)
+		if (frame.sp < stack_page ||
+		    frame.sp >= stack_page + THREAD_SIZE ||
+		    unwind_frame(&frame))
 			return 0;
 		if (!in_sched_functions(frame.pc))
 			return frame.pc;

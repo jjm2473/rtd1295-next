@@ -888,4 +888,15 @@ config TOUCHSCREEN_TPS6507X
 	  To compile this driver as a module, choose M here: the
 	  module will be called tps6507x_ts.
 
+config TOUCHSCREEN_MB8AC0300
+	tristate "Fuljitsu Semiconductor MB8AC0300 TPIF touchscreen"
+	depends on ARCH_MB8AC0300 || ARCH_MB86S70
+	help
+	  Say Y here if you have a sectorized resistive touchpanel
+	  as found on MB8AC0300 EVB
+
+config TOUCHSCREEN_TPCONTROLLERJ4
+	tristate "MITSUBISHI TPCONTROLLERJ4_01 touchscreen"
+	depends on SERIAL_SC16IS7XX_I2C
+
 endif

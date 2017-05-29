@@ -1,0 +1,24 @@
+* Fujitsu Media IP units shell
+
+Fujitsu Media IP units are present in Fujitsu MB86S7x SoCs,
+including multi-standard codecs, called jpegtx and wave320.
+
+Required properties:
+- compatible : one of:
+- "fujitsu,jpegtx"
+- "fujitsu,wave320"
+- reg: register base and length for the device.
+- id : Identification number.
+- interrupts : should contain the media ip units interrupt.
+- clocks : Refer Documentation/devicetree/bindings/clock/clock-bindings.txt
+- clock-names : Refer Documentation/devicetree/bindings/clock/clock-bindings.txt
+
+Example:
+	jpeg: jpeg {
+		compatible = "fujitsu,jpegtx";
+		reg = <0 0x36020000 0x10000>;
+		id = <0>;
+		interrupts = <0 190 0x4>;
+		clocks = <&clk_main_5_5>, <&clk_main_8_1>;
+		clock-names = "clk1", "clk2";
+	};

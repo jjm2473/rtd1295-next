@@ -1,0 +1,29 @@
+FUJITSU USB PHY
+
+MB86S7x USB2 PHY
+
+Required properties:
+ - compatible: Should be "fujitsu,phy-mb86s70-usb2"
+ - reg : Address and length of the register set for the device.
+ - interrupts : number of GIC interrupt.
+
+usb2phy: usb2phy@32200000 {
+	compatible = "fujitsu,phy-mb86s70-usb2";
+	reg = <0 0x32200000 0x100000>;
+	interrupts = <0 292 0x4>,
+	             <0 294 0x4>;
+};
+
+MB86S7x USB3 PHY
+
+Required properties:
+ - compatible: Should be "fujitsu,phy-mb86s70-usb3"
+ - reg : Address and length of the register set for the device.
+ - interrupts : number of GIC interrupt.
+
+usb3phy: usb3phy@32200000 {
+	compatible = "fujitsu,phy-mb86s70-usb3";
+	reg = <0 0x32200000 0x100000>;
+	interrupts = <0 292 0x4>,
+	             <0 294 0x4>;
+};

@@ -962,6 +962,7 @@ static void pci_restore_config_dword(struct pci_dev *pdev, int offset,
 	for (;;) {
 		dev_dbg(&pdev->dev, "restoring config space at offset "
 			"%#x (was %#x, writing %#x)\n", offset, val, saved_val);
+		msleep(100);
 		pci_write_config_dword(pdev, offset, saved_val);
 		if (retry-- <= 0)
 			return;
@@ -988,12 +989,12 @@ static void pci_restore_config_space_range(struct pci_dev *pdev,
 static void pci_restore_config_space(struct pci_dev *pdev)
 {
 	if (pdev->hdr_type == PCI_HEADER_TYPE_NORMAL) {
-		pci_restore_config_space_range(pdev, 10, 15, 0);
+		pci_restore_config_space_range(pdev, 10, 15, 5);
 		/* Restore BARs before the command register. */
 		pci_restore_config_space_range(pdev, 4, 9, 10);
-		pci_restore_config_space_range(pdev, 0, 3, 0);
+		pci_restore_config_space_range(pdev, 0, 3, 5);
 	} else {
-		pci_restore_config_space_range(pdev, 0, 15, 0);
+		pci_restore_config_space_range(pdev, 0, 15, 5);
 	}
 }
 
@@ -1119,6 +1120,8 @@ EXPORT_SYMBOL_GPL(pci_load_and_free_saved_state);
 static int do_pci_enable_device(struct pci_dev *dev, int bars)
 {
 	int err;
+	u16 cmd;
+	u8 pin;
 
 	err = pci_set_power_state(dev, PCI_D0);
 	if (err < 0 && err != -EIO)
@@ -1127,6 +1130,17 @@ static int do_pci_enable_device(struct pci_dev *dev, int bars)
 	if (err < 0)
 		return err;
 	pci_fixup_device(pci_fixup_enable, dev);
+
+	if (dev->msi_enabled || dev->msix_enabled)
+		return 0;
+
+	pci_read_config_byte(dev, PCI_INTERRUPT_PIN, &pin);
+	if (pin) {
+		pci_read_config_word(dev, PCI_COMMAND, &cmd);
+		if (cmd & PCI_COMMAND_INTX_DISABLE)
+			pci_write_config_word(dev, PCI_COMMAND,
+					      cmd & ~PCI_COMMAND_INTX_DISABLE);
+	}
 
 	return 0;
 }
@@ -3646,7 +3660,7 @@ int pci_set_vga_state(struct pci_dev *dev, bool decode,
 	u16 cmd;
 	int rc;
 
-	WARN_ON((flags & PCI_VGA_STATE_CHANGE_DECODES) & (command_bits & ~(PCI_COMMAND_IO|PCI_COMMAND_MEMORY)));
+	WARN_ON((flags & PCI_VGA_STATE_CHANGE_DECODES) && (command_bits & ~(PCI_COMMAND_IO|PCI_COMMAND_MEMORY)));
 
 	/* ARCH specific VGA enables */
 	rc = pci_set_vga_state_arch(dev, decode, command_bits, flags);

@@ -1,0 +1,22 @@
+config ARCH_MB8AC0300
+	bool "Fujitsu Semiconductor MB8AC0300" if ARCH_MULTI_V7
+	select ARM_GIC
+	select ARM_GLOBAL_TIMER
+	select ARM_TIMER_SP804
+	select CLKDEV_LOOKUP
+	select CLKSRC_OF
+	select COMMON_CLK
+	select GENERIC_CLOCKEVENTS
+	select GENERIC_TIME
+	select HAVE_ARM_SCU if SMP
+	select HAVE_ARM_TWD if LOCAL_TIMERS
+	select HAVE_SCHED_CLOCK
+	select HAVE_SMP
+	select MB8AC0300_EXIU
+	select MIGHT_HAVE_CACHE_L2X0
+	select SPARSE_IRQ
+	select HAVE_ARM_SCU
+	select HAVE_ARM_TWD
+	select ARCH_ENABLE_MEMORY_HOTPLUG
+	help
+	  Support for Fujitsu Semiconductor's MB8AC0300 based systems.

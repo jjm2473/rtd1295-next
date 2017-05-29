@@ -14,6 +14,9 @@ Required properties:
 Optional properties:
   - pwm-names: a list of names for the PWM devices specified in the
                "pwms" property (see PWM binding[0])
+  - gpios:     An arbitrary number of gpios that must be asserted when the
+               backlight is on, and de-asserted when off.  They will be asserted
+               in the order they appear, and de-asserted in reverse order.
 
 [0]: Documentation/devicetree/bindings/pwm/pwm.txt
 
@@ -25,4 +28,5 @@ Example:
 
 		brightness-levels = <0 4 8 16 32 64 128 255>;
 		default-brightness-level = <6>;
+		gpios = <&gpio 77 0>, <&gpio 25 1>;  /* gpio 25 is active low */
 	};

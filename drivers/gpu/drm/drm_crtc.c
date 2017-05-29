@@ -1534,6 +1534,7 @@ int drm_mode_getconnector(struct drm_device *dev, void *data,
 		}
 	}
 
+	pr_debug("[Vivien] in %s, modes=%d \n", __func__, out_resp->count_modes);
 	if (out_resp->count_modes == 0) {
 		connector->funcs->fill_modes(connector,
 					     dev->mode_config.max_width,
@@ -2501,10 +2502,22 @@ int drm_mode_getfb(struct drm_device *dev,
 	r->depth = fb->depth;
 	r->bpp = fb->bits_per_pixel;
 	r->pitch = fb->pitches[0];
-	if (fb->funcs->create_handle)
-		ret = fb->funcs->create_handle(fb, file_priv, &r->handle);
-	else
+	if (fb->funcs->create_handle) {
+		if (file_priv->is_master || capable(CAP_SYS_ADMIN)) {
+			ret = fb->funcs->create_handle(fb, file_priv,
+						       &r->handle);
+		} else {
+			/* GET_FB() is an unprivileged ioctl so we must not
+			 * return a buffer-handle to non-master processes! For
+			 * backwards-compatibility reasons, we cannot make
+			 * GET_FB() privileged, so just return an invalid handle
+			 * for non-masters. */
+			r->handle = 0;
+			ret = 0;
+		}
+	} else {
 		ret = -ENODEV;
+	}
 
 	drm_framebuffer_unreference(fb);
 

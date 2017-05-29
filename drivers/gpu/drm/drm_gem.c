@@ -453,25 +453,21 @@ drm_gem_flink_ioctl(struct drm_device *dev, void *data,
 	spin_lock(&dev->object_name_lock);
 	if (!obj->name) {
 		ret = idr_alloc(&dev->object_name_idr, obj, 1, 0, GFP_NOWAIT);
-		obj->name = ret;
-		args->name = (uint64_t) obj->name;
-		spin_unlock(&dev->object_name_lock);
-		idr_preload_end();
-
 		if (ret < 0)
 			goto err;
-		ret = 0;
+
+		obj->name = ret;
 
 		/* Allocate a reference for the name table.  */
 		drm_gem_object_reference(obj);
-	} else {
-		args->name = (uint64_t) obj->name;
-		spin_unlock(&dev->object_name_lock);
-		idr_preload_end();
-		ret = 0;
 	}
 
+	args->name = (uint64_t) obj->name;
+	ret = 0;
+
 err:
+	spin_unlock(&dev->object_name_lock);
+	idr_preload_end();
 	drm_gem_object_unreference_unlocked(obj);
 	return ret;
 }
@@ -619,6 +615,25 @@ void drm_gem_object_handle_free(struct drm_gem_object *obj)
 
 }
 EXPORT_SYMBOL(drm_gem_object_handle_free);
+
+void drm_gem_object_exported_dma_buf_free(struct drm_gem_object *obj)
+{
+	struct drm_device *dev = obj->dev;
+
+	/* Unbreak the reference cycle if we have an exported dma_buf. */
+	spin_lock(&dev->object_name_lock);
+	if (obj->export_dma_buf) {
+		struct dma_buf *dmabuf = obj->export_dma_buf;
+		obj->export_dma_buf = NULL;
+		spin_unlock(&dev->object_name_lock);
+
+		dma_buf_put(dmabuf);
+	}
+	else {
+		spin_unlock(&dev->object_name_lock);
+	}
+}
+
 
 void drm_gem_vm_open(struct vm_area_struct *vma)
 {

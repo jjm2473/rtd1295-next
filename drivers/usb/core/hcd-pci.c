@@ -22,7 +22,7 @@
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
 
-#include <asm/io.h>
+#include <linux/io.h>
 #include <asm/irq.h>
 
 #ifdef CONFIG_PPC_PMAC
@@ -75,7 +75,7 @@ static void for_each_companion(struct pci_dev *pdev, struct usb_hcd *hcd,
 				PCI_SLOT(companion->devfn) != slot)
 			continue;
 		companion_hcd = pci_get_drvdata(companion);
-		if (!companion_hcd)
+		if (!companion_hcd || !companion_hcd->self.root_hub)
 			continue;
 		fn(pdev, hcd, companion, companion_hcd);
 	}
@@ -187,6 +187,15 @@ int usb_hcd_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	driver = (struct hc_driver *)id->driver_data;
 	if (!driver)
 		return -EINVAL;
+
+	dev_dbg(&dev->dev, "%s->0x%llx\n",
+	    __func__, (unsigned long long)pci_resource_start(dev, 0));
+	dev_dbg(&dev->dev, "%s dev->irq %d\n",
+	    __func__, dev->irq);
+
+	if ((unsigned long long)pci_resource_start(dev, 0) == 0 ||
+	    dev->irq == 0)
+		return -EPROBE_DEFER;
 
 	if (pci_enable_device(dev) < 0)
 		return -ENODEV;

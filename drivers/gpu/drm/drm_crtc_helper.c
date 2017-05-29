@@ -130,6 +130,7 @@ int drm_helper_probe_single_connector_modes(struct drm_connector *connector,
 		mode->status = MODE_UNVERIFIED;
 
 	if (connector->force) {
+		pr_debug("[Vivien] in force\n");
 		if (connector->force == DRM_FORCE_ON)
 			connector->status = connector_status_connected;
 		else
@@ -137,6 +138,7 @@ int drm_helper_probe_single_connector_modes(struct drm_connector *connector,
 		if (connector->funcs->force)
 			connector->funcs->force(connector);
 	} else {
+		pr_debug("[Vivien] not in force\n");
 		connector->status = connector->funcs->detect(connector, true);
 	}
 
@@ -149,11 +151,15 @@ int drm_helper_probe_single_connector_modes(struct drm_connector *connector,
 	if (connector->status == connector_status_disconnected) {
 		DRM_DEBUG_KMS("[CONNECTOR:%d:%s] disconnected\n",
 			connector->base.id, drm_get_connector_name(connector));
+		pr_debug("[CONNECTOR:%d:%s] disconnected\n",
+			connector->base.id, drm_get_connector_name(connector));
 		drm_mode_connector_update_edid_property(connector, NULL);
 		verbose_prune = false;
+		pr_debug("[Vivien] in %s, wrong path!!!\n", __func__);
 		goto prune;
 	}
 
+	pr_debug("[Vivien] in %s before get_modes \n", __func__);
 #ifdef CONFIG_DRM_LOAD_EDID_FIRMWARE
 	count = drm_load_edid_firmware(connector);
 	if (count == 0)
