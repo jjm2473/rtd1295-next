@@ -1,0 +1,178 @@
+/*
+ * Socionext MB86S71 SoC
+ *
+ * Copyright (c) 2017 Andreas Färber
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	compatible = "fujitsu,mb86s71";
+	interrupt-parent = <&gic>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a15";
+			reg = <0x0>;
+			cci-control-port = <&cci_control4>;
+			next-level-cache = <&l2_big>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a15";
+			reg = <0x1>;
+			cci-control-port = <&cci_control4>;
+			next-level-cache = <&l2_big>;
+		};
+
+		cpu2: cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0x100>;
+			cci-control-port = <&cci_control3>;
+			next-level-cache = <&l2_little>;
+		};
+
+		cpu3: cpu@101 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0x101>;
+			cci-control-port = <&cci_control3>;
+			next-level-cache = <&l2_little>;
+		};
+
+		l2_big: l2-cache-big {
+			compatible = "cache";
+		};
+
+		l2_little: l2-cache-little {
+			compatible = "cache";
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv7-timer";
+		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>,
+		             <GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_LOW)>;
+	};
+
+	pmu-big {
+		compatible = "arm,cortex-a15-pmu";
+		interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-affinity = <&cpu0>, <&cpu1>;
+	};
+
+	pmu-little {
+		compatible = "arm,cortex-a7-pmu";
+		interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 22 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-affinity = <&cpu2>, <&cpu3>;
+	};
+
+	cci@2c090000 {
+		compatible = "arm,cci-400";
+		reg = <0x2c090000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x2c090000 0x10000>;
+
+		cci_control0: slave-if@1000 {
+			compatible = "arm,cci-400-ctrl-if";
+			reg = <0x1000 0x1000>;
+			interface-type = "ace-lite";
+		};
+
+		cci_control1: slave-if@2000 {
+			compatible = "arm,cci-400-ctrl-if";
+			reg = <0x2000 0x1000>;
+			interface-type = "ace-lite";
+		};
+
+		cci_control2: slave-if@3000 {
+			compatible = "arm,cci-400-ctrl-if";
+			reg = <0x3000 0x1000>;
+			interface-type = "ace-lite";
+		};
+
+		cci_control3: slave-if@4000 {
+			compatible = "arm,cci-400-ctrl-if";
+			reg = <0x4000 0x1000>;
+			interface-type = "ace";
+		};
+
+		cci_control4: slave-if@5000 {
+			compatible = "arm,cci-400-ctrl-if";
+			reg = <0x5000 0x1000>;
+			interface-type = "ace";
+		};
+
+		pmu@9000 {
+			compatible = "arm,cci-400-pmu,r0";
+			reg = <0x9000 0x5000>;
+			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x0 0x80000000>;
+
+		gic: interrupt-controller@2c001000 {
+			compatible = "arm,cortex-a15-gic";
+			reg = <0x2c001000 0x1000>,
+			      <0x2c002000 0x2000>,
+			      <0x2c004000 0x2000>,
+			      <0x2c006000 0x2000>;
+			interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		uart0: serial@31040000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x31040000 0x100>;
+			arm,primecell-periphid = <0x00341011>;
+			interrupts = <GIC_SPI 320 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		uart1: serial@31050000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x31050000 0x100>;
+			arm,primecell-periphid = <0x00341011>;
+			interrupts = <GIC_SPI 321 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		uart2: serial@31060000 {
+			compatible = "arm,pl011", "arm,primecell";
+			reg = <0x31060000 0x100>;
+			arm,primecell-periphid = <0x00341011>;
+			interrupts = <GIC_SPI 322 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		timer@31080000 {
+			compatible = "arm,sp804";
+			reg = <0x31080000 0x10000>;
+			interrupts = <GIC_SPI 324 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 325 IRQ_TYPE_LEVEL_HIGH>;
+		};
+	};
+};

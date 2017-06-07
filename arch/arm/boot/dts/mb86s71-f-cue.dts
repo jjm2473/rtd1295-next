@@ -1,0 +1,38 @@
+/*
+ * Fujitsu F-Cue board
+ *
+ * Copyright (c) 2017 Andreas Färber
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+/dts-v1/;
+
+#include "mb86s71.dtsi"
+
+/ {
+	compatible = "fujitsu,f-cue", "fujitsu,mb86s71";
+	model = "Fujitsu F-Cue";
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	/* vendor U-Boot looks for /memory */
+	memory {
+		device_type = "memory";
+		reg = <0x80000000 0x80000000>;
+	};
+};
+
+&arch_timer {
+	clock-frequency = <125000000>;
+};
+
+&uart0 {
+	status = "okay";
+};
