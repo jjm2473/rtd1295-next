@@ -27,6 +27,12 @@
 		device_type = "memory";
 		reg = <0x80000000 0x80000000>;
 	};
+
+	uart0_clk: uart0-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <7813000>;
+		#clock-cells = <0>;
+	};
 };
 
 &arch_timer {
@@ -35,4 +41,6 @@
 
 &uart0 {
 	status = "okay";
+	clocks = <&uart0_clk>;
+	clock-names = "apb_pclk";
 };
