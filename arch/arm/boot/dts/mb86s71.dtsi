@@ -160,6 +160,20 @@
 			#global-interrupts = <1>;
 		};
 
+		gpio0: gpio@31000000 {
+			compatible = "fujitsu,mb86s70-gpio";
+			reg = <0x31000000 0x10000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@31010000 {
+			compatible = "fujitsu,mb86s70-gpio";
+			reg = <0x31010000 0x10000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
 		uart0: serial@31040000 {
 			compatible = "arm,pl011", "arm,primecell";
 			reg = <0x31040000 0x100>;
