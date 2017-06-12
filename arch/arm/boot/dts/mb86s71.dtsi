@@ -127,6 +127,11 @@
 		};
 	};
 
+	crg: clock-controller {
+		compatible = "fujitsu,mb86s70-crg11";
+		#clock-cells = <3>;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <1>;
