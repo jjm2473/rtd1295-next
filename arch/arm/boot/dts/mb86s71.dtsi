@@ -133,6 +133,15 @@
 		#size-cells = <1>;
 		ranges = <0x0 0x0 0x80000000>;
 
+		mhu: mailbox@2b1f0000 {
+			compatible = "arm,mhu", "arm,primecell";
+			reg = <0x2b1f0000 0x1000>;
+			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
+			#mbox-cells = <1>;
+		};
+
 		iommu@2b400000 {
 			compatible = "arm,mmu-400";
 			reg = <0x2b400000 0x10000>;
@@ -152,12 +161,37 @@
 			#interrupt-cells = <3>;
 		};
 
+		dma@2f200000 {
+			compatible = "arm,pl330", "arm,primecell";
+			reg = <0x2f200000 0x1000>;
+			interrupts = <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 139 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
+			#dma-cells = <1>;
+			#dma-channels = <8>;
+			#dma-requests = <32>;
+		};
+
 		iommu@2f800000 {
 			compatible = "arm,mmu-400";
 			reg = <0x2f800000 0x10000>;
 			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>,
 			             <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>;
 			#global-interrupts = <1>;
+		};
+
+		sdhci0: mmc@300c0000 {
+			compatible = "fujitsu,mb86s70-sdhci-3.0";
+			reg = <0x300c0000 0x1000>;
+			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 165 IRQ_TYPE_LEVEL_HIGH>;
+			bus-width = <8>;
+			status = "disabled";
 		};
 
 		gpio0: gpio@31000000 {
@@ -205,6 +239,26 @@
 			             <GIC_SPI 325 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
+		sdhci2: mmc@31410000 {
+			compatible = "fujitsu,mb86s70-sdhci-3.0";
+			reg = <0x31410000 0x1000>;
+			interrupts = <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 177 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		dma@33600000 {
+			compatible = "arm,pl330", "arm,primecell";
+			reg = <0x33600000 0x1000>;
+			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 147 IRQ_TYPE_LEVEL_HIGH>;
+			#dma-cells = <1>;
+			#dma-channels = <4>;
+			#dma-requests = <1>;
+		};
+
 		iommu@35300000 {
 			compatible = "arm,mmu-400";
 			reg = <0x35300000 0x10000>;
@@ -243,6 +297,14 @@
 			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>,
 			             <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
 			#global-interrupts = <1>;
+		};
+
+		sdhci1: mmc@36600000 {
+			compatible = "fujitsu,mb86s70-sdhci-3.0";
+			reg = <0x36600000 0x1000>;
+			interrupts = <GIC_SPI 172 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 173 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
 		};
 	};
 };

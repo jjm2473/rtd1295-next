@@ -39,6 +39,21 @@
 	clock-frequency = <125000000>;
 };
 
+/* eMMC */
+&sdhci0 {
+	status = "okay";
+};
+
+/* SDIO */
+&sdhci1 {
+	status = "okay";
+};
+
+/* SDIO */
+&sdhci2 {
+	status = "okay";
+};
+
 &uart0 {
 	status = "okay";
 	clocks = <&uart0_clk>;
