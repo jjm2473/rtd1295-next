@@ -1,0 +1,17 @@
+Socionext platforms device tree bindings
+----------------------------------------
+
+
+MB86S7x SoC
+===========
+
+Required root node properties:
+
+ - compatible :  must contain "fujitsu,mb86s71" for MB86S71
+
+
+Boards:
+
+Root node property compatible must contain, depending on board:
+
+ - Fujitsu F-Cue: "fujitsu,f-cue"
