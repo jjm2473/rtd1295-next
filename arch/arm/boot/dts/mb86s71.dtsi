@@ -133,6 +133,14 @@
 		#size-cells = <1>;
 		ranges = <0x0 0x0 0x80000000>;
 
+		iommu@2b400000 {
+			compatible = "arm,mmu-400";
+			reg = <0x2b400000 0x10000>;
+			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>;
+			#global-interrupts = <1>;
+		};
+
 		gic: interrupt-controller@2c001000 {
 			compatible = "arm,cortex-a15-gic";
 			reg = <0x2c001000 0x1000>,
@@ -142,6 +150,14 @@
 			interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
+		};
+
+		iommu@2f800000 {
+			compatible = "arm,mmu-400";
+			reg = <0x2f800000 0x10000>;
+			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>;
+			#global-interrupts = <1>;
 		};
 
 		uart0: serial@31040000 {
@@ -173,6 +189,46 @@
 			reg = <0x31080000 0x10000>;
 			interrupts = <GIC_SPI 324 IRQ_TYPE_LEVEL_HIGH>,
 			             <GIC_SPI 325 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		iommu@35300000 {
+			compatible = "arm,mmu-400";
+			reg = <0x35300000 0x10000>;
+			interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>;
+			#global-interrupts = <1>;
+		};
+
+		iommu@35400000 {
+			compatible = "arm,mmu-400";
+			reg = <0x35400000 0x10000>;
+			interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+			#global-interrupts = <1>;
+		};
+
+		iommu@35500000 {
+			compatible = "arm,mmu-400";
+			reg = <0x35500000 0x10000>;
+			interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 76 IRQ_TYPE_LEVEL_HIGH>;
+			#global-interrupts = <1>;
+		};
+
+		iommu@35600000 {
+			compatible = "arm,mmu-400";
+			reg = <0x35600000 0x10000>;
+			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 78 IRQ_TYPE_LEVEL_HIGH>;
+			#global-interrupts = <1>;
+		};
+
+		iommu@35700000 {
+			compatible = "arm,mmu-400";
+			reg = <0x35700000 0x10000>;
+			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
+			#global-interrupts = <1>;
 		};
 	};
 };
