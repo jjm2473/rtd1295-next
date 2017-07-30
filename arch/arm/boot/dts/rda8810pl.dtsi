@@ -8,6 +8,7 @@
 
 / {
 	compatible = "rda,8810pl";
+	interrupt-parent = <&intc>;
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -48,6 +49,13 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x20800000 0x100000>;
+
+			intc: interrupt-controller {
+				compatible = "rda,8810pl-intc";
+				reg = <0x0 0x1000>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+			};
 		};
 
 		apb@20900000 {
