@@ -66,6 +66,13 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x20900000 0x100000>;
+
+			timer@10000 {
+				compatible = "rda,8810pl-timer";
+				reg = <0x10000 0x1000>;
+				interrupts = <16 IRQ_TYPE_NONE>,
+				             <17 IRQ_TYPE_NONE>;
+			};
 		};
 
 		apb@20a00000 {
