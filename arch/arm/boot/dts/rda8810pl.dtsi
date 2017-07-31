@@ -70,8 +70,8 @@
 			timer@10000 {
 				compatible = "rda,8810pl-timer";
 				reg = <0x10000 0x1000>;
-				interrupts = <16 IRQ_TYPE_NONE>,
-				             <17 IRQ_TYPE_NONE>;
+				interrupts = <15 IRQ_TYPE_NONE>,
+				             <16 IRQ_TYPE_NONE>;
 				interrupt-names = "hwtimer", "ostimer";
 			};
 		};
