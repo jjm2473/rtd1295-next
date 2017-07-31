@@ -78,6 +78,8 @@ static int rda_ostimer_stop(void)
 
 static int rda_ostimer_set_state_shutdown(struct clock_event_device *evt)
 {
+	pr_info("%s\n", __func__);
+
 	rda_ostimer_stop();
 
 	return 0;
@@ -85,6 +87,8 @@ static int rda_ostimer_set_state_shutdown(struct clock_event_device *evt)
 
 static int rda_ostimer_set_state_oneshot(struct clock_event_device *evt)
 {
+	pr_info("%s\n", __func__);
+
 	rda_ostimer_stop();
 
 	return 0;
@@ -93,6 +97,8 @@ static int rda_ostimer_set_state_oneshot(struct clock_event_device *evt)
 static int rda_ostimer_set_state_periodic(struct clock_event_device *evt)
 {
 	unsigned long cycles_per_jiffy;
+
+	pr_info("%s\n", __func__);
 
 	rda_ostimer_stop();
 
@@ -105,7 +111,7 @@ static int rda_ostimer_set_state_periodic(struct clock_event_device *evt)
 
 static int rda_ostimer_tick_resume(struct clock_event_device *evt)
 {
-	rda_ostimer_stop();
+	pr_info("%s\n", __func__);
 
 	return 0;
 }
@@ -113,6 +119,8 @@ static int rda_ostimer_tick_resume(struct clock_event_device *evt)
 static int rda_ostimer_set_next_event(unsigned long evt,
 				    struct clock_event_device *ev)
 {
+	pr_info("%s\n", __func__);
+
 	rda_ostimer_start(false, evt);
 
 	return 0;
@@ -134,6 +142,8 @@ static struct clock_event_device rda_clockevent = {
 static irqreturn_t rda_ostimer_interrupt(int irq, void *dev_id)
 {
 	struct clock_event_device *evt = dev_id;
+
+	pr_info("%s\n", __func__);
 
 	/* clear timer int */
 	writel(RDA_TIMER_IRQ_CLR_OSTIMER, rda_timer_base + RDA_TIMER_IRQ_CLR);
@@ -176,6 +186,8 @@ static int __init rda_timer_init(struct device_node *node)
 	rda_clockevent.irq = ostimer_irq;
 	clockevents_config_and_register(&rda_clockevent, rate,
 					0x2, 0xffffffff);
+
+	pr_info("%s done\n", __func__);
 
 	return 0;
 }
