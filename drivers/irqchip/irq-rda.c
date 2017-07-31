@@ -6,6 +6,7 @@
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/irqchip.h>
+#include <linux/irqdomain.h>
 #include <linux/of_address.h>
 
 #define RDA_INTC_MASK_SET	0x08
@@ -49,11 +50,26 @@ static struct irq_chip rda_irq_chip = {
 	.irq_disable	= rda_intc_mask_irq,
 };
 
+static int rda_irq_map(struct irq_domain *d,
+		       unsigned int virq, irq_hw_number_t hw)
+{
+	irq_set_status_flags(virq, IRQ_LEVEL);
+	irq_set_chip_and_handler(virq, &rda_irq_chip, handle_level_irq);
+	irq_set_chip_data(virq, d->host_data);
+	irq_set_probe(virq);
+
+	return 0;
+}
+
+static const struct irq_domain_ops rda_irq_domain_ops = {
+	.map = rda_irq_map,
+	.xlate = irq_domain_xlate_onecell,
+};
+
 static int __init rda8810_intc_init(struct device_node *np,
 				    struct device_node *parent)
 {
 	void __iomem *base;
-	unsigned int i;
 
 	base = of_io_request_and_map(np, 0, "rda-intc");
 	if (!base)
@@ -64,11 +80,7 @@ static int __init rda8810_intc_init(struct device_node *np,
 	 */
 	writel(RDA_IRQ_MASK_ALL, base + RDA_INTC_MASK_CLR);
 
-	for (i = 0; i < RDA_NR_IRQS; i++) {
-		irq_set_chip_and_handler(i, &rda_irq_chip, handle_level_irq);
-		irq_set_chip_data(i, base);
-		irq_set_probe(i);
-	}
+	irq_domain_add_simple(np, RDA_NR_IRQS, 0, &rda_irq_domain_ops, base);
 
 	pr_info("RDA8810PL intc probed\n");
 
