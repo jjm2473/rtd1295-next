@@ -9,6 +9,7 @@
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
+#include <linux/sched_clock.h>
 
 #define RDA_OSTIMER_LOADVAL_L	0x000
 #define RDA_OSTIMER_CTRL	0x004
@@ -192,3 +193,31 @@ static int __init rda_timer_init(struct device_node *node)
 	return 0;
 }
 CLOCKSOURCE_OF_DECLARE(rda8810pl, "rda,8810pl-timer", rda_timer_init);
+
+
+static void __iomem *rda_modem_timer_base;
+
+static u64 notrace rda_16k_timer_sched_read(void)
+{
+	return (u64)readl(rda_modem_timer_base + 0x14);
+}
+
+static int __init rda_modem_timer_init(struct device_node *node)
+{
+	unsigned long rate = 16384;
+
+	rda_modem_timer_base = of_io_request_and_map(node, 0, "rda-modem-timer");
+	if (IS_ERR(rda_modem_timer_base)) {
+		pr_err("Can't map 16k timer registers");
+		return PTR_ERR(rda_modem_timer_base);
+	}
+
+	sched_clock_register(rda_16k_timer_sched_read, 32, rate);
+	clocksource_mmio_init(rda_modem_timer_base + 0x14, "rda-16k-timer",
+			      rate, 250, 32, clocksource_mmio_readl_up);
+
+	pr_info("%s done\n", __func__);
+
+	return 0;
+}
+CLOCKSOURCE_OF_DECLARE(rda8810pl_modem, "rda,8810pl-modem-timer", rda_modem_timer_init);
