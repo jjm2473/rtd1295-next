@@ -45,6 +45,11 @@
 			ranges;
 		};
 
+		timer@11a02000 {
+			compatible = "rda,8810pl-modem-timer";
+			reg = <0x11a02000 0x1000>;
+		};
+
 		apb@20800000 {
 			compatible = "simple-bus";
 			reg = <0x20800000 0x100000>;
