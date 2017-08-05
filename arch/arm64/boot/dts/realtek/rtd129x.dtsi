@@ -82,6 +82,11 @@
 				ranges = <0x0 0x7000 0x1000>;
 			};
 
+			cr_pinctrl: pinctrl@12600 {
+				compatible = "realtek,rtd1295-cr-pinctrl";
+				reg = <0x12600 0x100>;
+			};
+
 			efuse: efuse@17000 {
 				compatible = "realtek,rtd1195-efuse";
 				reg = <0x17000 0x400>;
@@ -115,6 +120,11 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				ranges = <0x0 0x1d000 0x2000>;
+			};
+
+			disp_pinctrl: pinctrl@4d000 {
+				compatible = "realtek,rtd1295-disp-pinctrl";
+				reg = <0x4d000 0x100>;
 			};
 		};
 
@@ -191,6 +201,41 @@
 		compatible = "snps,dw-low-reset";
 		reg = <0x88 0x4>;
 		#reset-cells = <1>;
+	};
+
+	iso_pinctrl: pinctrl@300 {
+		compatible = "realtek,rtd1295-iso-pinctrl";
+		reg = <0x300 0x24>;
+
+		i2c0_pins: i2c0-pins {
+			function = "i2c0";
+			groups = "i2c0";
+		};
+
+		i2c1_pins: i2c1-pins {
+			function = "i2c1";
+			groups = "i2c1";
+		};
+
+		uart0_pins: uart0-pins {
+			function = "uart0";
+			groups = "uart0";
+		};
+
+		uart1_pins: uart1-pins {
+			function = "uart1";
+			groups = "uart1";
+		};
+
+		uart2_0_pins: uart2-0-pins {
+			function = "uart2_0";
+			groups = "uart2_0";
+		};
+
+		uart2_1_pins: uart2-1-pins {
+			function = "uart2_1";
+			groups = "uart2_1";
+		};
 	};
 
 	wdt: watchdog@680 {
@@ -345,6 +390,31 @@
 		compatible = "realtek,rtd1195-sb2-sem";
 		reg = <0x620 0x20>;
 		#hwlock-cells = <1>;
+	};
+
+	sb2_pinctrl: pinctrl@900 {
+		compatible = "realtek,rtd1295-sb2-pinctrl";
+		reg = <0x900 0x100>;
+
+		i2c2_pins: i2c2-pins {
+			function = "i2c2";
+			groups = "tp1_sync", "tp1_clk";
+		};
+
+		i2c3_pins: i2c3-pins {
+			function = "i2c3";
+			groups = "tp1_data", "tp1_valid";
+		};
+
+		i2c4_pins: i2c4-pins {
+			function = "i2c4";
+			groups = "i2c_scl_4", "i2c_sda_4";
+		};
+
+		i2c5_pins: i2c5-pins {
+			function = "i2c5";
+			groups = "i2c_scl_5", "i2c_sda_5";
+		};
 	};
 };
 
