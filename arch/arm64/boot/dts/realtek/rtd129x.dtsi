@@ -92,6 +92,41 @@
 			#reset-cells = <1>;
 		};
 
+		iso_pinctrl: pinctrl@98007300 {
+			compatible = "realtek,rtd1295-iso-pinctrl";
+			reg = <0x98007300 0x24>;
+
+			i2c0_pins: i2c0-pins {
+				function = "i2c0";
+				groups = "i2c0";
+			};
+
+			i2c1_pins: i2c1-pins {
+				function = "i2c1";
+				groups = "i2c1";
+			};
+
+			uart0_pins: uart0-pins {
+				function = "uart0";
+				groups = "uart0";
+			};
+
+			uart1_pins: uart1-pins {
+				function = "uart1";
+				groups = "uart1";
+			};
+
+			uart2_0_pins: uart2-0-pins {
+				function = "uart2_0";
+				groups = "uart2_0";
+			};
+
+			uart2_1_pins: uart2-1-pins {
+				function = "uart2_1";
+				groups = "uart2_1";
+			};
+		};
+
 		wdt: watchdog@98007680 {
 			compatible = "realtek,rtd1295-watchdog";
 			reg = <0x98007680 0x100>;
@@ -108,6 +143,36 @@
 			interrupt-parent = <&iso_irq_mux>;
 			interrupts = <2>;
 			status = "disabled";
+		};
+
+		cr_pinctrl: pinctrl@98012600 {
+			compatible = "realtek,rtd1295-cr-pinctrl";
+			reg = <0x98012600 0x100>;
+		};
+
+		sb2_pinctrl: pinctrl@9801a900 {
+			compatible = "realtek,rtd1295-sb2-pinctrl";
+			reg = <0x9801a900 0x100>;
+
+			i2c2_pins: i2c2-pins {
+				function = "i2c2";
+				groups = "tp1_sync", "tp1_clk";
+			};
+
+			i2c3_pins: i2c3-pins {
+				function = "i2c3";
+				groups = "tp1_data", "tp1_valid";
+			};
+
+			i2c4_pins: i2c4-pins {
+				function = "i2c4";
+				groups = "i2c_scl_4", "i2c_sda_4";
+			};
+
+			i2c5_pins: i2c5-pins {
+				function = "i2c5";
+				groups = "i2c_scl_5", "i2c_sda_5";
+			};
 		};
 
 		misc_irq_mux: interrupt-controller@9801b000 {
@@ -146,6 +211,11 @@
 			compatible = "realtek,rtd1295-rtc";
 			reg = <0x9801b600 0x100>;
 			clocks = <&clkc RTD1295_CLK_EN_MISC_RTC>;
+		};
+
+		disp_pinctrl: pinctrl@9804d000 {
+			compatible = "realtek,rtd1295-disp-pinctrl";
+			reg = <0x9804d000 0x100>;
 		};
 
 		gic: interrupt-controller@ff011000 {
