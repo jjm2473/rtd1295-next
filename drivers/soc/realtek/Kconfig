@@ -10,4 +10,12 @@ config REALTEK_SOC
 	  RTD1295 SoC families.
 	  If unsure, say 'n'.
 
+config REALTEK_SB2
+	bool "Realtek SB2"
+	default ARCH_REALTEK
+	help
+	  Say 'y' here to enable support for SB2 on Realtek RTD1195 and
+	  RTD1295 SoC families.
+	  If unsure, say 'n'.
+
 endif
