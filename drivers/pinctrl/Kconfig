@@ -177,6 +177,15 @@ config PINCTRL_OXNAS
 	select GPIOLIB_IRQCHIP
 	select MFD_SYSCON
 
+config PINCTRL_REALTEK
+	bool "Realtek RTD129x pinctrl driver"
+	depends on OF
+	depends on ARCH_REALTEK || COMPILE_TEST
+	select GENERIC_PINCONF
+	select PINMUX
+	help
+	  This selects pinctrl driver for Realtek RTD1295 platforms.
+
 config PINCTRL_ROCKCHIP
 	bool
 	select PINMUX
