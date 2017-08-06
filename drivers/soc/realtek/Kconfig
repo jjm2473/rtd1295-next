@@ -26,4 +26,12 @@ config REALTEK_SCPU
 	  and RTD1295 SoC families.
 	  If unsure, say 'n'.
 
+config REALTEK_PM_DOMAINS
+	bool "Realtek power domains"
+	depends on PM
+	select PM_GENERIC_DOMAINS
+	help
+	  Say 'y' here to enable support for powerctrl on Realtek RTD1295 SoC.
+	  If unsure, say 'n'.
+
 endif
