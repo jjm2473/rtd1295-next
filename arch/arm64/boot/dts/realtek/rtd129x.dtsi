@@ -103,6 +103,7 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			clocks = <&iso_clkc RTD1295_ISO_CLK_EN_MISC_UR0>;
+			resets = <&iso_reset 8>;
 			interrupt-parent = <&iso_irq_mux>;
 			interrupts = <2>;
 			status = "disabled";
@@ -122,6 +123,7 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			clocks = <&clkc RTD1295_CLK_EN_UR1>;
+			resets = <&reset2 28>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <3>, <5>;
 			status = "disabled";
@@ -133,6 +135,7 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			clocks = <&clkc RTD1295_CLK_EN_UR2>;
+			resets = <&reset2 27>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <8>, <13>;
 			status = "disabled";
