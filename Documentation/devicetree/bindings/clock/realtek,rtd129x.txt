@@ -1,0 +1,20 @@
+Realtek RTD129x clock controllers
+=================================
+
+Requires properties:
+- compatible   :  Should be one of the following:
+                  - "realtek,rtd1295-clk"
+                  - "realtek,rtd1295-iso-clk"
+- reg          :  Specifies physical base address and size
+- clocks       :  Specifies the oscillator node
+- #clock-cells :  Shall be 1
+
+
+Example:
+
+	clock-controller@98000000 {
+		compatible = "realtek,rtd1295-clk";
+		reg = <0x98000000 0x1000>;
+		clocks = <&osc27M>;
+		#clock-cells = <1>;
+	};
