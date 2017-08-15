@@ -1,0 +1,18 @@
+Realtek RTD129x Reset Controller
+================================
+
+Required properties:
+- compatible   :  Should be "realtek,rtd1295-reset"
+- reg          :  Should contain the register address and 4 as size.
+- #reset-cells :  Should be 1
+
+See reset.txt for common reset controller bindings.
+
+
+Example:
+
+	reset-controller@98000000 {
+		compatible = "realtek,rtd1295-reset";
+		reg = <0x98000000 0x4>;
+		#reset-cells = <1>;
+	};
