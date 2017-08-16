@@ -1,0 +1,25 @@
+Realtek RTD119x/129x IRQ Mux Controller
+=======================================
+
+Required properties:
+
+- compatible           :  Should be one of the following:
+                          - "realtek,rtd1195-misc-irq-mux"
+                          - "realtek,rtd1195-iso-irq-mux"
+                          - "realtek,rtd1295-misc-irq-mux"
+                          - "realtek,rtd1295-iso-irq-mux"
+- reg                  :  Specifies base physical address and size of the registers.
+- interrupts           :  Specifies the interrupt line which is mux'ed.
+- interrupt-controller :  Presence indicates the node as interrupt controller.
+- #interrupt-cells     :  Shall be 1. See common bindings in interrupt.txt.
+
+
+Example:
+
+	interrupt-controller@98007000 {
+		compatible = "realtek,rtd1295-iso-irq-mux";
+		reg = <0x98007000 0x100>;
+		interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
