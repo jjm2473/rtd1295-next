@@ -102,6 +102,12 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@9801b600 {
+			compatible = "realtek,rtd1295-rtc";
+			reg = <0x9801b600 0x100>;
+			clocks = <&clkc RTD1295_CLK_EN_MISC_RTC>;
+		};
+
 		gic: interrupt-controller@ff011000 {
 			compatible = "arm,gic-400";
 			reg = <0xff011000 0x1000>,
