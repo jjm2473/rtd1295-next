@@ -210,6 +210,30 @@
 		interrupts = <2>;
 		status = "disabled";
 	};
+
+	i2c_1: i2c@c00 {
+		compatible = "snps,designware-i2c";
+		reg = <0xc00 0x100>;
+		clocks = <&iso_clkc RTD1295_ISO_CLK_EN_I2C_1>;
+		resets = <&iso_reset RTD1295_ISO_RSTN_I2C_1>;
+		interrupt-parent = <&iso_irq_mux>;
+		interrupts = <11>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c_0: i2c@d00 {
+		compatible = "snps,designware-i2c";
+		reg = <0xd00 0x100>;
+		clocks = <&iso_clkc RTD1295_ISO_CLK_EN_I2C_0>;
+		resets = <&iso_reset RTD1295_ISO_RSTN_I2C_0>;
+		interrupt-parent = <&iso_irq_mux>;
+		interrupts = <8>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &misc {
@@ -249,6 +273,50 @@
 		compatible = "realtek,rtd1295-rtc";
 		reg = <0x600 0x100>;
 		clocks = <&clkc RTD1295_CLK_EN_MISC_RTC>;
+	};
+
+	i2c_2: i2c@700 {
+		compatible = "snps,designware-i2c";
+		reg = <0x700 0x100>;
+		clocks = <&clkc RTD1295_CLK_EN_MISC_I2C_2>;
+		interrupt-parent = <&misc_irq_mux>;
+		interrupts = <26>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c_3: i2c@900 {
+		compatible = "snps,designware-i2c";
+		reg = <0x900 0x100>;
+		clocks = <&clkc RTD1295_CLK_EN_MISC_I2C_3>;
+		interrupt-parent = <&misc_irq_mux>;
+		interrupts = <23>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c_4: i2c@a00 {
+		compatible = "snps,designware-i2c";
+		reg = <0xa00 0x100>;
+		clocks = <&clkc RTD1295_CLK_EN_MISC_I2C_4>;
+		interrupt-parent = <&misc_irq_mux>;
+		interrupts = <15>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c_5: i2c@b00 {
+		compatible = "snps,designware-i2c";
+		reg = <0xb00 0x100>;
+		clocks = <&clkc RTD1295_CLK_EN_MISC_I2C_5>;
+		interrupt-parent = <&misc_irq_mux>;
+		interrupts = <14>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
 	};
 };
 
