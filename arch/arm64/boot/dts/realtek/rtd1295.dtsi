@@ -78,6 +78,28 @@
 			     <GIC_PPI 10
 			(GIC_CPU_MASK_RAW(0xf) | IRQ_TYPE_LEVEL_LOW)>;
 	};
+
+	soc {
+		sb1@9801c000 {
+			compatible = "realtek,rtd1295-sb1";
+			reg = <0x9801c000 0x18>;
+		};
+
+		sb3@9801c200 {
+			compatible = "realtek,rtd1295-sb3";
+			reg = <0x9801c200 0x18>;
+		};
+
+		sb0@9801c400 {
+			compatible = "realtek,rtd1295-sb0";
+			reg = <0x9801c400 0x10>;
+		};
+
+		sb4@9801c600 {
+			compatible = "realtek,rtd1295-sb4";
+			reg = <0x9801c600 0x18>;
+		};
+	};
 };
 
 &arm_pmu {
