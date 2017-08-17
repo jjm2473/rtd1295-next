@@ -58,8 +58,93 @@
 			     <GIC_PPI 10
 			(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
 	};
+
+	mali_opp_table: gpu-opp-table {
+		compatible = "operating-points-v2";
+
+		opp@620000000 {
+			opp-hz = /bits/ 64 <620000000>;
+			opp-microvolt = <1100000>;
+		};
+
+		opp@600000000 {
+			opp-hz = /bits/ 64 <600000000>;
+			opp-microvolt = <1100000>;
+		};
+
+		opp@580000000 {
+			opp-hz = /bits/ 64 <580000000>;
+			opp-microvolt = <1075000>;
+		};
+
+		opp@560000000 {
+			opp-hz = /bits/ 64 <560000000>;
+			opp-microvolt = <1075000>;
+		};
+
+		opp@540000000 {
+			opp-hz = /bits/ 64 <540000000>;
+			opp-microvolt = <1050000>;
+		};
+
+		opp@520000000 {
+			opp-hz = /bits/ 64 <520000000>;
+			opp-microvolt = <1025000>;
+		};
+
+		opp@500000000 {
+			opp-hz = /bits/ 64 <500000000>;
+			opp-microvolt = <1000000>;
+		};
+
+		opp@460000000 {
+			opp-hz = /bits/ 64 <460000000>;
+			opp-microvolt = <1000000>;
+		};
+
+		opp@440000000 {
+			opp-hz = /bits/ 64 <440000000>;
+			opp-microvolt = <1000000>;
+		};
+
+		opp@400000000 {
+			opp-hz = /bits/ 64 <400000000>;
+			opp-microvolt = <1000000>;
+		};
+
+		opp@380000000 {
+			opp-hz = /bits/ 64 <380000000>;
+			opp-microvolt = <975000>;
+		};
+
+		opp@340000000 {
+			opp-hz = /bits/ 64 <340000000>;
+			opp-microvolt = <975000>;
+		};
+
+		opp@300000000 {
+			opp-hz = /bits/ 64 <300000000>;
+			opp-microvolt = <900000>;
+		};
+	};
 };
 
 &arm_pmu {
 	interrupt-affinity = <&cpu0>, <&cpu1>, <&cpu2>, <&cpu3>;
+};
+
+&rbus {
+	mali: gpu@50000 {
+		compatible = "realtek,rtd1295-mali", "arm,mali-t820";
+		reg = <0x50000 0x10000>;
+		clocks = <&clkc RTD1295_CLK_EN_GPU>;
+		clock-names = "core";
+		resets = <&reset1 RTD1295_RSTN_GPU>;
+		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "job", "mmu", "gpu";
+		operating-points-v2 = <&mali_opp_table>;
+		#cooling-cells = <2>;
+	};
 };
