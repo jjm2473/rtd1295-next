@@ -113,6 +113,26 @@
 				ranges = <0x0 0x1b000 0x1000>;
 			};
 
+			sb1: syscon@1c000 {
+				compatible = "realtek,rtd1295-sb1";
+				reg = <0x1c000 0x18>;
+			};
+
+			sb3: syscon@1c200 {
+				compatible = "realtek,rtd1295-sb3";
+				reg = <0x1c200 0x18>;
+			};
+
+			sb0: syscon@1c400 {
+				compatible = "realtek,rtd1295-sb0";
+				reg = <0x1c400 0x10>;
+			};
+
+			sb4: syscon@1c600 {
+				compatible = "realtek,rtd1295-sb4", "syscon";
+				reg = <0x1c600 0x18>;
+			};
+
 			scpu_wrapper: syscon@1d000 {
 				compatible = "syscon", "simple-mfd";
 				reg = <0x1d000 0x2000>;
