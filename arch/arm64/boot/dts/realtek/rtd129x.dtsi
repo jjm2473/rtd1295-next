@@ -302,6 +302,12 @@
 			status = "disabled";
 		};
 
+		scpu@9801d000 {
+			compatible = "realtek,rtd1295-scpu-wrapper";
+			reg = <0x9801d000 0x500>;
+			interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		disp_pinctrl: pinctrl@9804d000 {
 			compatible = "realtek,rtd1295-disp-pinctrl";
 			reg = <0x9804d000 0x100>;
