@@ -18,4 +18,12 @@ config REALTEK_SB2
 	  RTD1295 SoC families.
 	  If unsure, say 'n'.
 
+config REALTEK_SCPU
+	bool "Realtek SCPU Wrapper"
+	default ARCH_REALTEK
+	help
+	  Say 'y' here to enable support for SCPU Wrapper on Realtek RTD1195
+	  and RTD1295 SoC families.
+	  If unsure, say 'n'.
+
 endif
