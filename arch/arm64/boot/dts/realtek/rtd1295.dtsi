@@ -178,6 +178,12 @@
 		};
 	};
 
+	gmac: ethernet@16000 {
+		compatible = "realtek,r8168";
+		reg = <0x16000 0x1000>;
+		interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
 	mali: gpu@50000 {
 		compatible = "realtek,rtd1295-mali", "arm,mali-t820";
 		reg = <0x50000 0x10000>;
@@ -190,5 +196,11 @@
 		interrupt-names = "job", "mmu", "gpu";
 		operating-points-v2 = <&mali_opp_table>;
 		#cooling-cells = <2>;
+	};
+
+	hwnat: nat@60000 {
+		compatible = "realtek,rtd1295-hwnat";
+		reg = <0x60000 0x170000>;
+		interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
 	};
 };
