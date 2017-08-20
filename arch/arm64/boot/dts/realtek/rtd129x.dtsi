@@ -127,6 +127,14 @@
 			};
 		};
 
+		irda: irda@98007400 {
+			compatible = "realtek,rtd1295-irda";
+			reg = <0x98007400 0x100>;
+			interrupt-parent = <&iso_irq_mux>;
+			interrupts = <5>;
+			status = "disabled";
+		};
+
 		wdt: watchdog@98007680 {
 			compatible = "realtek,rtd1295-watchdog";
 			reg = <0x98007680 0x100>;
