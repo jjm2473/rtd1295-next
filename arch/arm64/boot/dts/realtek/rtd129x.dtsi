@@ -559,6 +559,14 @@
 		status = "disabled";
 	};
 
+	fan: fan@c00 {
+		compatible = "realtek,rtd1295-fan";
+		reg = <0xc00 0x14>;
+		interrupt-parent = <&misc_irq_mux>;
+		interrupts = <29>;
+		status = "disabled";
+	};
+
 	spi@d00 {
 		compatible = "realtek,rtd1295-gspi";
 		reg = <0xd00 0x32>;
