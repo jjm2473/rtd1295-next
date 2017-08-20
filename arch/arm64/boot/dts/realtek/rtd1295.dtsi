@@ -144,6 +144,12 @@
 };
 
 &rbus {
+	test_vo: vo@5000 {
+		compatible = "realtek,rtd1295-test-vo";
+		reg = <0x5000 0x1000>;
+		interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
 	hdmitx@d000 {
 		compatible = "realtek,rtd1295-hdmitx";
 		reg = <0xd000 0x560>;
