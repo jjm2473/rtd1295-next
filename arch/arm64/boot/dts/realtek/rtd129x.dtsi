@@ -92,6 +92,12 @@
 			#reset-cells = <1>;
 		};
 
+		pwm: pwm@980070d0 {
+			compatible = "realtek,rtd1295-pwm";
+			reg = <0x980070d0 0xc>;
+			status = "disabled";
+		};
+
 		iso_gpio: gpio@98007100 {
 			compatible = "realtek,rtd1295-iso-gpio";
 			reg = <0x98007100 0x100>;
