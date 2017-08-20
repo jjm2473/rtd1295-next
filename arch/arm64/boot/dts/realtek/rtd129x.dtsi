@@ -552,6 +552,12 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	spi@d00 {
+		compatible = "realtek,rtd1295-gspi";
+		reg = <0xd00 0x32>;
+		status = "disabled";
+	};
 };
 
 &sb2 {
