@@ -149,6 +149,20 @@
 	};
 
 	soc {
+		usb@98013200 {
+			compatible = "realtek,rtd1295-dwc3";
+			reg = <0x98013200 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			usb@98020000 {
+				compatible = "snps,dwc3";
+				reg = <0x98020000 0x9000>;
+				interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
+			};
+		};
+
 		sb1@9801c000 {
 			compatible = "realtek,rtd1295-sb1";
 			reg = <0x9801c000 0x18>;
