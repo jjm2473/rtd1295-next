@@ -225,6 +225,12 @@
 			reg = <0x9801d100 0x70>;
 		};
 
+		cec@98037800 {
+			compatible = "realtek,rtd1295-cec";
+			reg = <0x98037800 0xe0>;
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		pcie2: pci@9803b000 {
 			compatible = "realtek,rtd1295-pcie";
 			reg = <0x9803b000 0x1000>,
