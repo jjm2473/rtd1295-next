@@ -362,6 +362,25 @@
 			interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
+		jpeg: jpeg@9803e000 {
+			compatible = "realtek,rtd1295-jpeg";
+			reg = <0x9803e000 0x1000>;
+			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		ve1: ve1@98040000 {
+			compatible = "realtek,rtd1295-ve1";
+			reg = <0x98040000 0x8000>;
+			interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
+			             <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		ve3: ve3@98048000 {
+			compatible = "realtek,rtd1295-ve3";
+			reg = <0x98040000 0x4000>;
+			interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		disp_pinctrl: pinctrl@9804d000 {
 			compatible = "realtek,rtd1295-disp-pinctrl";
 			reg = <0x9804d000 0x100>;
