@@ -231,6 +231,12 @@
 			reg = <0x9801d100 0x70>;
 		};
 
+		hdmirx@98034000 {
+			compatible = "realtek,rtd1295-mipi-top";
+			reg = <0x98034000 0xf54>;
+			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		cec@98037800 {
 			compatible = "realtek,rtd1295-cec";
 			reg = <0x98037800 0xe0>;
