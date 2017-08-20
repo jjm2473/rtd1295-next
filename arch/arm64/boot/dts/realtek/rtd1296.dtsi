@@ -6,6 +6,7 @@
  */
 
 #include "rtd129x.dtsi"
+#include "rtd129x-pcie2.dtsi"
 
 / {
 	compatible = "realtek,rtd1296";
@@ -70,4 +71,12 @@
 
 &arm_pmu {
 	interrupt-affinity = <&cpu0>, <&cpu1>, <&cpu2>, <&cpu3>;
+};
+
+&pcie1 {
+	reset-gpios = <&iso_gpio 29 GPIO_ACTIVE_LOW>;
+};
+
+&pcie2 {
+	reset-gpios = <&iso_gpio 30 GPIO_ACTIVE_LOW>;
 };

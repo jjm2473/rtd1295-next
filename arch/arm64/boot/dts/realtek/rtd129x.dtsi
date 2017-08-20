@@ -10,6 +10,7 @@
 /memreserve/	0x0000000001b00000 0x00000000004be000;
 
 #include <dt-bindings/clock/realtek,rtd1295.h>
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/reset/realtek,rtd1295.h>
 
@@ -54,6 +55,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x00000000 0x00000000 0x0001f000>, /* boot ROM */
+			 <0x00030000 0x00030000 0x00020000>, /* PCIe IO */
 			 /* Exclude up to 2 GiB of RAM */
 			 <0x80000000 0x80000000 0x80000000>;
 
@@ -62,7 +64,9 @@
 			reg = <0x98000000 0x200000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x98000000 0x200000>;
+			ranges = <0x00000000 0x98000000 0x00200000>,
+				 <0xc0000000 0xc0000000 0x02000000>, /* PCIe */
+				 <0x10030000 0x00030000 0x00020000>; /* PCIe */
 
 			crt: syscon@0 {
 				compatible = "syscon", "simple-mfd";
@@ -146,6 +150,41 @@
 				compatible = "realtek,rtd1295-disp-pinctrl";
 				reg = <0x4d000 0x100>;
 			};
+
+			pcie1: pci@4e000 {
+				device_type = "pci";
+				compatible = "realtek,rtd1295-pcie-1.1";
+				reg = <0x4e000 0x1000>,
+				      <0x4f000 0x1000>,
+				      <0xc0000000 0x01000000>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&pcie1_clk_pins>;
+				sb4-syscon = <&sb4>;
+				clocks = <&clkc RTD1295_CLK_EN_PCIE0>;
+				resets = <&reset2 RTD1295_RSTN_PCIE0>,
+					 <&reset2 RTD1295_RSTN_PCIE0_CORE>,
+					 <&reset2 RTD1295_RSTN_PCIE0_POWER>,
+					 <&reset2 RTD1295_RSTN_PCIE0_STITCH>,
+					 <&reset2 RTD1295_RSTN_PCIE0_NONSTICH>,
+					 <&reset2 RTD1295_RSTN_PCIE0_PHY>,
+					 <&reset4 RTD1295_RSTN_PCIE0_PHY_MDIO>;
+				reset-names = "pcie",
+					      "pcie_core",
+					      "pcie_power",
+					      "pcie_stitch",
+					      "pcie_nonstitch",
+					      "pcie_phy",
+					      "pcie_phy_mdio";
+				reset-gpios = <&misc_gpio 18 GPIO_ACTIVE_LOW>;
+				bus-range = <0x00 0xff>;
+				num-lanes = <1>;
+				max-link-speed = <1>;
+				linux,pci-domain = <0>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+				ranges = <0x02000000 0x00000000 0xc0000000  0xc0000000  0x00000000 0x01000000>,
+					 <0x01000000 0x00000000 0x00030000  0x10030000  0x00000000 0x00010000>;
+			};
 		};
 
 		gic: interrupt-controller@ff011000 {
@@ -158,6 +197,18 @@
 			interrupt-controller;
 			#interrupt-cells = <3>;
 		};
+	};
+};
+
+&cr_pinctrl {
+	pcie1_clk_pins: pcie1-clk-pins {
+		function = "pcie";
+		pins = "pcie_clkreq_0";
+	};
+
+	pcie2_clk_pins: pcie2-clk-pins {
+		function = "pcie";
+		pins = "pcie_clkreq_1";
 	};
 };
 

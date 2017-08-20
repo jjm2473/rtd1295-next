@@ -6,6 +6,7 @@
  */
 
 #include "rtd129x.dtsi"
+#include "rtd129x-pcie2.dtsi"
 
 / {
 	compatible = "realtek,rtd1295";

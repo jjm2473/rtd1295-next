@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+/*
+ * Realtek RTD1293/RTD1295/RTD1296 SoC PCIe 2.0
+ *
+ * Copyright (c) 2017-2020 Andreas Färber
+ */
+
+&rbus {
+	pcie2: pci@3b000 {
+		device_type = "pci";
+		compatible = "realtek,rtd1295-pcie-2.0";
+		reg = <0x3b000 0x1000>,
+		      <0x3c000 0x1000>,
+		      <0xc1000000 0x01000000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcie2_clk_pins>;
+		sb4-syscon = <&sb4>;
+		clocks = <&clkc RTD1295_CLK_EN_PCIE1>;
+		resets = <&reset2 RTD1295_RSTN_PCIE1>,
+			 <&reset2 RTD1295_RSTN_PCIE1_CORE>,
+			 <&reset2 RTD1295_RSTN_PCIE1_POWER>,
+			 <&reset2 RTD1295_RSTN_PCIE1_STITCH>,
+			 <&reset2 RTD1295_RSTN_PCIE1_NONSTICH>,
+			 <&reset2 RTD1295_RSTN_PCIE1_PHY>,
+			 <&reset4 RTD1295_RSTN_PCIE1_PHY_MDIO>;
+		reset-names = "pcie",
+			      "pcie_core",
+			      "pcie_power",
+			      "pcie_stitch",
+			      "pcie_nonstitch",
+			      "pcie_phy",
+			      "pcie_phy_mdio";
+		reset-gpios = <&misc_gpio 20 GPIO_ACTIVE_LOW>;
+		bus-range = <0x01 0xff>;
+		num-lanes = <1>;
+		max-link-speed = <2>;
+		linux,pci-domain = <1>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges = <0x02000000 0x00000000 0xc1000000  0xc1000000  0x00000000 0x01000000>,
+			 <0x01000000 0x00000000 0x00040000  0x10040000  0x00000000 0x00010000>;
+	};
+};
