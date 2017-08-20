@@ -142,6 +142,28 @@
 };
 
 &rbus {
+	hdmitx@d000 {
+		compatible = "realtek,rtd1295-hdmitx";
+		reg = <0xd000 0x560>;
+		interrupt-parent = <&iso_gpio>;
+		interrupts = <6>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		scdc-rr@7200 {
+			reg = <0x7200 0x4>;
+			interrupt-parent = <&iso_irq_mux>;
+			interrupts = <31>;
+		};
+	};
+
+	hdcptx@d000 {
+		compatible = "realtek,rtd1295-hdcptx";
+		reg = <0xd000 0x400>;
+		interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
 	usb@13200 {
 		compatible = "realtek,rtd1295-dwc3";
 		reg = <0x13200 0x200>;
