@@ -195,6 +195,24 @@
 			status = "disabled";
 		};
 
+		sdmmc: mmc@98010400 {
+			compatible = "realtek,rtd1295-sdmmc";
+			reg = <0x98010400 0x200>;
+			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		sdio: sdio@98010c00 {
+			compatible = "realtek,rtd1295-sdio";
+			reg = <0x98010c00 0x200>;
+			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		emmc: mmc@98012000 {
+			compatible = "realtek,rtd1295-emmc";
+			reg = <0x98012000 0xa00>;
+			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		cr_pinctrl: pinctrl@98012600 {
 			compatible = "realtek,rtd1295-cr-pinctrl";
 			reg = <0x98012600 0x100>;
