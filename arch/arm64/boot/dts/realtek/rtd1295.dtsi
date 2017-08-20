@@ -171,6 +171,14 @@
 			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
+		lsadc: adc@98012800 {
+			compatible = "realtek,rtd1295-lsadc";
+			reg = <0x98012800 0x200>;
+			interrupt-parent = <&misc_irq_mux>;
+			interrupts = <21>, <22>;
+			status = "disabled";
+		};
+
 		usb@98013200 {
 			compatible = "realtek,rtd1295-dwc3";
 			reg = <0x98013200 0x200>;
