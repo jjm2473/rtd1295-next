@@ -92,6 +92,19 @@
 			#reset-cells = <1>;
 		};
 
+		iso_gpio: gpio@98007100 {
+			compatible = "realtek,rtd1295-iso-gpio";
+			reg = <0x98007100 0x100>;
+			gpio-controller;
+			gpio-ranges = <&iso_pinctrl 0 0 35>;
+			#gpio-cells = <2>;
+
+			interrupt-parent = <&iso_irq_mux>;
+			interrupts = <19>, <20>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+
 		iso_pinctrl: pinctrl@98007300 {
 			compatible = "realtek,rtd1295-iso-pinctrl";
 			reg = <0x98007300 0x24>;
@@ -222,6 +235,21 @@
 			compatible = "realtek,rtd1295-misc-irq-mux";
 			reg = <0x9801b000 0x100>;
 			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+
+		misc_gpio: gpio@9801b100 {
+			compatible = "realtek,rtd1295-misc-gpio";
+			reg = <0x9801b100 0x100>;
+			gpio-controller;
+			gpio-ranges = <&sb2_pinctrl   0 0 54>,
+				      <&disp_pinctrl 54 0 10>,
+				      <&cr_pinctrl   64 0 37>;
+			#gpio-cells = <2>;
+
+			interrupt-parent = <&misc_irq_mux>;
+			interrupts = <19>, <20>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 		};
