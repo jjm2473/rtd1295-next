@@ -195,6 +195,18 @@
 			status = "disabled";
 		};
 
+		md@9800b000 {
+			compatible = "realtek,rtd1295-md";
+			reg = <0x9800b000 0x1000>;
+			interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		se@9800c000 {
+			compatible = "realtek,rtd1295-se";
+			reg = <0x9800c000 0x1000>;
+			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		sdmmc: mmc@98010400 {
 			compatible = "realtek,rtd1295-sdmmc";
 			reg = <0x98010400 0x200>;
