@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+/*
+ * Realtek RTD1293/RTD1295/RTD1296 SoC SATA
+ *
+ * Copyright (c) 2017-2019 Andreas Färber
+ */
+
+&rbus {
+	sata: sata@3f000 {
+		compatible = "realtek,rtd1295-ahci";
+		reg = <0x3f000 0x1000>;
+		clocks = <&clkc RTD1295_CLK_EN_SATA_0>,
+			 <&clkc RTD1295_CLK_EN_SATA_ALIVE_0>;
+		interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		sata0: sata-port@0 {
+			reg = <0>;
+			resets = <&reset1 RTD1295_RSTN_SATA_0>,
+				 <&reset1 RTD1295_RSTN_SATA_FUNC_EXIST_0>,
+				 <&reset1 RTD1295_RSTN_SATA_PHY_0>,
+				 <&reset1 RTD1295_RSTN_SATA_PHY_POW_0>;
+		};
+
+		sata1: sata-port@1 {
+			reg = <1>;
+			resets = <&reset4 RTD1295_RSTN_SATA_1>,
+				 <&reset4 RTD1295_RSTN_SATA_FUNC_EXIST_1>,
+				 <&reset4 RTD1295_RSTN_SATA_PHY_1>,
+				 <&reset4 RTD1295_RSTN_SATA_PHY_POW_1>;
+			status = "disabled";
+		};
+	};
+};
