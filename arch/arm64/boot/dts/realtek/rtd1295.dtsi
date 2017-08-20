@@ -199,6 +199,12 @@
 		reg = <0x1d100 0x70>;
 	};
 
+	cec@37800 {
+		compatible = "realtek,rtd1295-cec";
+		reg = <0x37800 0xe0>;
+		interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
 	mali: gpu@50000 {
 		compatible = "realtek,rtd1295-mali", "arm,mali-t820";
 		reg = <0x50000 0x10000>;
