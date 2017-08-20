@@ -150,6 +150,12 @@
 	};
 
 	soc {
+		test_vo: vo@98005000 {
+			compatible = "realtek,rtd1295-test-vo";
+			reg = <0x98005000 0x1000>;
+			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		hdmitx@9800d000 {
 			compatible = "realtek,rtd1295-hdmitx";
 			reg = <0x9800d000 0x560>;
