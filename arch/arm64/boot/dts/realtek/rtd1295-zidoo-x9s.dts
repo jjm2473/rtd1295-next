@@ -33,6 +33,11 @@
 	};*/
 };
 
+&i2c_0 {
+	status = "okay";
+	clock-frequency = <400000>;
+};
+
 &irda {
 	status = "okay";
 };
