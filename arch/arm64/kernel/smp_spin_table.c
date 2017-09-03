@@ -87,7 +87,7 @@ static int smp_spin_table_cpu_prepare(unsigned int cpu)
 	 * existing linear mapping, we can use it to cover both cases. In
 	 * either case the memory will be MT_NORMAL.
 	 */
-	release_addr = ioremap_cache(cpu_release_addr[cpu],
+	release_addr = ioremap/*_cache*/(cpu_release_addr[cpu],
 				     sizeof(*release_addr));
 	if (!release_addr)
 		return -ENOMEM;
@@ -99,7 +99,7 @@ static int smp_spin_table_cpu_prepare(unsigned int cpu)
 	 * boot-loader's endianess before jumping. This is mandated by
 	 * the boot protocol.
 	 */
-	writeq_relaxed(__pa_symbol(secondary_holding_pen), release_addr);
+	writel_relaxed(__pa_symbol(secondary_holding_pen), release_addr);
 	__flush_dcache_area((__force void *)release_addr,
 			    sizeof(*release_addr));
 
