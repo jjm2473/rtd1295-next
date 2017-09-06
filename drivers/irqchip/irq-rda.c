@@ -20,6 +20,8 @@ static void rda_intc_mask_irq(struct irq_data *d)
 {
 	void __iomem *base = (void __iomem *)irq_data_get_irq_chip_data(d);
 
+	pr_info("%s irq=%u\n", __func__, d->irq);
+
 	writel(BIT(d->irq), base + RDA_INTC_MASK_CLR);
 }
 
@@ -27,7 +29,9 @@ static void rda_intc_unmask_irq(struct irq_data *d)
 {
 	void __iomem *base = (void __iomem *)irq_data_get_irq_chip_data(d);
 
-	writel(BIT(d->irq), base + RDA_INTC_MASK_SET);
+	pr_info("%s irq=%u\n", __func__, d->irq);
+
+	writel(BIT(/*d->irq*/17), base + RDA_INTC_MASK_SET);
 }
 
 static int rda_intc_set_type(struct irq_data *data, unsigned int flow_type)

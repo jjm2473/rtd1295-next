@@ -144,7 +144,7 @@ static irqreturn_t rda_ostimer_interrupt(int irq, void *dev_id)
 {
 	struct clock_event_device *evt = dev_id;
 
-	pr_info("%s\n", __func__);
+	//pr_info("%s\n", __func__);
 
 	/* clear timer int */
 	writel(RDA_TIMER_IRQ_CLR_OSTIMER, rda_timer_base + RDA_TIMER_IRQ_CLR);
