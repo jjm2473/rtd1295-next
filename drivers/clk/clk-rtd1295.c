@@ -372,6 +372,9 @@ static void __init rtd1295_iso_clk_init(struct device_node *node)
 
 	osc = of_clk_get(node, 0);
 
+	pr_info("I2C1_SDA_DEL %08x\n", readl_relaxed(base + 0x80));
+	pr_info("I2C0_SDA_DEL %08x\n", readl_relaxed(base + 0x84));
+
 	for (i = 0; i < ARRAY_SIZE(rtd1295_iso_gates); i++) {
 		if (!rtd1295_iso_gates[i])
 			continue;
