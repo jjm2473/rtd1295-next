@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+if ARCH_REALTEK || COMPILE_TEST
+
+config REALTEK_SOC
+	tristate "Realtek chip info"
+	default ARCH_REALTEK
+	select SOC_BUS
+	help
+	  Say 'y' here to enable support for SoC info on Realtek RTD1195 and
+	  RTD1295 SoC families.
+	  If unsure, say 'n'.
+
+endif

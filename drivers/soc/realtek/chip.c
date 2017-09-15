@@ -1,0 +1,181 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Realtek Digital Home Center System-on-Chip info
+ *
+ * Copyright (c) 2017-2020 Andreas Färber
+ */
+
+#include <linux/bitfield.h>
+#include <linux/io.h>
+#include <linux/mfd/syscon.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/of_address.h>
+#include <linux/platform_device.h>
+#include <linux/regmap.h>
+#include <linux/slab.h>
+#include <linux/sys_soc.h>
+
+#define REG_SB2_CHIP_ID		0x200
+#define REG_SB2_CHIP_INFO	0x204
+
+#define SB2_CHIP_ID_CHIP_ID		GENMASK(15, 0)
+
+#define SB2_CHIP_INFO_REVISE_ID		GENMASK(31, 16)
+
+struct dhc_soc_revision {
+	const char *name;
+	u16 chip_rev;
+};
+
+static const struct dhc_soc_revision rtd1195_revisions[] = {
+	{ "A", 0x0000 },
+	{ "B", 0x0001 },
+	{ "C", 0x0002 },
+	{ "D", 0x0003 },
+	{ }
+};
+
+static const struct dhc_soc_revision rtd1295_revisions[] = {
+	{ "A00", 0x0000 },
+	{ "A01", 0x0001 },
+	{ "B00", 0x0002 },
+	{ "B01", 0x0003 },
+	{ }
+};
+
+struct dhc_soc {
+	u16 chip_id;
+	const char *family;
+	const char *(*get_name)(struct device *dev, const struct dhc_soc *s);
+	const struct dhc_soc_revision *revisions;
+	const char *codename;
+};
+
+static const char *default_name(struct device *dev, const struct dhc_soc *s)
+{
+	return s->family;
+}
+
+static const struct dhc_soc dhc_soc_families[] = {
+	{ 0x6329, "RTD1195", default_name, rtd1195_revisions, "Phoenix" },
+	{ 0x6421, "RTD1295", default_name, rtd1295_revisions, "Kylin" },
+};
+
+static const struct dhc_soc *dhc_soc_by_chip_id(u16 chip_id)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(dhc_soc_families); i++) {
+		const struct dhc_soc *family = &dhc_soc_families[i];
+
+		if (family->chip_id == chip_id)
+			return family;
+	}
+	return NULL;
+}
+
+static const char *dhc_soc_rev(const struct dhc_soc *family, u16 chip_rev)
+{
+	if (family) {
+		const struct dhc_soc_revision *rev = family->revisions;
+
+		while (rev && rev->name) {
+			if (rev->chip_rev == chip_rev)
+				return rev->name;
+			rev++;
+		}
+	}
+	return "unknown";
+}
+
+static int dhc_soc_probe(struct platform_device *pdev)
+{
+	const struct dhc_soc *s;
+	struct soc_device_attribute *soc_dev_attr;
+	struct soc_device *soc_dev;
+	struct device_node *node;
+	struct regmap *regmap;
+	u16 chip_id, chip_rev;
+	unsigned int val;
+	int ret;
+
+	regmap = syscon_node_to_regmap(pdev->dev.of_node->parent);
+	if (IS_ERR(regmap))
+		return PTR_ERR(regmap);
+
+	ret = regmap_read(regmap, REG_SB2_CHIP_ID, &val);
+	if (ret)
+		return ret;
+	chip_id = FIELD_GET(SB2_CHIP_ID_CHIP_ID, val);
+
+	ret = regmap_read(regmap, REG_SB2_CHIP_INFO, &val);
+	if (ret)
+		return ret;
+	chip_rev = FIELD_GET(SB2_CHIP_INFO_REVISE_ID, val);
+
+	soc_dev_attr = kzalloc(sizeof(*soc_dev_attr), GFP_KERNEL);
+	if (!soc_dev_attr)
+		return -ENOMEM;
+
+	node = of_find_node_by_path("/");
+	of_property_read_string(node, "model", &soc_dev_attr->machine);
+	of_node_put(node);
+
+	s = dhc_soc_by_chip_id(chip_id);
+
+	if (likely(s && s->get_name)) {
+		soc_dev_attr->soc_id = s->get_name(&pdev->dev, s);
+		if (IS_ERR(soc_dev_attr->soc_id))
+			return PTR_ERR(soc_dev_attr->soc_id);
+	} else
+		soc_dev_attr->soc_id = "unknown";
+
+	soc_dev_attr->revision = dhc_soc_rev(s, chip_rev);
+
+	soc_dev_attr->family = kasprintf(GFP_KERNEL, "Realtek %s",
+		(s && s->codename) ? s->codename :
+		((s && s->family) ? s->family : "Digital Home Center"));
+
+	soc_dev = soc_device_register(soc_dev_attr);
+	if (IS_ERR(soc_dev)) {
+		kfree(soc_dev_attr->family);
+		kfree(soc_dev_attr);
+		return PTR_ERR(soc_dev);
+	}
+
+	platform_set_drvdata(pdev, soc_dev);
+
+	pr_info("%s %s (0x%04x) rev %s (0x%04x) detected\n",
+		soc_dev_attr->family, soc_dev_attr->soc_id, (u32)chip_id,
+		soc_dev_attr->revision, (u32)chip_rev);
+
+	return 0;
+}
+
+static int dhc_soc_remove(struct platform_device *pdev)
+{
+	struct soc_device *soc_dev = platform_get_drvdata(pdev);
+
+	soc_device_unregister(soc_dev);
+
+	return 0;
+}
+
+static const struct of_device_id dhc_soc_dt_ids[] = {
+	 { .compatible = "realtek,rtd1195-chip" },
+	 { }
+};
+
+static struct platform_driver dhc_soc_driver = {
+	.probe = dhc_soc_probe,
+	.remove = dhc_soc_remove,
+	.driver = {
+		.name = "dhc-soc",
+		.of_match_table	= dhc_soc_dt_ids,
+	},
+};
+module_platform_driver(dhc_soc_driver);
+
+MODULE_DESCRIPTION("Realtek DHC SoC identification driver");
+MODULE_LICENSE("GPL");
