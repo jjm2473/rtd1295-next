@@ -248,6 +248,11 @@
 			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
+		chip-info@9801a200 {
+			compatible = "realtek,rtd1195-chip";
+			reg = <0x9801a200 0x8>;
+		};
+
 		sb2_pinctrl: pinctrl@9801a900 {
 			compatible = "realtek,rtd1295-sb2-pinctrl";
 			reg = <0x9801a900 0x100>;
