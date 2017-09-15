@@ -1,5 +1,12 @@
 if ARCH_REALTEK || COMPILE_TEST
 
+config REALTEK_SOC
+	bool "Realtek chip info"
+	select SOC_BUS
+	help
+	  Say 'y' here to enable support for SoC info on Realtek RTD1295 SoC.
+	  If unsure, say 'n'.
+
 config REALTEK_PM_DOMAINS
 	bool "Realtek power domains"
 	depends on PM
