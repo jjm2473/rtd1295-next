@@ -217,6 +217,11 @@
 			groups = "i2c1";
 		};
 
+		i2c6_pins: i2c5-pins {
+			function = "i2c6";
+			groups = "i2c6";
+		};
+
 		uart0_pins: uart0-pins {
 			function = "uart0";
 			groups = "uart0";
@@ -261,6 +266,8 @@
 	i2c_1: i2c@c00 {
 		compatible = "snps,designware-i2c";
 		reg = <0xc00 0x100>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c1_pins>;
 		clocks = <&iso_clkc RTD1295_ISO_CLK_EN_I2C_1>;
 		resets = <&iso_reset RTD1295_ISO_RSTN_I2C_1>;
 		interrupt-parent = <&iso_irq_mux>;
@@ -273,6 +280,8 @@
 	i2c_0: i2c@d00 {
 		compatible = "snps,designware-i2c";
 		reg = <0xd00 0x100>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c0_pins>;
 		clocks = <&iso_clkc RTD1295_ISO_CLK_EN_I2C_0>;
 		resets = <&iso_reset RTD1295_ISO_RSTN_I2C_0>;
 		interrupt-parent = <&iso_irq_mux>;
@@ -327,6 +336,8 @@
 	i2c_2: i2c@700 {
 		compatible = "snps,designware-i2c";
 		reg = <0x700 0x100>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c2_pins>;
 		clocks = <&clkc RTD1295_CLK_EN_MISC_I2C_2>;
 		interrupt-parent = <&misc_irq_mux>;
 		interrupts = <26>;
@@ -338,6 +349,8 @@
 	i2c_3: i2c@900 {
 		compatible = "snps,designware-i2c";
 		reg = <0x900 0x100>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c3_pins>;
 		clocks = <&clkc RTD1295_CLK_EN_MISC_I2C_3>;
 		interrupt-parent = <&misc_irq_mux>;
 		interrupts = <23>;
@@ -349,6 +362,8 @@
 	i2c_4: i2c@a00 {
 		compatible = "snps,designware-i2c";
 		reg = <0xa00 0x100>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c4_pins>;
 		clocks = <&clkc RTD1295_CLK_EN_MISC_I2C_4>;
 		interrupt-parent = <&misc_irq_mux>;
 		interrupts = <15>;
@@ -360,6 +375,8 @@
 	i2c_5: i2c@b00 {
 		compatible = "snps,designware-i2c";
 		reg = <0xb00 0x100>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c5_pins>;
 		clocks = <&clkc RTD1295_CLK_EN_MISC_I2C_5>;
 		interrupt-parent = <&misc_irq_mux>;
 		interrupts = <14>;
