@@ -44,6 +44,10 @@
 	status = "okay";
 };
 
+&mali {
+	mali-supply = <&g2227_dcdc3>;
+};
+
 &uart0 {
 	status = "okay";
 };
