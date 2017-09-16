@@ -33,6 +33,22 @@
 	};*/
 };
 
+&cpu0 {
+	cpu-supply = <&g2227_dcdc2>;
+};
+
+&cpu1 {
+	cpu-supply = <&g2227_dcdc2>;
+};
+
+&cpu2 {
+	cpu-supply = <&g2227_dcdc2>;
+};
+
+&cpu3 {
+	cpu-supply = <&g2227_dcdc2>;
+};
+
 &i2c_0 {
 	status = "okay";
 	clock-frequency = <400000>;
@@ -42,6 +58,10 @@
 
 &irda {
 	status = "okay";
+};
+
+&l2 {
+	l2-supply = <&g2227_ldo3>;
 };
 
 &mali {
