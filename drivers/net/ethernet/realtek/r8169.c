@@ -28,6 +28,7 @@
 #include <linux/pci-aspm.h>
 #include <linux/prefetch.h>
 #include <linux/ipv6.h>
+#include <linux/of_irq.h>
 #include <net/ip6_checksum.h>
 
 #include <asm/io.h>
@@ -8068,13 +8069,12 @@ static void rtl_hw_initialize(struct rtl8169_private *tp)
 	}
 }
 
-static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
+static int rtl_alloc_common(struct device *d, const struct rtl_cfg_info *cfg, struct net_device **netdev)
 {
 	const struct rtl_cfg_info *cfg = rtl_cfg_infos + ent->driver_data;
 	struct rtl8169_private *tp;
 	struct mii_if_info *mii;
 	struct net_device *dev;
-	int chipset, region, i;
 	int rc;
 
 	if (netif_msg_drv(&debug)) {
@@ -8082,15 +8082,14 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		       MODULENAME, RTL8169_VERSION);
 	}
 
-	dev = devm_alloc_etherdev(&pdev->dev, sizeof (*tp));
+	dev = devm_alloc_etherdev(d, sizeof (*tp));
 	if (!dev)
 		return -ENOMEM;
 
-	SET_NETDEV_DEV(dev, &pdev->dev);
+	SET_NETDEV_DEV(dev, d);
 	dev->netdev_ops = &rtl_netdev_ops;
 	tp = netdev_priv(dev);
 	tp->netdev = dev;
-	tp->pci_dev = pdev;
 	tp->msg_enable = netif_msg_init(debug.msg_enable, R8169_MSG_DEFAULT);
 
 	mii = &tp->mii;
@@ -8100,6 +8099,29 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	mii->phy_id_mask = 0x1f;
 	mii->reg_num_mask = 0x1f;
 	mii->supports_gmii = cfg->has_gmii;
+
+	*netdev = dev;
+
+	return rc;
+}
+
+static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
+{
+	const struct rtl_cfg_info *cfg = rtl_cfg_infos + ent->driver_data;
+	const unsigned int region = cfg->region;
+	struct rtl8169_private *tp;
+	struct mii_if_info *mii;
+	struct net_device *dev;
+	int chipset, i;
+	int rc;
+
+	rc = rtl_alloc_common(&pdev->dev, cfg, &dev);
+	if (rc)
+		return rc;
+
+	tp = netdev_priv(dev);
+	tp->pci_dev = pdev;
+	mii = &tp->mii;
 
 	/* disable ASPM completely as that cause random device stop working
 	 * problems as well as full system hangs for some PCIe devices users */
@@ -8338,3 +8360,205 @@ static struct pci_driver rtl8169_pci_driver = {
 };
 
 module_pci_driver(rtl8169_pci_driver);
+
+#include <linux/of_net.h>
+#include <linux/platform_device.h>
+
+static const struct of_device_id rtl8169_pltfm_of_matches[] = {
+	{ .compatible = "realtek,r8169" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, rtl8169_pltfm_of_matches);
+
+static int rtl8169_pltfm_probe(struct platform_device *pdev)
+{
+	const struct rtl_cfg_info *cfg = rtl_cfg_infos + 1;
+	struct rtl8169_private *tp;
+	struct mii_if_info *mii;
+	struct net_device *dev;
+	void __iomem *ioaddr;
+	const char *mac_addr;
+	int chipset, i, retry, irq;
+	u32 tmp;
+	int rc;
+
+	irq = irq_of_parse_and_map(pdev->dev.of_node, 0);
+	if (irq < 0)
+		return irq;
+
+	rc = rtl_alloc_common(&pdev->dev, cfg, &dev);
+	if (rc)
+		return rc;
+
+	tp = netdev_priv(dev);
+	tp->dev = &pdev->dev;
+	tp->mac_version = 0x2a - 1;
+	mii = &tp->mii;
+
+	/* Identify chip attached to board */
+	rtl8169_get_mac_version(tp, dev, cfg->default_ver);
+
+	rtl_init_rxcfg(tp);
+
+	rtl_irq_disable(tp);
+
+	rtl_hw_initialize(tp);
+
+	rtl_hw_reset(tp);
+
+	rtl_ack_events(tp, 0xffff);
+
+	/*
+	 * Pretend we are using VLANs; this bypasses a nasty bug where
+	 * interrupts stop flowing on high load on 8110SCd controllers.
+	 */
+	if (tp->mac_version == RTL_GIGA_MAC_VER_05)
+		tp->cp_cmd |= RxVlan;
+
+	rtl_init_mdio_ops(tp);
+	rtl_init_pll_power_ops(tp);
+	rtl_init_jumbo_ops(tp);
+	rtl_init_csi_ops(tp);
+
+	rtl8169_print_mac_version(tp);
+
+	chipset = tp->mac_version;
+	tp->txd_version = rtl_chip_infos[chipset].txd_version;
+
+	RTL_W8(tp, Cfg9346, Cfg9346_Unlock);
+	RTL_W8(tp, Config1, RTL_R8(tp, Config1) | PMEnable);
+	RTL_W8(tp, Config5, RTL_R8(tp, Config5) & PMEStatus);
+
+	//disable magic packet WOL
+	RTL_W8(tp, Config3, RTL_R8(tp, Config3) & ~MagicPacket);
+
+#if 0
+	if ((RTL_R8(tp, Config3) & LinkUp) != 0)
+		tp->features |= RTL_FEATURE_WOL;
+
+	if ((RTL_R8(tp, Config5) & (UWF | BWF | MWF)) != 0)
+		tp->features |= RTL_FEATURE_WOL;
+	tp->features |= rtl_try_msi(tp, cfg);
+	RTL_W8(tp, Cfg9346, Cfg9346_Lock);
+#endif
+
+	if (rtl_tbi_enabled(tp)) {
+		tp->set_speed = rtl8169_set_speed_tbi;
+		tp->get_link_ksettings = rtl8169_get_link_ksettings_tbi;
+		tp->phy_reset_enable = rtl8169_tbi_reset_enable;
+		tp->phy_reset_pending = rtl8169_tbi_reset_pending;
+		tp->link_ok = rtl8169_tbi_link_ok;
+		tp->do_ioctl = rtl_tbi_ioctl;
+	} else {
+		tp->set_speed = rtl8169_set_speed_xmii;
+		tp->get_link_ksettings = rtl8169_get_link_ksettings_xmii;
+		tp->phy_reset_enable = rtl8169_xmii_reset_enable;
+		tp->phy_reset_pending = rtl8169_xmii_reset_pending;
+		tp->link_ok = rtl8169_xmii_link_ok;
+		tp->do_ioctl = rtl_xmii_ioctl;
+	}
+
+	mutex_init(&tp->wk.mutex);
+
+	/* Get MAC address */
+	mac_addr = of_get_mac_address(pdev->dev.of_node);
+	if (mac_addr)
+		rtl_rar_set(tp, (u8*)mac_addr);
+
+	/* workaround: avoid getting deadbeef */
+	#define RETRY_MAX	10
+	for (retry = 0; retry < RETRY_MAX; retry++) {
+		for (i = 0; i < ETH_ALEN; i++)
+			dev->dev_addr[i] = RTL_R8(tp, MAC0 + i);
+
+		if (*(u32 *) dev->dev_addr != 0xdeadbeef) {
+			break;
+		} else {
+			printk(KERN_ERR "%s get invalid MAC address %pM, retry %d\n",
+				rtl_chip_infos[chipset].name, dev->dev_addr, retry);
+			tmp = RTL_R32(tp, PHYAR); // read something else
+			msleep(10);
+		}
+	}
+	if (retry == RETRY_MAX)
+		printk(KERN_ERR "%s get invalid MAC address %pM, give up!\n",
+			rtl_chip_infos[chipset].name, dev->dev_addr);
+
+	dev->ethtool_ops = &rtl8169_ethtool_ops;
+	dev->watchdog_timeo = RTL8169_TX_TIMEOUT;
+
+	netif_napi_add(dev, &tp->napi, rtl8169_poll, R8169_NAPI_WEIGHT);
+
+	dev->features |= NETIF_F_SG | NETIF_F_IP_CSUM | NETIF_F_TSO | NETIF_F_RXCSUM |
+		NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX;
+
+	dev->hw_features = NETIF_F_SG | NETIF_F_IP_CSUM | NETIF_F_TSO |
+		NETIF_F_RXCSUM | NETIF_F_HW_VLAN_CTAG_TX |
+		NETIF_F_HW_VLAN_CTAG_RX;
+	dev->vlan_features = NETIF_F_SG | NETIF_F_IP_CSUM | NETIF_F_TSO |
+		NETIF_F_HIGHDMA;
+
+	if (tp->mac_version == RTL_GIGA_MAC_VER_05)
+		/* Disallow toggling */
+		dev->hw_features &= ~NETIF_F_HW_VLAN_CTAG_RX;
+
+	dev->hw_features |= NETIF_F_RXALL;
+	dev->hw_features |= NETIF_F_RXFCS;
+
+	/* MTU range: 60 - hw-specific max */
+	dev->min_mtu = ETH_ZLEN;
+	dev->max_mtu = rtl_chip_infos[chipset].jumbo_max;
+
+	tp->hw_start = cfg->hw_start;
+	tp->event_slow = cfg->event_slow;
+
+	tp->opts1_mask = (tp->mac_version != RTL_GIGA_MAC_VER_01) ?
+		~(RxBOVF | RxFOVF) : ~0;
+
+	timer_setup(&tp->timer, rtl8169_phy_timer, (unsigned long)dev);
+
+	tp->rtl_fw = RTL_FIRMWARE_UNKNOWN;
+
+	rc = register_netdev(dev);
+	if (rc < 0) {
+		netif_napi_del(&tp->napi);
+		free_netdev(dev);
+		return rc;
+	}
+
+	platform_set_drvdata(pdev, dev);
+
+	netif_info(tp, probe, dev, "%s at 0x%p, %pM, XID %08x IRQ %d\n",
+		   rtl_chip_infos[chipset].name, ioaddr, dev->dev_addr,
+		   (u32)(RTL_R32(tp, TxConfig) & 0x9cf0f8ff), dev->irq);
+	if (rtl_chip_infos[chipset].jumbo_max != JUMBO_1K) {
+		netif_info(tp, probe, dev, "jumbo features [frames: %d bytes, "
+			   "tx checksumming: %s]\n",
+			   rtl_chip_infos[chipset].jumbo_max,
+			   rtl_chip_infos[chipset].jumbo_tx_csum ? "ok" : "ko");
+	}
+
+	if (tp->mac_version == RTL_GIGA_MAC_VER_27 ||
+	     tp->mac_version == RTL_GIGA_MAC_VER_28 ||
+	     tp->mac_version == RTL_GIGA_MAC_VER_31) {
+		rtl8168_driver_start(tp);
+	}
+
+#if 0
+	device_set_wakeup_enable(&pdev->dev, tp->features & RTL_FEATURE_WOL);
+#endif
+
+	netif_carrier_off(dev);
+
+	return rc;
+}
+
+static struct platform_driver rtl8169_platform_driver = {
+	.driver = {
+		.name = MODULENAME,
+		.of_match_table = rtl8169_pltfm_of_matches,
+	},
+	.probe = rtl8169_pltfm_probe,
+};
+
+module_platform_driver(rtl8169_platform_driver);

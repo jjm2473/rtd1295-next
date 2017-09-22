@@ -5,7 +5,7 @@
 config NET_VENDOR_REALTEK
 	bool "Realtek devices"
 	default y
-	depends on PCI || (PARPORT && X86)
+	depends on PCI || (PARPORT && X86) || ARCH_REALTEK
 	---help---
 	  If you have a network (Ethernet) card belonging to this class, say Y.
 
@@ -95,7 +95,7 @@ config 8139_OLD_RX_RESET
 	  old RX-reset behavior.  If unsure, say N.
 
 config R8169
-	tristate "Realtek 8169 gigabit ethernet support"
+	bool "Realtek 8169 gigabit ethernet support"
 	depends on PCI
 	select FW_LOADER
 	select CRC32
