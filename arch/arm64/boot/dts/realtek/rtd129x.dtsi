@@ -249,6 +249,8 @@
 		reg = <0x800 0x400>;
 		reg-shift = <2>;
 		reg-io-width = <4>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&uart0_pins>;
 		clocks = <&iso_clkc RTD1295_ISO_CLK_EN_MISC_UR0>;
 		resets = <&iso_reset RTD1295_ISO_RSTN_UR0>;
 		interrupt-parent = <&iso_irq_mux>;
@@ -295,6 +297,8 @@
 		reg = <0x200 0x100>;
 		reg-shift = <2>;
 		reg-io-width = <4>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&uart1_pins>;
 		clocks = <&clkc RTD1295_CLK_EN_UR1>;
 		resets = <&reset2 RTD1295_RSTN_UR1>;
 		interrupt-parent = <&misc_irq_mux>;
