@@ -68,6 +68,10 @@
 	mali-supply = <&g2227_dcdc3>;
 };
 
+&sata {
+	status = "okay";
+};
+
 &uart0 {
 	status = "okay";
 };
