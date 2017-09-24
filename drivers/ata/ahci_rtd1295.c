@@ -2,6 +2,7 @@
 #include <linux/bitops.h>
 #include <linux/gpio.h>
 #include <linux/module.h>
+#include <linux/of_address.h>
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 #include <linux/platform_device.h>
@@ -262,6 +263,22 @@ static void rtd129x_ahci_mac_init(struct device *dev, void __iomem *base, int po
 		writel_delay(0x0, base + 0xF68);
 }
 
+static int send_oob(void __iomem *ukbase, unsigned int port)
+{
+	u32 val = 0;
+
+	if (port == 0) {
+		val = readl(ukbase + 0x80);
+		val |= 0x115;
+	} else if (port == 1) {
+		val = readl(ukbase + 0x80);
+		val |= 0x12A;
+	}
+	writel(val, ukbase + 0x80);
+
+	return 0;
+}
+
 static const struct ata_port_info rtd129x_ahci_port_info = {
 	.flags		= AHCI_FLAG_COMMON | ATA_FLAG_EM | ATA_FLAG_SW_ACTIVITY,
 	.pio_mask	= ATA_PIO4,
@@ -281,12 +298,17 @@ static const struct of_device_id rtd129x_ahci_dt_ids[] = {
 static int rtd129x_ahci_probe(struct platform_device *pdev)
 {
 	struct ahci_host_priv *hpriv;
+	void __iomem *ukbase;
 	struct device_node *child;
 	int rc;
 
 	hpriv = ahci_platform_get_resources(pdev, 0);
 	if (IS_ERR(hpriv))
 		return PTR_ERR(hpriv);
+
+	ukbase = of_iomap(pdev->dev.of_node, 1);
+	if (!ukbase)
+		return -ENOMEM;
 
 	rc = ahci_platform_enable_resources(hpriv);
 	if (rc)
@@ -361,7 +383,7 @@ static int rtd129x_ahci_probe(struct platform_device *pdev)
 				reset_control_put(phy_pow_reset);
 		}
 
-		// oob
+		send_oob(ukbase, port);
 	}
 
 	rc = ahci_platform_init_host(pdev, hpriv, &rtd129x_ahci_port_info,
