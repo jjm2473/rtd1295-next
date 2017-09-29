@@ -171,6 +171,17 @@ config PINCTRL_MCP23S08
 	  This provides a GPIO interface supporting inputs and outputs.
 	  The I2C versions of the chips can be used as interrupt-controller.
 
+config PINCTRL_OWL
+	bool "Actions Semi S500 pinctrl driver"
+	depends on OF
+	depends on ARCH_ACTIONS || COMPILE_TEST
+	default ARCH_ACTIONS
+	select PINMUX
+	select PINCONF
+	select GENERIC_PINCONF
+	help
+	  This selects pinctrl driver for Actions Semiconductor S500 SoC.
+
 config PINCTRL_OXNAS
 	bool
 	depends on OF
