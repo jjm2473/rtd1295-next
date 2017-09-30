@@ -71,12 +71,34 @@
 	status = "okay";
 };
 
+&iso_gpio {
+	hog33 {
+		gpio-hog;
+		output-low;
+		gpios = <33 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &l2 {
 	l2-supply = <&g2227_ldo3>;
 };
 
 &mali {
 	mali-supply = <&g2227_dcdc3>;
+};
+
+&misc_gpio {
+	hog8 {
+		gpio-hog;
+		input;
+		gpios = <8 GPIO_ACTIVE_HIGH>;
+	};
+
+	hog100 {
+		gpio-hog;
+		output-high;
+		gpios = <100 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &sata {
