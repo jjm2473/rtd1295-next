@@ -6,6 +6,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "rtd1295.dtsi"
 
 / {
@@ -71,6 +73,10 @@
 
 &sata {
 	status = "okay";
+};
+
+&sata0 {
+	gpios = <&misc_gpio 16 GPIO_ACTIVE_HIGH>;
 };
 
 &uart0 {
