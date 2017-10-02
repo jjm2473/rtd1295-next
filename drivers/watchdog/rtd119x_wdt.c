@@ -8,12 +8,15 @@
 
 #include <linux/bitops.h>
 #include <linux/clk.h>
+#include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/platform_device.h>
 #include <linux/watchdog.h>
+
+#include <asm/system_misc.h>
 
 #define RTD119X_TCWCR		0x0
 #define RTD119X_TCWTR		0x4
@@ -30,6 +33,19 @@ struct rtd119x_watchdog_device {
 	void __iomem *base;
 	struct clk *clk;
 };
+
+static void __iomem *rtd119x_wdt_base;
+
+static void rtd119x_machine_restart(enum reboot_mode reboot_mode,
+				    const char *cmd)
+{
+	writel(RTD119X_TCWTR_WDCLR, rtd119x_wdt_base + RTD119X_TCWTR);
+	writel(0x800000, rtd119x_wdt_base + RTD119X_TCWOV);
+	writel(RTD119X_TCWCR_WDEN_ENABLED, rtd119x_wdt_base + RTD119X_TCWCR);
+
+	while (true)
+		mdelay(100);
+}
 
 static int rtd119x_wdt_start(struct watchdog_device *wdev)
 {
@@ -141,6 +157,9 @@ static int rtd119x_wdt_probe(struct platform_device *pdev)
 		clk_put(data->clk);
 		return ret;
 	}
+
+	rtd119x_wdt_base = data->base;
+	arm_pm_restart = rtd119x_machine_restart;
 
 	return 0;
 }
