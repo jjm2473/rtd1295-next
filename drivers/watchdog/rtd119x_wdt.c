@@ -8,11 +8,16 @@
 
 #include <linux/bitops.h>
 #include <linux/clk.h>
+#include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/platform_device.h>
 #include <linux/watchdog.h>
+
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+#include <asm/system_misc.h>
+#endif
 
 #define RTD119X_TCWCR		0x0
 #define RTD119X_TCWTR		0x4
@@ -29,6 +34,21 @@ struct rtd119x_watchdog_device {
 	void __iomem *base;
 	struct clk *clk;
 };
+
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+static void __iomem *rtd119x_wdt_base;
+
+static void rtd119x_machine_restart(enum reboot_mode reboot_mode,
+				    const char *cmd)
+{
+	writel(RTD119X_TCWTR_WDCLR, rtd119x_wdt_base + RTD119X_TCWTR);
+	writel(0x800000, rtd119x_wdt_base + RTD119X_TCWOV);
+	writel(RTD119X_TCWCR_WDEN_ENABLED, rtd119x_wdt_base + RTD119X_TCWCR);
+
+	while (true)
+		mdelay(100);
+}
+#endif
 
 static int rtd119x_wdt_start(struct watchdog_device *wdev)
 {
@@ -140,7 +160,16 @@ static int rtd119x_wdt_probe(struct platform_device *pdev)
 	rtd119x_wdt_set_timeout(&data->wdt_dev, data->wdt_dev.timeout);
 	rtd119x_wdt_stop(&data->wdt_dev);
 
-	return devm_watchdog_register_device(dev, &data->wdt_dev);
+	ret = devm_watchdog_register_device(dev, &data->wdt_dev);
+	if (ret)
+		return ret;
+
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
+	rtd119x_wdt_base = data->base;
+	arm_pm_restart = rtd119x_machine_restart;
+#endif
+
+	return 0;
 }
 
 static struct platform_driver rtd119x_wdt_driver = {
