@@ -322,7 +322,6 @@ static int rtd129x_ahci_probe(struct platform_device *pdev)
 		struct reset_control *phy_reset;
 		struct reset_control *phy_pow_reset;
 		u32 port;
-		int gpio;
 
 		if (!of_device_is_available(child))
 			continue;
@@ -354,15 +353,6 @@ static int rtd129x_ahci_probe(struct platform_device *pdev)
 			phy_reset = of_reset_control_get_exclusive_by_index(child, 2);
 			phy_pow_reset = of_reset_control_get_exclusive_by_index(child, 3);
 		}
-
-		gpio = of_get_gpio(child, 0);
-		if (gpio >= 0) {
-			rc = devm_gpio_request(port_dev, gpio, child->name);
-			if (rc < 0)
-				goto disable_resources;
-			gpio_direction_output(gpio, 1);
-		} else
-			dev_warn(port_dev, "getting GPIO for port %u failed", port);
 
 		if (sata_reset) {
 			dev_info(port_dev, "resetting SATA for port %u", port);
