@@ -34,6 +34,15 @@
 			method = "smc";
 		};
 	};*/
+
+	sata0_reg: sata0-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "SATA0";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&misc_gpio 16 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 };
 
 &cpu0 {
@@ -98,7 +107,7 @@
 };
 
 &sata0 {
-	gpios = <&misc_gpio 16 GPIO_ACTIVE_HIGH>;
+	target-supply = <&sata0_reg>;
 };
 
 &uart0 {
