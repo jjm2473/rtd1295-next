@@ -748,7 +748,7 @@ struct rtl8169_stats {
 struct rtl8169_private {
 	void __iomem *mmio_addr;	/* memory map physical address */
 	struct pci_dev *pci_dev;
-	struct net_device *dev;
+	struct net_device *netdev;
 	struct napi_struct napi;
 	u32 msg_enable;
 	u16 mac_version;
@@ -898,7 +898,7 @@ static bool rtl_loop_wait(struct rtl8169_private *tp, const struct rtl_cond *c,
 		if (c->check(tp) == high)
 			return true;
 	}
-	netif_err(tp, drv, tp->dev, "%s == %d (loop: %d, delay: %d).\n",
+	netif_err(tp, drv, tp->netdev, "%s == %d (loop: %d, delay: %d).\n",
 		  c->msg, !high, n, d);
 	return false;
 }
@@ -944,7 +944,7 @@ static bool name ## _check(struct rtl8169_private *tp)
 static bool rtl_ocp_reg_failure(struct rtl8169_private *tp, u32 reg)
 {
 	if (reg & 0xffff0001) {
-		netif_err(tp, drv, tp->dev, "Invalid ocp reg %x!\n", reg);
+		netif_err(tp, drv, tp->netdev, "Invalid ocp reg %x!\n", reg);
 		return true;
 	}
 	return false;
@@ -1526,7 +1526,7 @@ static void rtl8169_xmii_reset_enable(struct rtl8169_private *tp)
 
 static void rtl_link_chg_patch(struct rtl8169_private *tp)
 {
-	struct net_device *dev = tp->dev;
+	struct net_device *dev = tp->netdev;
 
 	if (!netif_running(dev))
 		return;
@@ -2723,14 +2723,14 @@ static bool rtl_fw_data_ok(struct rtl8169_private *tp, struct net_device *dev,
 
 		case PHY_BJMPN:
 			if (regno > index) {
-				netif_err(tp, ifup, tp->dev,
+				netif_err(tp, ifup, tp->netdev,
 					  "Out of range of firmware\n");
 				goto out;
 			}
 			break;
 		case PHY_READCOUNT_EQ_SKIP:
 			if (index + 2 >= pa->size) {
-				netif_err(tp, ifup, tp->dev,
+				netif_err(tp, ifup, tp->netdev,
 					  "Out of range of firmware\n");
 				goto out;
 			}
@@ -2739,14 +2739,14 @@ static bool rtl_fw_data_ok(struct rtl8169_private *tp, struct net_device *dev,
 		case PHY_COMP_NEQ_SKIPN:
 		case PHY_SKIPN:
 			if (index + 1 + regno >= pa->size) {
-				netif_err(tp, ifup, tp->dev,
+				netif_err(tp, ifup, tp->netdev,
 					  "Out of range of firmware\n");
 				goto out;
 			}
 			break;
 
 		default:
-			netif_err(tp, ifup, tp->dev,
+			netif_err(tp, ifup, tp->netdev,
 				  "Invalid action 0x%08x\n", action);
 			goto out;
 		}
@@ -2758,7 +2758,7 @@ out:
 
 static int rtl_check_firmware(struct rtl8169_private *tp, struct rtl_fw *rtl_fw)
 {
-	struct net_device *dev = tp->dev;
+	struct net_device *dev = tp->netdev;
 	int rc = -EINVAL;
 
 	if (!rtl_fw_format_ok(tp, rtl_fw)) {
@@ -2882,7 +2882,7 @@ static void rtl_apply_firmware(struct rtl8169_private *tp)
 static void rtl_apply_firmware_cond(struct rtl8169_private *tp, u8 reg, u16 val)
 {
 	if (rtl_readphy(tp, reg) != val)
-		netif_warn(tp, hw, tp->dev, "chipset not ready for firmware\n");
+		netif_warn(tp, hw, tp->netdev, "chipset not ready for firmware\n");
 	else
 		rtl_apply_firmware(tp);
 }
@@ -3681,7 +3681,7 @@ static void rtl8168e_2_hw_phy_config(struct rtl8169_private *tp)
 	rtl_writephy(tp, 0x1f, 0x0000);
 
 	/* Broken BIOS workaround: feed GigaMAC registers with MAC address. */
-	rtl_rar_exgmac_set(tp, tp->dev->dev_addr);
+	rtl_rar_exgmac_set(tp, tp->netdev->dev_addr);
 }
 
 static void rtl8168f_hw_phy_config(struct rtl8169_private *tp)
@@ -4479,7 +4479,7 @@ static void rtl_phy_work(struct rtl8169_private *tp)
 	if (tp->link_ok(tp))
 		return;
 
-	netif_dbg(tp, link, tp->dev, "PHY reset until link up\n");
+	netif_dbg(tp, link, tp->netdev, "PHY reset until link up\n");
 
 	tp->phy_reset_enable(tp);
 
@@ -4680,7 +4680,7 @@ static void rtl_speed_down(struct rtl8169_private *tp)
 		       ADVERTISED_1000baseT_Half |
 		       ADVERTISED_1000baseT_Full : 0);
 
-	rtl8169_set_speed(tp->dev, AUTONEG_ENABLE, SPEED_1000, DUPLEX_FULL,
+	rtl8169_set_speed(tp->netdev, AUTONEG_ENABLE, SPEED_1000, DUPLEX_FULL,
 			  adv);
 }
 
@@ -5238,7 +5238,7 @@ err_release_firmware:
 err_free:
 	kfree(rtl_fw);
 err_warn:
-	netif_warn(tp, ifup, tp->dev, "unable to load firmware patch %s (%d)\n",
+	netif_warn(tp, ifup, tp->netdev, "unable to load firmware patch %s (%d)\n",
 		   name, rc);
 out_no_firmware:
 	tp->rtl_fw = NULL;
@@ -5682,7 +5682,7 @@ static void rtl_hw_start_8168bb(struct rtl8169_private *tp)
 
 	RTL_W16(tp, CPlusCmd, RTL_R16(tp, CPlusCmd) & ~R8168_CPCMD_QUIRK_MASK);
 
-	if (tp->dev->mtu <= ETH_DATA_LEN) {
+	if (tp->netdev->mtu <= ETH_DATA_LEN) {
 		rtl_tx_performance_tweak(tp, PCI_EXP_DEVCTL_READRQ_4096B |
 					 PCI_EXP_DEVCTL_NOSNOOP_EN);
 	}
@@ -5703,7 +5703,7 @@ static void __rtl_hw_start_8168cp(struct rtl8169_private *tp)
 
 	RTL_W8(tp, Config3, RTL_R8(tp, Config3) & ~Beacon_en);
 
-	if (tp->dev->mtu <= ETH_DATA_LEN)
+	if (tp->netdev->mtu <= ETH_DATA_LEN)
 		rtl_tx_performance_tweak(tp, PCI_EXP_DEVCTL_READRQ_4096B);
 
 	rtl_disable_clock_request(tp);
@@ -5734,7 +5734,7 @@ static void rtl_hw_start_8168cp_2(struct rtl8169_private *tp)
 
 	RTL_W8(tp, Config3, RTL_R8(tp, Config3) & ~Beacon_en);
 
-	if (tp->dev->mtu <= ETH_DATA_LEN)
+	if (tp->netdev->mtu <= ETH_DATA_LEN)
 		rtl_tx_performance_tweak(tp, PCI_EXP_DEVCTL_READRQ_4096B);
 
 	RTL_W16(tp, CPlusCmd, RTL_R16(tp, CPlusCmd) & ~R8168_CPCMD_QUIRK_MASK);
@@ -5751,7 +5751,7 @@ static void rtl_hw_start_8168cp_3(struct rtl8169_private *tp)
 
 	RTL_W8(tp, MaxTxPacketSize, TxPacketMax);
 
-	if (tp->dev->mtu <= ETH_DATA_LEN)
+	if (tp->netdev->mtu <= ETH_DATA_LEN)
 		rtl_tx_performance_tweak(tp, PCI_EXP_DEVCTL_READRQ_4096B);
 
 	RTL_W16(tp, CPlusCmd, RTL_R16(tp, CPlusCmd) & ~R8168_CPCMD_QUIRK_MASK);
@@ -5808,7 +5808,7 @@ static void rtl_hw_start_8168d(struct rtl8169_private *tp)
 
 	RTL_W8(tp, MaxTxPacketSize, TxPacketMax);
 
-	if (tp->dev->mtu <= ETH_DATA_LEN)
+	if (tp->netdev->mtu <= ETH_DATA_LEN)
 		rtl_tx_performance_tweak(tp, PCI_EXP_DEVCTL_READRQ_4096B);
 
 	RTL_W16(tp, CPlusCmd, RTL_R16(tp, CPlusCmd) & ~R8168_CPCMD_QUIRK_MASK);
@@ -5818,7 +5818,7 @@ static void rtl_hw_start_8168dp(struct rtl8169_private *tp)
 {
 	rtl_csi_access_enable_1(tp);
 
-	if (tp->dev->mtu <= ETH_DATA_LEN)
+	if (tp->netdev->mtu <= ETH_DATA_LEN)
 		rtl_tx_performance_tweak(tp, PCI_EXP_DEVCTL_READRQ_4096B);
 
 	RTL_W8(tp, MaxTxPacketSize, TxPacketMax);
@@ -5867,7 +5867,7 @@ static void rtl_hw_start_8168e_1(struct rtl8169_private *tp)
 
 	rtl_ephy_init(tp, e_info_8168e_1, ARRAY_SIZE(e_info_8168e_1));
 
-	if (tp->dev->mtu <= ETH_DATA_LEN)
+	if (tp->netdev->mtu <= ETH_DATA_LEN)
 		rtl_tx_performance_tweak(tp, PCI_EXP_DEVCTL_READRQ_4096B);
 
 	RTL_W8(tp, MaxTxPacketSize, TxPacketMax);
@@ -5892,7 +5892,7 @@ static void rtl_hw_start_8168e_2(struct rtl8169_private *tp)
 
 	rtl_ephy_init(tp, e_info_8168e_2, ARRAY_SIZE(e_info_8168e_2));
 
-	if (tp->dev->mtu <= ETH_DATA_LEN)
+	if (tp->netdev->mtu <= ETH_DATA_LEN)
 		rtl_tx_performance_tweak(tp, PCI_EXP_DEVCTL_READRQ_4096B);
 
 	rtl_eri_write(tp, 0xc0, ERIAR_MASK_0011, 0x0000, ERIAR_EXGMAC);
@@ -6670,6 +6670,7 @@ static struct sk_buff *rtl8169_alloc_rx_data(struct rtl8169_private *tp,
 	void *data;
 	dma_addr_t mapping;
 	struct device *d = tp_to_dev(tp);
+	struct net_device *dev = tp->netdev;
 	int node = dev_to_node(d);
 
 	data = kmalloc_node(R8169_RX_BUF_SIZE, GFP_KERNEL, node);
@@ -6687,7 +6688,7 @@ static struct sk_buff *rtl8169_alloc_rx_data(struct rtl8169_private *tp,
 				 DMA_FROM_DEVICE);
 	if (unlikely(dma_mapping_error(d, mapping))) {
 		if (net_ratelimit())
-			netif_err(tp, drv, tp->dev, "Failed to map RX DMA!\n");
+			netif_err(tp, drv, tp->netdev, "Failed to map RX DMA!\n");
 		goto err_out;
 	}
 
@@ -6794,7 +6795,7 @@ static void rtl8169_tx_clear(struct rtl8169_private *tp)
 
 static void rtl_reset_work(struct rtl8169_private *tp)
 {
-	struct net_device *dev = tp->dev;
+	struct net_device *dev = tp->netdev;
 	int i;
 
 	napi_disable(&tp->napi);
@@ -6845,7 +6846,7 @@ static int rtl8169_xmit_frags(struct rtl8169_private *tp, struct sk_buff *skb,
 		mapping = dma_map_single(d, addr, len, DMA_TO_DEVICE);
 		if (unlikely(dma_mapping_error(d, mapping))) {
 			if (net_ratelimit())
-				netif_err(tp, drv, tp->dev,
+				netif_err(tp, drv, tp->netdev,
 					  "Failed to map TX fragments DMA!\n");
 			goto err_out;
 		}
@@ -6888,7 +6889,7 @@ static void r8169_csum_workaround(struct rtl8169_private *tp,
 				  struct sk_buff *skb)
 {
 	if (skb_shinfo(skb)->gso_size) {
-		netdev_features_t features = tp->dev->features;
+		netdev_features_t features = tp->netdev->features;
 		struct sk_buff *segs, *nskb;
 
 		features &= ~(NETIF_F_SG | NETIF_F_IPV6_CSUM | NETIF_F_TSO6);
@@ -6900,7 +6901,7 @@ static void r8169_csum_workaround(struct rtl8169_private *tp,
 			nskb = segs;
 			segs = segs->next;
 			nskb->next = NULL;
-			rtl8169_start_xmit(nskb, tp->dev);
+			rtl8169_start_xmit(nskb, tp->netdev);
 		} while (segs);
 
 		dev_consume_skb_any(skb);
@@ -6908,12 +6909,12 @@ static void r8169_csum_workaround(struct rtl8169_private *tp,
 		if (skb_checksum_help(skb) < 0)
 			goto drop;
 
-		rtl8169_start_xmit(skb, tp->dev);
+		rtl8169_start_xmit(skb, tp->netdev);
 	} else {
 		struct net_device_stats *stats;
 
 drop:
-		stats = &tp->dev->stats;
+		stats = &tp->netdev->stats;
 		stats->tx_dropped++;
 		dev_kfree_skb_any(skb);
 	}
@@ -6984,7 +6985,7 @@ static bool rtl8169_tso_csum_v2(struct rtl8169_private *tp,
 
 	if (mss) {
 		if (transport_offset > GTTCPHO_MAX) {
-			netif_warn(tp, tx_err, tp->dev,
+			netif_warn(tp, tx_err, tp->netdev,
 				   "Invalid transport offset 0x%x for TSO\n",
 				   transport_offset);
 			return false;
@@ -7016,7 +7017,7 @@ static bool rtl8169_tso_csum_v2(struct rtl8169_private *tp,
 			return !(skb_checksum_help(skb) || eth_skb_pad(skb));
 
 		if (transport_offset > TCPHO_MAX) {
-			netif_warn(tp, tx_err, tp->dev,
+			netif_warn(tp, tx_err, tp->netdev,
 				   "Invalid transport offset 0x%x\n",
 				   transport_offset);
 			return false;
@@ -7419,7 +7420,7 @@ static irqreturn_t rtl8169_interrupt(int irq, void *dev_instance)
  */
 static void rtl_slow_event_work(struct rtl8169_private *tp)
 {
-	struct net_device *dev = tp->dev;
+	struct net_device *dev = tp->netdev;
 	u16 status;
 
 	status = rtl_get_events(tp) & tp->event_slow;
@@ -7459,7 +7460,7 @@ static void rtl_task(struct work_struct *work)
 	};
 	struct rtl8169_private *tp =
 		container_of(work, struct rtl8169_private, wk.work);
-	struct net_device *dev = tp->dev;
+	struct net_device *dev = tp->netdev;
 	int i;
 
 	rtl_lock_work(tp);
@@ -7483,7 +7484,7 @@ out_unlock:
 static int rtl8169_poll(struct napi_struct *napi, int budget)
 {
 	struct rtl8169_private *tp = container_of(napi, struct rtl8169_private, napi);
-	struct net_device *dev = tp->dev;
+	struct net_device *dev = tp->netdev;
 	u16 enable_mask = RTL_EVENT_NAPI | tp->event_slow;
 	int work_done= 0;
 	u16 status;
@@ -8087,7 +8088,7 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	dev->netdev_ops = &rtl_netdev_ops;
 	tp = netdev_priv(dev);
-	tp->dev = dev;
+	tp->netdev = dev;
 	tp->pci_dev = pdev;
 	tp->msg_enable = netif_msg_init(debug.msg_enable, R8169_MSG_DEFAULT);
 
