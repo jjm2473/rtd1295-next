@@ -1797,7 +1797,12 @@ static void rtl8169_get_drvinfo(struct net_device *dev,
 
 	strlcpy(info->driver, MODULENAME, sizeof(info->driver));
 	strlcpy(info->version, RTL8169_VERSION, sizeof(info->version));
-	strlcpy(info->bus_info, pci_name(tp->pci_dev), sizeof(info->bus_info));
+#if 0
+	if (tp->pci_dev)
+		strlcpy(info->bus_info, pci_name(tp->pci_dev), sizeof(info->bus_info));
+	else
+#endif
+		strlcpy(info->bus_info, dev_name(tp->dev), sizeof(info->bus_info));
 	BUILD_BUG_ON(sizeof(info->fw_version) < sizeof(rtl_fw->version));
 	if (!IS_ERR_OR_NULL(rtl_fw))
 		strlcpy(info->fw_version, rtl_fw->version,
@@ -1919,8 +1924,8 @@ static int rtl8169_set_speed(struct net_device *dev,
 		goto out;
 
 	if (netif_running(dev) && (autoneg == AUTONEG_ENABLE) &&
-	    (advertising & ADVERTISED_1000baseT_Full) &&
-	    !pci_is_pcie(tp->pci_dev)) {
+	    (advertising & ADVERTISED_1000baseT_Full) /*&&
+	    !(tp->pci_dev && pci_is_pcie(tp->pci_dev))*/) {
 		mod_timer(&tp->timer, jiffies + RTL8169_PHY_TIMEOUT);
 	}
 out:
@@ -2974,7 +2979,11 @@ static void rtl8169sb_hw_phy_config(struct rtl8169_private *tp)
 
 static void rtl8169scd_hw_phy_config_quirk(struct rtl8169_private *tp)
 {
+#if 0
 	struct pci_dev *pdev = tp->pci_dev;
+
+	if (!pdev)
+		return;
 
 	if ((pdev->subsystem_vendor != PCI_VENDOR_ID_GIGABYTE) ||
 	    (pdev->subsystem_device != 0xe000))
@@ -2983,6 +2992,7 @@ static void rtl8169scd_hw_phy_config_quirk(struct rtl8169_private *tp)
 	rtl_writephy(tp, 0x1f, 0x0001);
 	rtl_writephy(tp, 0x10, 0xf01b);
 	rtl_writephy(tp, 0x1f, 0x0000);
+#endif
 }
 
 static void rtl8169scd_hw_phy_config(struct rtl8169_private *tp)
@@ -3935,7 +3945,15 @@ static void rtl8168g_1_hw_phy_config(struct rtl8169_private *tp)
 
 static void rtl8168g_2_hw_phy_config(struct rtl8169_private *tp)
 {
+#if 1
+	/* set dis_mcu_clroob to avoid WOL fail when ALDPS mode is enabled */
+	RTL_W8(tp, MCU, RTL_R8(tp, MCU) | DIS_MCU_CLROOB);
+	/* enable ALDPS mode */
+	rtl_writephy(tp, 0x1f, 0x0a43);
+	rtl_patchphy(tp, 0x18, 4);
+#else
 	rtl_apply_firmware(tp);
+#endif
 }
 
 static void rtl8168h_1_hw_phy_config(struct rtl8169_private *tp)
@@ -4527,6 +4545,8 @@ static bool rtl_tbi_enabled(struct rtl8169_private *tp)
 
 static void rtl8169_init_phy(struct net_device *dev, struct rtl8169_private *tp)
 {
+	u32 tmp;
+
 	rtl_hw_phy_config(dev);
 
 	if (tp->mac_version <= RTL_GIGA_MAC_VER_06) {
@@ -4534,10 +4554,16 @@ static void rtl8169_init_phy(struct net_device *dev, struct rtl8169_private *tp)
 		RTL_W8(tp, 0x82, 0x01);
 	}
 
+	// disable now is oob
+	RTL_W8(tp, MCU, RTL_R8(tp, MCU) & ~NOW_IS_OOB);
+
+#if 0
+	if (tp->pci_dev)
 	pci_write_config_byte(tp->pci_dev, PCI_LATENCY_TIMER, 0x40);
 
-	if (tp->mac_version <= RTL_GIGA_MAC_VER_06)
+	if (tp->mac_version <= RTL_GIGA_MAC_VER_06 && tp->pci_dev)
 		pci_write_config_byte(tp->pci_dev, PCI_CACHE_LINE_SIZE, 0x08);
+#endif
 
 	if (tp->mac_version == RTL_GIGA_MAC_VER_02) {
 		dprintk("Set MAC Reg C+CR Offset 0x82h = 0x01h\n");
@@ -4554,6 +4580,11 @@ static void rtl8169_init_phy(struct net_device *dev, struct rtl8169_private *tp)
 			  (tp->mii.supports_gmii ?
 			   ADVERTISED_1000baseT_Half |
 			   ADVERTISED_1000baseT_Full : 0));
+
+	/* enable interrupt from PHY to MCU */
+	tmp = r8168_mac_ocp_read(tp, 0xfc1e);
+	tmp |= (BIT(1) | BIT(11) | BIT(12));
+	r8168_mac_ocp_write(tp, 0xfc1e, tmp);
 
 	if (rtl_tbi_enabled(tp))
 		netif_info(tp, link, dev, "TBI auto-negotiating\n");
@@ -7880,7 +7911,7 @@ static void rtl_wol_shutdown_quirk(struct rtl8169_private *tp)
 	case RTL_GIGA_MAC_VER_11:
 	case RTL_GIGA_MAC_VER_12:
 	case RTL_GIGA_MAC_VER_17:
-		pci_clear_master(tp->pci_dev);
+		//pci_clear_master(tp->pci_dev);
 
 		RTL_W8(tp, ChipCmd, CmdRxEnb);
 		/* PCI commit */
@@ -7997,7 +8028,10 @@ static int rtl_alloc_irq(struct rtl8169_private *tp)
 		flags = PCI_IRQ_ALL_TYPES;
 	}
 
+#if 0
 	return pci_alloc_irq_vectors(tp->pci_dev, 1, 1, flags);
+#endif
+	return 0;
 }
 
 DECLARE_RTL_COND(rtl_link_list_ready_cond)
@@ -8124,7 +8158,9 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		return rc;
 
 	tp = netdev_priv(dev);
+#if 0
 	tp->pci_dev = pdev;
+#endif
 	mii = &tp->mii;
 
 	/* disable ASPM completely as that cause random device stop working
