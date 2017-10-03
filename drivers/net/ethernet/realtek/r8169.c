@@ -748,6 +748,7 @@ struct rtl8169_stats {
 struct rtl8169_private {
 	void __iomem *mmio_addr;	/* memory map physical address */
 	struct pci_dev *pci_dev;
+	struct device *dev;
 	struct net_device *netdev;
 	struct napi_struct napi;
 	u32 msg_enable;
