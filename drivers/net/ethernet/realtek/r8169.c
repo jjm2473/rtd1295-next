@@ -332,6 +332,7 @@ enum rtl_registers {
 	MAR0		= 8,	/* Multicast filter. */
 	CounterAddrLow		= 0x10,
 	CounterAddrHigh		= 0x14,
+	LEDSel			= 0x18,
 	TxDescStartAddrLow	= 0x20,
 	TxDescStartAddrHigh	= 0x24,
 	TxHDescStartAddrLow	= 0x28,
@@ -358,6 +359,7 @@ enum rtl_registers {
 					/* Unlimited maximum PCI burst. */
 #define	RX_DMA_BURST			(7 << RXCFG_DMA_SHIFT)
 
+	TCTR		= 0x48,
 	RxMissed	= 0x4c,
 	Cfg9346		= 0x50,
 	Config0		= 0x51,
@@ -368,6 +370,7 @@ enum rtl_registers {
 	Config3		= 0x54,
 	Config4		= 0x55,
 	Config5		= 0x56,
+	TimeInt0	= 0x58,
 	MultiIntr	= 0x5c,
 	PHYAR		= 0x60,
 	PHYstatus	= 0x6c,
@@ -441,6 +444,7 @@ enum rtl8168_8101_registers {
 #define	EN_NDP				(1 << 3)
 #define	EN_OOB_RESET			(1 << 2)
 #define	LINK_LIST_RDY			(1 << 1)
+#define	DIS_MCU_CLROOB			(1 << 0)
 	EFUSEAR			= 0xdc,
 #define	EFUSEAR_FLAG			0x80000000
 #define	EFUSEAR_WRITE_CMD		0x80000000
