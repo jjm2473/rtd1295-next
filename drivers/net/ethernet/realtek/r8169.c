@@ -7680,13 +7680,12 @@ static void
 rtl8169_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 {
 	struct rtl8169_private *tp = netdev_priv(dev);
-	struct pci_dev *pdev = tp->pci_dev;
 	struct rtl8169_counters *counters = tp->counters;
 	unsigned int start;
 
-	pm_runtime_get_noresume(&pdev->dev);
+	pm_runtime_get_noresume(tp->dev);
 
-	if (netif_running(dev) && pm_runtime_active(&pdev->dev))
+	if (netif_running(dev) && pm_runtime_active(tp->dev))
 		rtl8169_rx_missed(dev);
 
 	do {
@@ -7714,7 +7713,7 @@ rtl8169_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 	 * Fetch additonal counter values missing in stats collected by driver
 	 * from tally counters.
 	 */
-	if (pm_runtime_active(&pdev->dev))
+	if (pm_runtime_active(tp->dev))
 		rtl8169_update_counters(tp);
 
 	/*
@@ -7728,7 +7727,7 @@ rtl8169_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 	stats->tx_aborted_errors = le16_to_cpu(counters->tx_aborted) -
 		le16_to_cpu(tp->tc_offset.tx_aborted);
 
-	pm_runtime_put_noidle(&pdev->dev);
+	pm_runtime_put_noidle(tp->dev);
 }
 
 static void rtl8169_net_suspend(struct net_device *dev)
