@@ -28,6 +28,7 @@
 #include <linux/pci-aspm.h>
 #include <linux/prefetch.h>
 #include <linux/ipv6.h>
+#include <linux/of_address.h>
 #include <linux/of_irq.h>
 #include <net/ip6_checksum.h>
 
@@ -8384,6 +8385,15 @@ static int rtl8169_pltfm_probe(struct platform_device *pdev)
 	irq = irq_of_parse_and_map(pdev->dev.of_node, 0);
 	if (irq < 0)
 		return irq;
+
+	if (!pdev->dev.dma_mask)
+		pdev->dev.dma_mask = &pdev->dev.coherent_dma_mask;
+	if (!pdev->dev.coherent_dma_mask)
+		pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+
+	ioaddr = of_iomap(pdev->dev.of_node, 0);
+	if (!ioaddr)
+		return -ENOMEM;
 
 	rc = rtl_alloc_common(&pdev->dev, cfg, &dev);
 	if (rc)
