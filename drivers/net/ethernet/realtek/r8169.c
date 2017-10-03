@@ -7595,7 +7595,7 @@ static int rtl8169_close(struct net_device *dev)
 	struct rtl8169_private *tp = netdev_priv(dev);
 	struct pci_dev *pdev = tp->pci_dev;
 
-	pm_runtime_get_sync(&pdev->dev);
+	pm_runtime_get_sync(tp->dev);
 
 	/* Update counters before going down */
 	rtl8169_update_counters(tp);
@@ -7610,14 +7610,14 @@ static int rtl8169_close(struct net_device *dev)
 
 	pci_free_irq(pdev, 0, tp);
 
-	dma_free_coherent(&pdev->dev, R8169_RX_RING_BYTES, tp->RxDescArray,
+	dma_free_coherent(tp->dev, R8169_RX_RING_BYTES, tp->RxDescArray,
 			  tp->RxPhyAddr);
-	dma_free_coherent(&pdev->dev, R8169_TX_RING_BYTES, tp->TxDescArray,
+	dma_free_coherent(tp->dev, R8169_TX_RING_BYTES, tp->TxDescArray,
 			  tp->TxPhyAddr);
 	tp->TxDescArray = NULL;
 	tp->RxDescArray = NULL;
 
-	pm_runtime_put_sync(&pdev->dev);
+	pm_runtime_put_sync(tp->dev);
 
 	return 0;
 }
@@ -7637,18 +7637,18 @@ static int rtl_open(struct net_device *dev)
 	struct pci_dev *pdev = tp->pci_dev;
 	int retval = -ENOMEM;
 
-	pm_runtime_get_sync(&pdev->dev);
+	pm_runtime_get_sync(tp->dev);
 
 	/*
 	 * Rx and Tx descriptors needs 256 bytes alignment.
 	 * dma_alloc_coherent provides more.
 	 */
-	tp->TxDescArray = dma_alloc_coherent(&pdev->dev, R8169_TX_RING_BYTES,
+	tp->TxDescArray = dma_alloc_coherent(tp->dev, R8169_TX_RING_BYTES,
 					     &tp->TxPhyAddr, GFP_KERNEL);
 	if (!tp->TxDescArray)
 		goto err_pm_runtime_put;
 
-	tp->RxDescArray = dma_alloc_coherent(&pdev->dev, R8169_RX_RING_BYTES,
+	tp->RxDescArray = dma_alloc_coherent(tp->dev, R8169_RX_RING_BYTES,
 					     &tp->RxPhyAddr, GFP_KERNEL);
 	if (!tp->RxDescArray)
 		goto err_free_tx_0;
@@ -7690,7 +7690,7 @@ static int rtl_open(struct net_device *dev)
 	rtl_unlock_work(tp);
 
 	tp->saved_wolopts = 0;
-	pm_runtime_put_sync(&pdev->dev);
+	pm_runtime_put_sync(tp->dev);
 
 	rtl8169_check_link_status(dev, tp);
 out:
@@ -7700,15 +7700,15 @@ err_release_fw_2:
 	rtl_release_firmware(tp);
 	rtl8169_rx_clear(tp);
 err_free_rx_1:
-	dma_free_coherent(&pdev->dev, R8169_RX_RING_BYTES, tp->RxDescArray,
+	dma_free_coherent(tp->dev, R8169_RX_RING_BYTES, tp->RxDescArray,
 			  tp->RxPhyAddr);
 	tp->RxDescArray = NULL;
 err_free_tx_0:
-	dma_free_coherent(&pdev->dev, R8169_TX_RING_BYTES, tp->TxDescArray,
+	dma_free_coherent(tp->dev, R8169_TX_RING_BYTES, tp->TxDescArray,
 			  tp->TxPhyAddr);
 	tp->TxDescArray = NULL;
 err_pm_runtime_put:
-	pm_runtime_put_noidle(&pdev->dev);
+	pm_runtime_put_noidle(tp->dev);
 	goto out;
 }
 
