@@ -115,6 +115,11 @@
 			compatible = "realtek,rtd1295-iso-pinctrl";
 			reg = <0x98007300 0x24>;
 
+			etn_led_pins: etn-led-pins {
+				function = "etn_led";
+				groups = "etn_led_link", "etn_led_rxtx";
+			};
+
 			i2c0_pins: i2c0-pins {
 				function = "i2c0";
 				groups = "i2c0";
@@ -275,6 +280,15 @@
 			i2c5_pins: i2c5-pins {
 				function = "i2c5";
 				groups = "i2c_scl_5", "i2c_sda_5";
+			};
+
+			rgmii0_pins: rgmii0-pins {
+				function = "rgmii";
+				groups = "rgmii0_txc", "rgmii0_tx_ctl",
+					 "rgmii0_txd_0", "rgmii0_txd_1", "rgmii0_txd_2", "rgmii0_txd_3",
+					 "rgmii0_rxc", "rgmii0_rx_ctl",
+					 "rgmii0_rxd_0", "rgmii0_rxd_1", "rgmii0_rxd_2", "rgmii0_rxd_3",
+					 "rgmii0_mdio", "rgmii0_mdc";
 			};
 		};
 

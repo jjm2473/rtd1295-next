@@ -202,8 +202,18 @@
 
 		gmac: ethernet@98016000 {
 			compatible = "realtek,r8168";
-			reg = <0x98016000 0x1000>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&rgmii0_pins>, <&etn_led_pins>;
+			reg = <0x98016000 0x1000>,
+			      <0x9800705c 0x8>,
+			      <0x98007fc0 0x4>;
+			clocks = <&iso_clkc RTD1295_ISO_CLK_EN_ETN_SYS>,
+				 <&iso_clkc RTD1295_ISO_CLK_EN_ETN_250M>;
+			clock-names = "sys", "250m";
+			resets = <&iso_reset RTD1295_ISO_RSTN_GMAC>,
+				 <&iso_reset RTD1295_ISO_RSTN_GPHY>;
 			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
 		};
 
 		sb1@9801c000 {
