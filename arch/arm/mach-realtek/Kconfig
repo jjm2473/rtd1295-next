@@ -1,0 +1,14 @@
+menuconfig ARCH_REALTEK
+	bool "Realtek SoCs"
+	depends on ARCH_MULTI_V7
+	select ARM_AMBA
+	select ARM_GIC
+	select ARM_GLOBAL_TIMER
+	select CACHE_L2X0
+	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
+	select COMMON_CLK
+	select GENERIC_IRQ_CHIP
+	select HAVE_ARM_SCU if SMP
+	select HAVE_ARM_TWD if SMP
+	help
+	  This enables support for the Realtek RTD1195 SoC family.
