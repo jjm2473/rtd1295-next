@@ -394,6 +394,13 @@
 		#hwlock-cells = <0>;
 	};
 
+	bridge@0 {
+		compatible = "realtek,rtd1195-sb2";
+		reg = <0x0 0x100>;
+		resets = <&reset3 RTD1195_RSTN_SB2>;
+		interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
 	chip-info@200 {
 		compatible = "realtek,rtd1195-chip";
 		reg = <0x200 0x8>;
