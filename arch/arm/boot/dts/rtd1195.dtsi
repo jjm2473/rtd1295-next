@@ -412,3 +412,12 @@
 		#hwlock-cells = <1>;
 	};
 };
+
+&scpu_wrapper {
+	scpu@0 {
+		compatible = "realtek,rtd1195-scpu-wrapper";
+		reg = <0x0 0x500>;
+		clocks = <&clkc RTD1195_CLK_EN_SCPU>;
+		interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};
