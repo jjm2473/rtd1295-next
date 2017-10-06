@@ -127,6 +127,12 @@
 			status = "disabled";
 		};
 
+		sb2@1801a000 {
+			compatible = "realtek,rtd1195-sb2";
+			reg = <0x1801a000 0x100>;
+			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		misc_irq_mux: interrupt-controller@1801b000 {
 			compatible = "realtek,rtd1195-misc-irq-mux";
 			reg = <0x1801b000 0x100>;
