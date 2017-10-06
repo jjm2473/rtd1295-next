@@ -35,6 +35,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a7";
 			reg = <0x0>;
+			enable-method = "realtek,rtd1195-smp";
 			clock-frequency = <1000000000>;
 		};
 
@@ -42,6 +43,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a7";
 			reg = <0x1>;
+			enable-method = "realtek,rtd1195-smp";
 			clock-frequency = <1000000000>;
 		};
 	};
