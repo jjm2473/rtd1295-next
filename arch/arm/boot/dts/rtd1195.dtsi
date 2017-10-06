@@ -146,6 +146,12 @@
 			status = "disabled";
 		};
 
+		scpu@1801d000 {
+			compatible = "realtek,rtd1195-scpu-wrapper";
+			reg = <0x1801d000 0x500>;
+			interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		gic: interrupt-controller@ff011000 {
 			compatible = "arm,cortex-a7-gic";
 			reg = <0xff011000 0x1000>,
