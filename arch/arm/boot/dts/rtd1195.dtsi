@@ -223,6 +223,11 @@
 		#hwlock-cells = <0>;
 	};
 
+	chip-info@200 {
+		compatible = "realtek,rtd1195-chip";
+		reg = <0x200 0x8>;
+	};
+
 	sb2_hd_sem_new: hwspinlock@620 {
 		compatible = "realtek,rtd1195-sb2-sem";
 		reg = <0x620 0x20>;
