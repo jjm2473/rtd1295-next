@@ -51,6 +51,7 @@ static irqreturn_t rtd_sb2_handle_irq(int irq, void *base)
 }
 
 static const struct of_device_id rtd_sb2_dt_ids[] = {
+	 { .compatible = "realtek,rtd1195-sb2" },
 	 { .compatible = "realtek,rtd1295-sb2" },
 	 { }
 };
