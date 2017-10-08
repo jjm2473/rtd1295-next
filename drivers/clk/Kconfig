@@ -249,6 +249,13 @@ config COMMON_CLK_OXNAS
 	---help---
 	  Support for the OXNAS SoC Family clocks.
 
+config CLK_RTD119X
+	bool "Clock driver for the Realtek RTD119x SoC family"
+	default ARCH_REALTEK && ARM
+	depends on (ARCH_REALTEK && ARM) || COMPILE_TEST
+	---help---
+	  Support for the Realtek RTD1195 SoC.
+
 config CLK_RTD129X
 	bool "Clock driver for the Realtek RTD129x SoC family"
 	default ARCH_REALTEK && ARM64
