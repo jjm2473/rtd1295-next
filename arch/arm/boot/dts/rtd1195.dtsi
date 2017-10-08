@@ -85,6 +85,14 @@
 		clock-output-names = "osc27M";
 	};
 
+	clk_sys: sys-clk {
+		compatible = "fixed-factor-clock";
+		clocks = <&osc27M>;
+		clock-div = <1>;
+		clock-mult = <9>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <1>;
