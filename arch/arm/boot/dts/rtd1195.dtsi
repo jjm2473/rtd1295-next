@@ -110,6 +110,13 @@
 		#size-cells = <1>;
 		ranges;
 
+		clkc: clock-controller@18000000 {
+			compatible = "realtek,rtd1195-clk";
+			reg = <0x18000000 0x1000>;
+			clocks = <&osc27M>;
+			#clock-cells = <1>;
+		};
+
 		iso_irq_mux: interrupt-controller@18007000 {
 			compatible = "realtek,rtd1195-iso-irq-mux";
 			reg = <0x18007000 0x100>;
