@@ -148,6 +148,11 @@
 			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
+		chip-info@1801a200 {
+			compatible = "realtek,rtd1195-chip";
+			reg = <0x1801a200 0x8>;
+		};
+
 		misc_irq_mux: interrupt-controller@1801b000 {
 			compatible = "realtek,rtd1195-misc-irq-mux";
 			reg = <0x1801b000 0x100>;
