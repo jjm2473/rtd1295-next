@@ -5,6 +5,9 @@
  * Copyright (c) 2017-2019 Andreas Färber
  */
 
+#include <linux/clk-provider.h>
+#include <linux/clocksource.h>
+#include <linux/io.h>
 #include <linux/memblock.h>
 #include <asm/mach/arch.h>
 
@@ -27,6 +30,18 @@ static void __init rtd1195_reserve(void)
 	rtd1195_memblock_remove(0x18100000, 0x01000000);
 }
 
+static void __init rtd1195_init_time(void)
+{
+	void __iomem *base;
+
+	base = ioremap(0xff018000, 4);
+	writel_relaxed(0x1, base);
+	iounmap(base);
+
+	of_clk_init(NULL);
+	timer_probe();
+}
+
 static const char *const rtd1195_dt_compat[] __initconst = {
 	"realtek,rtd1195",
 	NULL
@@ -34,6 +49,7 @@ static const char *const rtd1195_dt_compat[] __initconst = {
 
 DT_MACHINE_START(rtd1195, "Realtek RTD1195")
 	.dt_compat = rtd1195_dt_compat,
+	.init_time = rtd1195_init_time,
 	.reserve = rtd1195_reserve,
 	.l2c_aux_val = 0x0,
 	.l2c_aux_mask = ~0x0,
