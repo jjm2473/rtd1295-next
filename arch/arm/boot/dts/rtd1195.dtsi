@@ -90,6 +90,14 @@
 		clock-output-names = "osc27M";
 	};
 
+	clk_sys: sys-clk {
+		compatible = "fixed-factor-clock";
+		clocks = <&osc27M>;
+		clock-div = <1>;
+		clock-mult = <9>;
+		#clock-cells = <0>;
+	};
+
 	dummy_clk: dummy-clk {
 		compatible = "fixed-clock";
 		clock-frequency = <0>;
