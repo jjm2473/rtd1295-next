@@ -1,3 +1,5 @@
+#include <linux/clk-provider.h>
+#include <linux/clocksource.h>
 #include <linux/io.h>
 #include <linux/memblock.h>
 #include <linux/of_address.h>
@@ -72,6 +74,14 @@ static void __init rtd119x_reserve(void)
 	rtd119x_memblock_remove(0x18100000, 0x01000000);
 }
 
+static void __init rtd119x_timer_init(void)
+{
+	writel(0x1, IOMEM(0xff018000));
+
+	of_clk_init(NULL);
+	timer_probe();
+}
+
 static void __init rtd119x_machine_init(void)
 {
 	struct device_node *node;
@@ -120,6 +130,7 @@ static const char *const rtd119x_dt_compat[] __initconst = {
 DT_MACHINE_START(rtd119x, "RTD119x")
 	.dt_compat = rtd119x_dt_compat,
 	.init_machine = rtd119x_machine_init,
+	.init_time = rtd119x_timer_init,
 	.reserve = rtd119x_reserve,
 	.map_io = rtd119x_map_io,
 MACHINE_END
