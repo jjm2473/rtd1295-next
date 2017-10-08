@@ -110,6 +110,7 @@ static const struct watchdog_info rtd119x_wdt_info = {
 };
 
 static const struct of_device_id rtd119x_wdt_dt_ids[] = {
+	 { .compatible = "realtek,rtd1195-watchdog" },
 	 { .compatible = "realtek,rtd1295-watchdog" },
 	 { }
 };
