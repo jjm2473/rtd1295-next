@@ -70,6 +70,7 @@ struct rtd119x_pinctrl_desc {
 	unsigned int num_muxes;
 };
 
+#include "pinctrl-rtd1195.h"
 #include "pinctrl-rtd1295.h"
 
 struct rtd119x_pinctrl {
@@ -322,6 +323,8 @@ static void rtd119x_pinctrl_selftest(struct rtd119x_pinctrl *data)
 }
 
 static const struct of_device_id rtd119x_pinctrl_dt_ids[] = {
+	 { .compatible = "realtek,rtd1195-iso-pinctrl", .data = &rtd1195_iso_pinctrl_desc },
+	 { .compatible = "realtek,rtd1195-crt-pinctrl", .data = &rtd1195_crt_pinctrl_desc },
 	 { .compatible = "realtek,rtd1295-iso-pinctrl", .data = &rtd1295_iso_pinctrl_desc },
 	 { .compatible = "realtek,rtd1295-sb2-pinctrl", .data = &rtd1295_sb2_pinctrl_desc },
 	 { .compatible = "realtek,rtd1295-disp-pinctrl", .data = &rtd1295_disp_pinctrl_desc },
