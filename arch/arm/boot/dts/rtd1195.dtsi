@@ -150,7 +150,7 @@
 			      <0xff012000 0x2000>,
 			      <0xff014000 0x2000>,
 			      <0xff016000 0x2000>;
-			interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>;
+			/*interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>;*/
 			interrupt-controller;
 			#interrupt-cells = <3>;
 		};
