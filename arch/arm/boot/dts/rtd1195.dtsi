@@ -15,6 +15,7 @@
 
 #include <dt-bindings/clock/realtek,rtd1195.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/reset/realtek,rtd1195.h>
 
 / {
 	compatible = "realtek,rtd1195";
@@ -128,6 +129,24 @@
 			#clock-cells = <1>;
 		};
 
+		reset1: reset-controller@18000000 {
+			compatible = "realtek,rtd1295-reset";
+			reg = <0x18000000 0x4>;
+			#reset-cells = <1>;
+		};
+
+		reset2: reset-controller@18000004 {
+			compatible = "realtek,rtd1295-reset";
+			reg = <0x18000004 0x4>;
+			#reset-cells = <1>;
+		};
+
+		reset3: reset-controller@18000008 {
+			compatible = "realtek,rtd1295-reset";
+			reg = <0x18000008 0x4>;
+			#reset-cells = <1>;
+		};
+
 		iso_clkc: clock-controller@18007000 {
 			compatible = "realtek,rtd1195-iso-clk";
 			reg = <0x18007000 0x100>;
@@ -143,6 +162,12 @@
 			#interrupt-cells = <1>;
 		};
 
+		iso_reset: reset-controller@18007088 {
+			compatible = "realtek,rtd1295-reset";
+			reg = <0x18007088 0x4>;
+			#reset-cells = <1>;
+		};
+
 		watchdog@18007680 {
 			compatible = "realtek,rtd1195-watchdog";
 			reg = <0x18007680 0x100>;
@@ -154,6 +179,7 @@
 			reg = <0x18007800 0x400>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
+			resets = <&iso_reset RTD1195_ISO_RSTN_UR0>;
 			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_MISC_UR0>;
 			interrupt-parent = <&iso_irq_mux>;
 			interrupts = <2>;
@@ -163,6 +189,7 @@
 		i2c_0: i2c@18007d00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x18007d00 0x100>;
+			resets = <&iso_reset RTD1195_ISO_RSTN_I2C_0>;
 			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_I2C_0>;
 			interrupt-parent = <&iso_irq_mux>;
 			interrupts = <8>;
@@ -174,6 +201,7 @@
 		i2c_6: i2c@18007e00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x18007e00 0x100>;
+			resets = <&iso_reset RTD1195_ISO_RSTN_I2C_6>;
 			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_I2C_6>;
 			interrupt-parent = <&iso_irq_mux>;
 			interrupts = <10>;
@@ -185,6 +213,7 @@
 		sb2@1801a000 {
 			compatible = "realtek,rtd1195-sb2";
 			reg = <0x1801a000 0x100>;
+			resets = <&reset3 RTD1195_RSTN_SB2>;
 			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
@@ -206,6 +235,7 @@
 			reg = <0x1801b200 0x100>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
+			resets = <&reset2 RTD1195_RSTN_UR1>;
 			clocks = <&clkc RTD1195_CLK_EN_UR1>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <3>, <5>;
@@ -215,6 +245,7 @@
 		i2c_1: i2c@1801b300 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801b300 0x100>;
+			resets = <&reset2 RTD1195_RSTN_I2C_1>;
 			clocks = <&clkc RTD1195_CLK_EN_I2C_1>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <4>;
@@ -226,12 +257,14 @@
 		rtc: rtc@1801b600 {
 			compatible = "realtek,rtd1195-rtc", "realtek,rtd1295-rtc";
 			reg = <0x1801b600 0x100>;
+			resets = <&reset2 RTD1195_RSTN_RTC>;
 			clocks = <&clkc RTD1195_CLK_EN_MISC_RTC>;
 		};
 
 		i2c_2: i2c@1801b700 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801b700 0x100>;
+			resets = <&reset2 RTD1195_RSTN_I2C_2>;
 			clocks = <&clkc RTD1195_CLK_EN_I2C_2>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <26>;
@@ -243,6 +276,7 @@
 		i2c_3: i2c@1801b900 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801b900 0x100>;
+			resets = <&reset2 RTD1195_RSTN_I2C_3>;
 			clocks = <&clkc RTD1195_CLK_EN_I2C_3>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <23>;
@@ -254,6 +288,7 @@
 		i2c_4: i2c@1801ba00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801ba00 0x100>;
+			resets = <&reset2 RTD1195_RSTN_I2C_4>;
 			clocks = <&clkc RTD1195_CLK_EN_I2C_4>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <15>;
@@ -265,6 +300,7 @@
 		i2c_5: i2c@1801bb00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801bb00 0x100>;
+			resets = <&reset2 RTD1195_RSTN_I2C_5>;
 			clocks = <&clkc RTD1195_CLK_EN_I2C_5>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <14>;
