@@ -265,6 +265,12 @@
 		interrupts = <3>;
 		status = "disabled";
 	};
+
+	rtc: rtc@600 {
+		compatible = "realtek,rtd1195-rtc", "realtek,rtd1295-rtc";
+		reg = <0x600 0x100>;
+		clocks = <&clkc RTD1195_CLK_EN_MISC_RTC>;
+	};
 };
 
 &sb2 {
