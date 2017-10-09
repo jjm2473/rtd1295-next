@@ -140,6 +140,18 @@ static int rtd119x_pinctrl_get_function_groups(struct pinctrl_dev *pcdev,
 	return 0;
 }
 
+static const struct pinctrl_pin_desc *rtd119x_pinctrl_get_pin_by_number(struct rtd119x_pinctrl *data, int number)
+{
+	int i;
+
+	for (i = 0; i < data->info->num_pins; i++) {
+		if (data->info->pins[i].number == number)
+			return &data->info->pins[i];
+	}
+
+	return NULL;
+}
+
 static const struct rtd119x_pin_desc *rtd119x_pinctrl_find_mux(struct rtd119x_pinctrl *data, const char *name)
 {
 	int i;
@@ -156,12 +168,17 @@ static int rtd119x_pinctrl_set_one_mux(struct pinctrl_dev *pcdev,
 	unsigned int pin, const char *func_name)
 {
 	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
+	const struct pinctrl_pin_desc *pin_desc;
 	const struct rtd119x_pin_desc *mux;
 	const char *pin_name;
 	u32 val;
 	int i;
 
-	pin_name = data->info->pins[pin].name;
+	pin_desc = rtd119x_pinctrl_get_pin_by_number(data, pin);
+	if (!pin_desc)
+		return -ENOTSUPP;
+
+	pin_name = pin_desc->name;
 
 	mux = rtd119x_pinctrl_find_mux(data, pin_name);
 	if (!mux)
