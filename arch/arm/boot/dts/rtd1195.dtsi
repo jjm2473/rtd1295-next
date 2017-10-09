@@ -172,6 +172,12 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@1801b600 {
+			compatible = "realtek,rtd1195-rtc", "realtek,rtd1295-rtc";
+			reg = <0x1801b600 0x100>;
+			clocks = <&dummy_clk>;
+		};
+
 		scpu@1801d000 {
 			compatible = "realtek,rtd1195-scpu-wrapper";
 			reg = <0x1801d000 0x500>;
