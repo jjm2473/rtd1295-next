@@ -6,6 +6,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "rtd1195.dtsi"
 
 / {
@@ -23,6 +25,16 @@
 	memory {
 		device_type = "memory";
 		reg = <0x0 0x40000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue {
+			label = "x1000:blue:power";
+			gpios = <&misc_gpio 7 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
 	};
 };
 
