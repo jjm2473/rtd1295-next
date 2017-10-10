@@ -136,17 +136,17 @@ static int rtd119x_gpio_get(struct gpio_chip *chip, unsigned offset)
 	return val;
 }
 
-static unsigned int rtd1295_misc_gpio_dir_offset(unsigned int offset)
+static unsigned int rtd1195_misc_gpio_dir_offset(unsigned int offset)
 {
 	return 0x00 + (offset / 32) * 4;
 }
 
-static unsigned int rtd1295_misc_gpio_dato_offset(unsigned int offset)
+static unsigned int rtd1195_misc_gpio_dato_offset(unsigned int offset)
 {
 	return 0x10 + (offset / 32) * 4;
 }
 
-static unsigned int rtd1295_misc_gpio_dati_offset(unsigned int offset)
+static unsigned int rtd1195_misc_gpio_dati_offset(unsigned int offset)
 {
 	return 0x20 + (offset / 32) * 4;
 }
@@ -166,12 +166,28 @@ static unsigned int rtd1295_iso_gpio_dati_offset(unsigned int offset)
 	return 0x08 + (offset / 32) * 0x18;
 }
 
+static const struct rtd119x_gpio_info rtd1195_misc_gpio_info = {
+	.gpio_base = 0,
+	.num_gpios = 60,
+	.dir_offset  = rtd1195_misc_gpio_dir_offset,
+	.dato_offset = rtd1195_misc_gpio_dato_offset,
+	.dati_offset = rtd1195_misc_gpio_dati_offset,
+};
+
+static const struct rtd119x_gpio_info rtd1195_iso_gpio_info = {
+	.gpio_base = 60,
+	.num_gpios = 21,
+	.dir_offset  = rtd1295_iso_gpio_dir_offset,
+	.dato_offset = rtd1295_iso_gpio_dato_offset,
+	.dati_offset = rtd1295_iso_gpio_dati_offset,
+};
+
 static const struct rtd119x_gpio_info rtd1295_misc_gpio_info = {
 	.gpio_base = 0,
 	.num_gpios = 101,
-	.dir_offset  = rtd1295_misc_gpio_dir_offset,
-	.dato_offset = rtd1295_misc_gpio_dato_offset,
-	.dati_offset = rtd1295_misc_gpio_dati_offset,
+	.dir_offset  = rtd1195_misc_gpio_dir_offset,
+	.dato_offset = rtd1195_misc_gpio_dato_offset,
+	.dati_offset = rtd1195_misc_gpio_dati_offset,
 };
 
 static const struct rtd119x_gpio_info rtd1295_iso_gpio_info = {
@@ -183,6 +199,8 @@ static const struct rtd119x_gpio_info rtd1295_iso_gpio_info = {
 };
 
 static const struct of_device_id rtd119x_gpio_of_matches[] = {
+	{ .compatible = "realtek,rtd1195-misc-gpio", .data = &rtd1195_misc_gpio_info },
+	{ .compatible = "realtek,rtd1195-iso-gpio", .data = &rtd1195_iso_gpio_info },
 	{ .compatible = "realtek,rtd1295-misc-gpio", .data = &rtd1295_misc_gpio_info },
 	{ .compatible = "realtek,rtd1295-iso-gpio", .data = &rtd1295_iso_gpio_info },
 	{ }
