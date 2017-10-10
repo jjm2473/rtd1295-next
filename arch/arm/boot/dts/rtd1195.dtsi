@@ -13,6 +13,7 @@
 /memreserve/ 0x18000000 0x00100000; /* rbus */
 /memreserve/ 0x18100000 0x01000000; /* nor */
 
+#include <dt-bindings/clock/realtek,rtd1195.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
@@ -123,7 +124,14 @@
 		clkc: clock-controller@18000000 {
 			compatible = "realtek,rtd1195-clk";
 			reg = <0x18000000 0x1000>;
-			clocks = <&osc27M>;
+			clocks = <&osc27M>, <&clk_sys>;
+			#clock-cells = <1>;
+		};
+
+		iso_clkc: clock-controller@18007000 {
+			compatible = "realtek,rtd1195-iso-clk";
+			reg = <0x18007000 0x100>;
+			clocks = <&osc27M>, <&clk_sys>;
 			#clock-cells = <1>;
 		};
 
@@ -146,7 +154,7 @@
 			reg = <0x18007800 0x400>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
-			clock-frequency = <27000000>;
+			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_MISC_UR0>;
 			interrupt-parent = <&iso_irq_mux>;
 			interrupts = <2>;
 			status = "disabled";
@@ -155,6 +163,7 @@
 		i2c_0: i2c@18007d00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x18007d00 0x100>;
+			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_I2C_0>;
 			interrupt-parent = <&iso_irq_mux>;
 			interrupts = <8>;
 			#address-cells = <1>;
@@ -165,6 +174,7 @@
 		i2c_6: i2c@18007e00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x18007e00 0x100>;
+			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_I2C_6>;
 			interrupt-parent = <&iso_irq_mux>;
 			interrupts = <10>;
 			#address-cells = <1>;
@@ -196,7 +206,7 @@
 			reg = <0x1801b200 0x100>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
-			clock-frequency = <27000000>;
+			clocks = <&clkc RTD1195_CLK_EN_UR1>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <3>, <5>;
 			status = "disabled";
@@ -205,6 +215,7 @@
 		i2c_1: i2c@1801b300 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801b300 0x100>;
+			clocks = <&clkc RTD1195_CLK_EN_I2C_1>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <4>;
 			#address-cells = <1>;
@@ -215,12 +226,13 @@
 		rtc: rtc@1801b600 {
 			compatible = "realtek,rtd1195-rtc", "realtek,rtd1295-rtc";
 			reg = <0x1801b600 0x100>;
-			clocks = <&dummy_clk>;
+			clocks = <&clkc RTD1195_CLK_EN_MISC_RTC>;
 		};
 
 		i2c_2: i2c@1801b700 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801b700 0x100>;
+			clocks = <&clkc RTD1195_CLK_EN_I2C_2>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <26>;
 			#address-cells = <1>;
@@ -231,6 +243,7 @@
 		i2c_3: i2c@1801b900 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801b900 0x100>;
+			clocks = <&clkc RTD1195_CLK_EN_I2C_3>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <23>;
 			#address-cells = <1>;
@@ -241,6 +254,7 @@
 		i2c_4: i2c@1801ba00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801ba00 0x100>;
+			clocks = <&clkc RTD1195_CLK_EN_I2C_4>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <15>;
 			#address-cells = <1>;
@@ -251,6 +265,7 @@
 		i2c_5: i2c@1801bb00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801bb00 0x100>;
+			clocks = <&clkc RTD1195_CLK_EN_I2C_5>;
 			interrupt-parent = <&misc_irq_mux>;
 			interrupts = <14>;
 			#address-cells = <1>;
@@ -261,6 +276,7 @@
 		scpu@1801d000 {
 			compatible = "realtek,rtd1195-scpu-wrapper";
 			reg = <0x1801d000 0x500>;
+			clocks = <&clkc RTD1195_CLK_EN_SCPU>;
 			interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
