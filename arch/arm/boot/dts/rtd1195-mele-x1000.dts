@@ -5,6 +5,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "rtd1195.dtsi"
 
 / {
@@ -24,6 +26,16 @@
 		reg = <0x0000a800 0x17ff5800>, /* boot ROM to r-bus */
 		      <0x18070000 0x00090000>, /* r-bus to NOR flash */
 		      <0x19100000 0x26f00000>; /* NOR flash to 1 GiB */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue {
+			label = "x1000:blue:power";
+			gpios = <&misc_gpio 7 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
 	};
 };
 
