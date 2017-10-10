@@ -178,6 +178,14 @@
 			#reset-cells = <1>;
 		};
 
+		iso_gpio: gpio@18007100 {
+			compatible = "realtek,rtd1195-iso-gpio";
+			reg = <0x18007100 0x100>;
+			gpio-controller;
+			gpio-ranges = <&iso_pinctrl 0 0 21>;
+			#gpio-cells = <2>;
+		};
+
 		iso_pinctrl: pinctrl@18007300 {
 			compatible = "realtek,rtd1195-iso-pinctrl";
 			reg = <0x18007300 0x14>;
@@ -264,6 +272,14 @@
 			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
+		};
+
+		misc_gpio: gpio@1801b100 {
+			compatible = "realtek,rtd1195-misc-gpio";
+			reg = <0x1801b100 0x100>;
+			gpio-controller;
+			gpio-ranges = <&crt_pinctrl 0 0 60>;
+			#gpio-cells = <2>;
 		};
 
 		uart1: serial@1801b200 {
