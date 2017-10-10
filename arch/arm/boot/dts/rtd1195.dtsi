@@ -147,6 +147,16 @@
 			#reset-cells = <1>;
 		};
 
+		crt_pinctrl: pinctrl@18000300 {
+			compatible = "realtek,rtd1195-crt-pinctrl";
+			reg = <0x18000300 0x78>;
+
+			i2c5_pins: i2c5-pins {
+				function = "i2c5";
+				groups = "i2c_scl_5", "i2c_sda_5";
+			};
+		};
+
 		iso_clkc: clock-controller@18007000 {
 			compatible = "realtek,rtd1195-iso-clk";
 			reg = <0x18007000 0x100>;
@@ -168,6 +178,26 @@
 			#reset-cells = <1>;
 		};
 
+		iso_pinctrl: pinctrl@18007300 {
+			compatible = "realtek,rtd1195-iso-pinctrl";
+			reg = <0x18007300 0x14>;
+
+			i2c0_pins: i2c0-pins {
+				function = "i2c0";
+				groups = "i2c_scl_0", "i2c_sda_0";
+			};
+
+			i2c6_pins: i2c6-pins {
+				function = "i2c6";
+				groups = "i2c_scl_6", "i2c_sda_6";
+			};
+
+			uart0_pins: uart0-pins {
+				function = "uart0";
+				groups = "ur0_rx", "ur0_tx";
+			};
+		};
+
 		watchdog@18007680 {
 			compatible = "realtek,rtd1195-watchdog";
 			reg = <0x18007680 0x100>;
@@ -179,6 +209,8 @@
 			reg = <0x18007800 0x400>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart0_pins>;
 			resets = <&iso_reset RTD1195_ISO_RSTN_UR0>;
 			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_MISC_UR0>;
 			interrupt-parent = <&iso_irq_mux>;
@@ -189,6 +221,8 @@
 		i2c_0: i2c@18007d00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x18007d00 0x100>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c0_pins>;
 			resets = <&iso_reset RTD1195_ISO_RSTN_I2C_0>;
 			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_I2C_0>;
 			interrupt-parent = <&iso_irq_mux>;
@@ -201,6 +235,8 @@
 		i2c_6: i2c@18007e00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x18007e00 0x100>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c6_pins>;
 			resets = <&iso_reset RTD1195_ISO_RSTN_I2C_6>;
 			clocks = <&iso_clkc RTD1195_ISO_CLK_EN_I2C_6>;
 			interrupt-parent = <&iso_irq_mux>;
@@ -300,6 +336,8 @@
 		i2c_5: i2c@1801bb00 {
 			compatible = "snps,designware-i2c";
 			reg = <0x1801bb00 0x100>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c5_pins>;
 			resets = <&reset2 RTD1195_RSTN_I2C_5>;
 			clocks = <&clkc RTD1195_CLK_EN_I2C_5>;
 			interrupt-parent = <&misc_irq_mux>;
