@@ -108,6 +108,12 @@
 			#interrupt-cells = <1>;
 		};
 
+		watchdog@18007680 {
+			compatible = "realtek,rtd1195-watchdog";
+			reg = <0x18007680 0x100>;
+			clocks = <&osc27M>;
+		};
+
 		uart0: serial@18007800 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x18007800 0x400>;
