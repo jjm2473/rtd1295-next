@@ -5,6 +5,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "rtd1293.dtsi"
 
 / {
@@ -23,6 +25,62 @@
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};
+
+	sata0_reg: sata0-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "SATA0";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&misc_gpio 56 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	sata1_reg: sata1-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "SATA1";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&iso_gpio 15 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		hdd1 {
+			label = "ds418j:hdd1:activity";
+			gpios = <&misc_gpio 18 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			linux,default-trigger = "heartbeat";
+		};
+
+		hdd2 {
+			label = "ds418j:hdd2:activity";
+			gpios = <&misc_gpio 19 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			linux,default-trigger = "heartbeat";
+		};
+	};
+};
+
+&i2c_0 {
+	status = "okay";
+	clock-frequency = <400000>;
+
+#include "rtd129x-g2227.dtsi"
+};
+
+&sata {
+	status = "okay";
+};
+
+&sata0 {
+	target-supply = <&sata0_reg>;
+};
+
+&sata1 {
+	status = "okay";
+	target-supply = <&sata1_reg>;
 };
 
 &uart0 {

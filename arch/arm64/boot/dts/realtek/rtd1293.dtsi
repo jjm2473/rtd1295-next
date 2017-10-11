@@ -6,6 +6,7 @@
  */
 
 #include "rtd129x.dtsi"
+#include "rtd129x-sata.dtsi"
 
 / {
 	compatible = "realtek,rtd1293";
