@@ -189,6 +189,14 @@ config PCIE_ROCKCHIP
 	  There is 1 internal PCIe port available to support GEN2 with
 	  4 slots.
 
+config PCIE_RTD129X
+	bool "Realtek RTD129x PCIe controller"
+	depends on (ARM64 && ARCH_REALTEK) || COMPILE_TEST
+	depends on OF
+	help
+	  Say Y here if you want to enable PCIe controller support on
+	  Realtek RTD1293/95/96 SoCs.
+
 config PCIE_MEDIATEK
 	bool "MediaTek PCIe controller"
 	depends on (ARM || ARM64) && (ARCH_MEDIATEK || COMPILE_TEST)
