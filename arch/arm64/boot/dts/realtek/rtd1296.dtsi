@@ -68,6 +68,14 @@
 			     <GIC_PPI 10
 			(GIC_CPU_MASK_RAW(0xf) | IRQ_TYPE_LEVEL_LOW)>;
 	};
+
+	soc {
+		pcie2: pci@9803b000 {
+			compatible = "realtek,rtd1295-pcie";
+			reg = <0x9803b000 0x1000>,
+			      <0x9803c000 0x1000>;
+		};
+	};
 };
 
 &arm_pmu {
