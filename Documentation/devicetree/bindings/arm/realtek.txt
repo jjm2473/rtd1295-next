@@ -2,6 +2,23 @@ Realtek platforms device tree bindings
 --------------------------------------
 
 
+RTD1293 SoC
+===========
+
+Required root node properties:
+
+ - compatible :  must contain "realtek,rtd1293"
+
+
+Root node property compatible must contain, depending on board:
+
+ - Synology DiskStation DS418j: "synology,ds418j"
+
+Example:
+
+    compatible = "synology,ds418j", "realtek,rtd1293";
+
+
 RTD1295 SoC
 ===========
 
