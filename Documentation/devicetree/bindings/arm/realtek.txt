@@ -37,3 +37,20 @@ Root node property compatible must contain, depending on board:
 Example:
 
     compatible = "zidoo,x9s", "realtek,rtd1295";
+
+
+RTD1296 SoC
+===========
+
+Required root node properties:
+
+ - compatible :  must contain "realtek,rtd1296"
+
+
+Root node property compatible must contain, depending on board:
+
+ - Synology DiskStation DS418: "synology,ds418"
+
+Example:
+
+    compatible = "synology,ds418", "realtek,rtd1296";
