@@ -180,6 +180,28 @@
 			interrupt-names = "2hz0", "2hz1", "timer0", "timer1";
 		};
 
+		pinctrl: pinctrl@b01b0040 {
+			compatible = "actions,s500-pinctrl";
+			reg = <0xb01b0040 0x10>,
+			      <0xb01b0060 0x18>,
+			      <0xb01b0080 0xc>;
+
+			lcd0_lvds_o_pn_pins: lcd0-lvds-o-pn-pins {
+				function = "lcd0";
+				groups = "lvds_o_pn";
+			};
+
+			uart0_rx_pins: uart0-rx-pins {
+				function = "uart0";
+				groups = "uart0_rx";
+			};
+
+			uart0_tx_pins: uart0-tx-pins {
+				function = "uart0";
+				groups = "uart0_tx";
+			};
+		};
+
 		sps: power-controller@b01b0100 {
 			compatible = "actions,s500-sps";
 			reg = <0xb01b0100 0x100>;
