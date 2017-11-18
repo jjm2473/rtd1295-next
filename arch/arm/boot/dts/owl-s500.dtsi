@@ -180,6 +180,46 @@
 			interrupt-names = "2hz0", "2hz1", "timer0", "timer1";
 		};
 
+		gpioa: gpio@b01b0000 {
+			compatible = "actions,s500-gpio";
+			reg = <0xb01b0000 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 0 32>;
+			#gpio-cells = <2>;
+		};
+
+		gpiob: gpio@b01b000c {
+			compatible = "actions,s500-gpio";
+			reg = <0xb01b000c 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 32 32>;
+			#gpio-cells = <2>;
+		};
+
+		gpioc: gpio@b01b0018 {
+			compatible = "actions,s500-gpio";
+			reg = <0xb01b0018 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 64 32>;
+			#gpio-cells = <2>;
+		};
+
+		gpiod: gpio@b01b0024 {
+			compatible = "actions,s500-gpio";
+			reg = <0xb01b0024 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 96 32>;
+			#gpio-cells = <2>;
+		};
+
+		gpioe: gpio@b01b0030 {
+			compatible = "actions,s500-gpio";
+			reg = <0xb01b0030 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 128 4>;
+			#gpio-cells = <2>;
+		};
+
 		pinctrl: pinctrl@b01b0040 {
 			compatible = "actions,s500-pinctrl";
 			reg = <0xb01b0040 0x10>,
