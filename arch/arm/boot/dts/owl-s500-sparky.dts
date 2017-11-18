@@ -8,6 +8,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "owl-s500.dtsi"
 
 / {
@@ -25,6 +27,17 @@
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x40000000>; /* 1 or 2 GiB */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1 {
+			label = "sparky:status:red";
+			gpios = <&gpiod 18 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			panic-indicator;
+		};
 	};
 
 	uart3_clk: uart3-clk {
