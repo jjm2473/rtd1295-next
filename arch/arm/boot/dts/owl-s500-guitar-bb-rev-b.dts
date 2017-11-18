@@ -47,6 +47,13 @@
 	};
 };
 
+/* on 40-pin connector */
+&uart0 {
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_rx_pins>, <&uart0_tx_pins>;
+};
+
 &uart3 {
 	status = "okay";
 	clocks = <&uart3_clk>;
