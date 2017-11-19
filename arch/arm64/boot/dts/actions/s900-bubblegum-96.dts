@@ -6,6 +6,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "s900.dtsi"
 
 / {
@@ -23,6 +25,46 @@
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x0 0x0 0x80000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0 {
+			label = "bubblegum-96:led0:green";
+			gpios = <&gpioa 19 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+
+		led1 {
+			label = "bubblegum-96:led1:green";
+			gpios = <&gpioa 20 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+
+		led2 {
+			label = "bubblegum-96:led2:green";
+			gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+
+		led3 {
+			label = "bubblegum-96:led3:green";
+			gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+
+		wifi {
+			label = "bubblegum-96:wifi:yellow";
+			gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+
+		bt {
+			label = "bubblegum-96:bt:blue";
+			gpios = <&gpioa 18 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
 	};
 
 	uart5_clk: uart5-clk {
