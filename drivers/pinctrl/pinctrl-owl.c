@@ -233,6 +233,7 @@ static const struct pinconf_ops owl_pinconf_ops = {
 static const struct of_device_id owl_pinctrl_dt_ids[] = {
 	 { .compatible = "actions,s500-pinctrl", .data = &s500_pinctrl_desc },
 	 { .compatible = "actions,s700-pinctrl", .data = &s500_pinctrl_desc },
+	 { .compatible = "actions,s900-pinctrl", .data = &s500_pinctrl_desc },
 	 { }
 };
 
