@@ -42,7 +42,7 @@
 			linux,default-trigger = "heartbeat";
 		};
 
-		led2 {
+		/*led2 {
 			label = "bubblegum-96:led2:green";
 			gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "heartbeat";
@@ -52,7 +52,7 @@
 			label = "bubblegum-96:led3:green";
 			gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "heartbeat";
-		};
+		};*/
 
 		wifi {
 			label = "bubblegum-96:wifi:yellow";
