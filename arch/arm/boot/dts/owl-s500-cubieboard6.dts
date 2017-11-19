@@ -8,6 +8,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "owl-s500.dtsi"
 
 / {
@@ -25,6 +27,22 @@
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x80000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1 {
+			label = "cubieboard6:led1:blue";
+			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+
+		led2 {
+			label = "cubieboard6:led2:yellow";
+			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
 	};
 
 	uart3_clk: uart3-clk {
