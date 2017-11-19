@@ -6,6 +6,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "s700.dtsi"
 
 / {
@@ -28,6 +30,22 @@
 	memory@1,e0000000 {
 		device_type = "memory";
 		reg = <0x1 0xe0000000 0x0 0x0>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1 {
+			label = "cubieboard7:led1:blue";
+			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+
+		led2 {
+			label = "cubieboard7:led2:yellow";
+			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
 	};
 
 	uart3_clk: uart3-clk {
