@@ -154,6 +154,13 @@
 			status = "disabled";
 		};
 
+		pinctrl: pinctrl@e01b0040 {
+			compatible = "actions,s700-pinctrl";
+			reg = <0x0 0xe01b0040 0x0 0x10>,
+			      <0x0 0xe01b0060 0x0 0x18>,
+			      <0x0 0xe01b0080 0x0 0xc>;
+		};
+
 		sps: power-controller@e01b0100 {
 			compatible = "actions,s700-sps";
 			reg = <0x0 0xe01b0100 0x0 0x100>;
