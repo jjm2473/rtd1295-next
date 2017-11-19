@@ -154,6 +154,46 @@
 			status = "disabled";
 		};
 
+		gpioa: gpio@e01b0000 {
+			compatible = "actions,s700-gpio";
+			reg = <0x0 0xe01b0000 0x0 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 0 32>;
+			#gpio-cells = <2>;
+		};
+
+		gpiob: gpio@e01b000c {
+			compatible = "actions,s700-gpio";
+			reg = <0x0 0xe01b000c 0x0 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 32 32>;
+			#gpio-cells = <2>;
+		};
+
+		gpioc: gpio@e01b0018 {
+			compatible = "actions,s700-gpio";
+			reg = <0x0 0xe01b0018 0x0 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 64 32>;
+			#gpio-cells = <2>;
+		};
+
+		gpiod: gpio@e01b0024 {
+			compatible = "actions,s700-gpio";
+			reg = <0x0 0xe01b0024 0x0 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 96 32>;
+			#gpio-cells = <2>;
+		};
+
+		gpioe: gpio@e01b0030 {
+			compatible = "actions,s700-gpio";
+			reg = <0x0 0xe01b0030 0x0 0xc>;
+			gpio-controller;
+			gpio-ranges = <&pinctrl 0 128 8>;
+			#gpio-cells = <2>;
+		};
+
 		pinctrl: pinctrl@e01b0040 {
 			compatible = "actions,s700-pinctrl";
 			reg = <0x0 0xe01b0040 0x0 0x10>,
