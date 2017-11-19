@@ -141,6 +141,7 @@ static int owl_gpio_get(struct gpio_chip *chip, unsigned int offset)
 static const struct of_device_id owl_gpio_of_matches[] = {
 	{ .compatible = "actions,s500-gpio" },
 	{ .compatible = "actions,s700-gpio" },
+	{ .compatible = "actions,s900-gpio" },
 	{ }
 };
 
