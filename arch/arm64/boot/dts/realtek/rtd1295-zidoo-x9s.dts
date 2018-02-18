@@ -60,9 +60,9 @@
 	cpu-supply = <&g2227_dcdc2>;
 };
 
-&gmac {
+/*&gmac {
 	status = "okay";
-};
+};*/
 
 &i2c_0 {
 	status = "okay";
