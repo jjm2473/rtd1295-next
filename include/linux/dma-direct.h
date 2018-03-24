@@ -5,7 +5,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/mem_encrypt.h>
 
-#ifdef CONFIG_ARCH_HAS_PHYS_TO_DMA
+#if 0 //def CONFIG_ARCH_HAS_PHYS_TO_DMA
 #include <asm/dma-direct.h>
 #else
 static inline dma_addr_t __phys_to_dma(struct device *dev, phys_addr_t paddr)
