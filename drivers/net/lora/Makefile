@@ -15,3 +15,6 @@ lora-rn2483-y += rn2483_cmd.o
 
 obj-$(CONFIG_LORA_SX1276) += lora-sx1276.o
 lora-sx1276-y := sx1276.o
+
+obj-$(CONFIG_LORA_WIMOD) += lora-wimod.o
+lora-wimod-y := wimod.o
