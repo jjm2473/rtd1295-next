@@ -16,6 +16,9 @@ obj-$(CONFIG_LORA_RN2483) += lora-rn2483.o
 lora-rn2483-y := rn2483.o
 lora-rn2483-y += rn2483_cmd.o
 
+obj-$(CONFIG_LORA_SX1257) += lora-sx1257.o
+lora-sx1257-y := sx1257.o
+
 obj-$(CONFIG_LORA_SX1276) += lora-sx1276.o
 lora-sx1276-y := sx1276.o
 
