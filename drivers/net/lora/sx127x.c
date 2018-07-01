@@ -5,6 +5,7 @@
  * Copyright (c) 2016-2018 Andreas Färber
  */
 
+#include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/lora.h>
@@ -74,6 +75,8 @@ struct sx127x_priv {
 
 	struct workqueue_struct *wq;
 	struct work_struct tx_work;
+
+	struct dentry *debugfs;
 };
 
 static bool sx127x_volatile_reg(struct device *dev, unsigned int reg)
@@ -470,6 +473,77 @@ static const struct cfglora_ops sx127x_lora_ops = {
 	.get_freq = sx127x_lora_get_freq,
 };
 
+static ssize_t sx127x_state_read(struct file *file, char __user *user_buf,
+				 size_t count, loff_t *ppos)
+{
+	struct net_device *netdev = file->private_data;
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	ssize_t size;
+	char *buf;
+	int len = 0;
+	int ret;
+	unsigned int val;
+	bool lora_mode = true;
+	const int max_len = 4096;
+
+	buf = kzalloc(max_len, GFP_KERNEL);
+	if (!buf)
+		return 0;
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, REG_OPMODE, &val);
+	if (!ret) {
+		len += snprintf(buf + len, max_len - len, "RegOpMode = 0x%02x\n", val);
+		lora_mode = (val & REG_OPMODE_LONG_RANGE_MODE) != 0;
+	}
+
+	ret = regmap_read(priv->regmap, REG_FRF_MSB, &val);
+	if (!ret)
+		len += snprintf(buf + len, max_len - len, "RegFrMsb = 0x%02x\n", val);
+	ret = regmap_read(priv->regmap, REG_FRF_MID, &val);
+	if (!ret)
+		len += snprintf(buf + len, max_len - len, "RegFrMid = 0x%02x\n", val);
+	ret = regmap_read(priv->regmap, REG_FRF_LSB, &val);
+	if (!ret)
+		len += snprintf(buf + len, max_len - len, "RegFrLsb = 0x%02x\n", val);
+
+	ret = regmap_read(priv->regmap, REG_PA_CONFIG, &val);
+	if (!ret)
+		len += snprintf(buf + len, max_len - len, "RegPaConfig = 0x%02x\n", val);
+
+	if (lora_mode) {
+		ret = regmap_read(priv->regmap, LORA_REG_IRQ_FLAGS_MASK, &val);
+		if (!ret)
+			len += snprintf(buf + len, max_len - len, "RegIrqFlagsMask = 0x%02x\n", val);
+
+		ret = regmap_read(priv->regmap, LORA_REG_IRQ_FLAGS, &val);
+		if (!ret)
+			len += snprintf(buf + len, max_len - len, "RegIrqFlags = 0x%02x\n", val);
+
+		ret = regmap_read(priv->regmap, LORA_REG_SYNC_WORD, &val);
+		if (!ret)
+			len += snprintf(buf + len, max_len - len, "RegSyncWord = 0x%02x\n", val);
+	}
+
+	ret = regmap_read(priv->regmap, REG_PA_DAC, &val);
+	if (!ret)
+		len += snprintf(buf + len, max_len - len, "RegPaDac = 0x%02x\n", val);
+
+	mutex_unlock(&priv->spi_lock);
+
+	size = simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	kfree(buf);
+
+	return size;
+}
+
+static const struct file_operations sx127x_state_fops = {
+	.owner = THIS_MODULE,
+	.open = simple_open,
+	.read = sx127x_state_read,
+};
+
 static int sx1272_reset(struct sx127x_priv *priv)
 {
 	if (!priv->rst)
@@ -698,6 +772,9 @@ static int sx127x_probe(struct spi_device *spi)
 		return ret;
 	}
 
+	priv->debugfs = debugfs_create_dir(dev_name(&spi->dev), NULL);
+	debugfs_create_file("state", S_IRUGO, priv->debugfs, netdev, &sx127x_state_fops);
+
 	dev_info(&spi->dev, "probed (SX%d)\n", model->number);
 
 	return 0;
@@ -707,6 +784,8 @@ static int sx127x_remove(struct spi_device *spi)
 {
 	struct net_device *netdev = spi_get_drvdata(spi);
 	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	debugfs_remove_recursive(priv->debugfs);
 
 	unregister_loradev(netdev);
 
