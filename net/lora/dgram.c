@@ -217,7 +217,11 @@ const struct proto_ops dgram_proto_ops = {
 	.socketpair	= sock_no_socketpair,
 	.accept		= sock_no_accept,
 	.getname	= dgram_getname,
+#if 0 /* LINUX_VERSION_CODE >= LINUX_VERSION(4, 18, 0) */
+	.poll_mask	= datagram_poll_mask,
+#else
 	.poll		= datagram_poll,
+#endif
 	.ioctl		= dgram_ioctl,
 	.listen		= sock_no_listen,
 	.shutdown	= sock_no_shutdown,
