@@ -123,6 +123,14 @@
 	pins = "mfio17", "mfio18", "mfio19", "mfio20";
 };
 
+&pin_spim0 {
+	drive-strength = <2>;
+};
+
+&pin_spim0_clk {
+	drive-strength = <2>;
+};
+
 &pwm {
 	status = "okay";
 
@@ -135,6 +143,21 @@
 	status = "okay";
 	bus-width = <1>;
 	disable-wp;
+};
+
+&spfi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spim0_pins>,
+		    <&spim0_cs0_alt_pin>,
+		    <&spim0_cs2_alt_pin>,
+		    <&spim0_cs3_alt_pin>,
+		    <&spim0_cs4_alt_pin>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>, <0>,
+		   <&gpio1 12 GPIO_ACTIVE_HIGH>,
+		   <&gpio1 13 GPIO_ACTIVE_HIGH>,
+		   <&gpio1 14 GPIO_ACTIVE_HIGH>;
 };
 
 &spfi1 {
