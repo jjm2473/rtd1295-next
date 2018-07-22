@@ -51,6 +51,7 @@
 
 	leds {
 		compatible = "pwm-leds";
+
 		heartbeat {
 			label = "marduk:red:heartbeat";
 			pwms = <&pwm 3 300000>;
@@ -61,11 +62,13 @@
 
 	keys {
 		compatible = "gpio-keys";
+
 		button@1 {
 			label = "Button 1";
 			linux,code = <0x101>; /* BTN_1 */
 			gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
 		};
+
 		button@2 {
 			label = "Button 2";
 			linux,code = <0x102>; /* BTN_2 */
@@ -92,7 +95,6 @@
 		compatible = "infineon,slb9645tt";
 		reg = <0x20>;
 	};
-
 };
 
 &i2c3 {
