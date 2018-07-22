@@ -74,8 +74,64 @@
 	};
 };
 
+&adc {
+	status = "okay";
+	vref-supply = <&reg_1v8>;
+	adc-reserved-channels = <0x10>;
+};
+
+&enet {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+	clock-frequency = <400000>;
+
+	tpm@20 {
+		compatible = "infineon,slb9645tt";
+		reg = <0x20>;
+	};
+
+};
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = <400000>;
+};
+
 &internal_dac {
 	VDD-supply = <&internal_dac_supply>;
+};
+
+&pin_enet {
+	drive-strength = <2>;
+};
+
+&pin_enet_phy_clk {
+	drive-strength = <2>;
+};
+
+&pin_sdhost_cmd {
+	drive-strength = <2>;
+};
+
+&pin_sdhost_data {
+	drive-strength = <2>;
+};
+
+&pwm {
+	status = "okay";
+
+	pinctrl-0 = <&pwmpdm0_pin>, <&pwmpdm1_pin>, <&pwmpdm2_pin>,
+		    <&pwmpdm3_pin>;
+	pinctrl-names = "default";
+};
+
+&sdhost {
+	status = "okay";
+	bus-width = <4>;
+	disable-wp;
 };
 
 &spfi1 {
@@ -104,60 +160,4 @@
 
 &usb {
 	status = "okay";
-};
-
-&enet {
-	status = "okay";
-};
-
-&pin_enet {
-	drive-strength = <2>;
-};
-
-&pin_enet_phy_clk {
-	drive-strength = <2>;
-};
-
-&sdhost {
-	status = "okay";
-	bus-width = <4>;
-	disable-wp;
-};
-
-&pin_sdhost_cmd {
-	drive-strength = <2>;
-};
-
-&pin_sdhost_data {
-	drive-strength = <2>;
-};
-
-&pwm {
-	status = "okay";
-
-	pinctrl-0 = <&pwmpdm0_pin>, <&pwmpdm1_pin>, <&pwmpdm2_pin>,
-		    <&pwmpdm3_pin>;
-	pinctrl-names = "default";
-};
-
-&adc {
-	status = "okay";
-	vref-supply = <&reg_1v8>;
-	adc-reserved-channels = <0x10>;
-};
-
-&i2c2 {
-	status = "okay";
-	clock-frequency = <400000>;
-
-	tpm@20 {
-		compatible = "infineon,slb9645tt";
-		reg = <0x20>;
-	};
-
-};
-
-&i2c3 {
-	status = "okay";
-	clock-frequency = <400000>;
 };
