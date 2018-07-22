@@ -406,7 +406,7 @@
 				function = "spim0";
 				drive-strength = <4>;
 			};
-			spim0_clk: spim0-clk {
+			pin_spim0_clk: spim0-clk {
 				pins = "mfio8";
 				function = "spim0";
 				drive-strength = <4>;
