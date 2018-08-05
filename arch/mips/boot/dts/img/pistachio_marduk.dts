@@ -217,6 +217,10 @@
 		#gpio-cells = <2>;
 
 		uart0 {
+			lora {
+				compatible = "microchip,rn2483";
+				reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			};
 		};
 
 		uart1 {
