@@ -215,6 +215,12 @@
 
 		gpio-controller;
 		#gpio-cells = <2>;
+
+		uart0 {
+		};
+
+		uart1 {
+		};
 	};
 
 	ca8210: sixlowpan@4 {
