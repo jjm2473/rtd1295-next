@@ -1213,9 +1213,31 @@ static int sc16is7xx_probe(struct device *dev,
 			SC16IS7XX_IOCONTROL_SRESET_BIT);
 
 	for (i = 0; i < devtype->nr_uart; ++i) {
+#ifdef CONFIG_OF_ADDRESS
+		struct device_node *np;
+		struct platform_device *pdev;
+		char name[6] = "uartx";
+#endif
+
 		s->p[i].line		= i;
 		/* Initialize port data */
+#ifdef CONFIG_OF_ADDRESS
+		name[4] = '0' + i;
+		np = of_get_child_by_name(dev->of_node, name);
+		if (IS_ERR(np)) {
+			ret = PTR_ERR(np);
+			goto out_ports;
+		}
+		pdev = of_platform_device_create(np, NULL, dev);
+		if (IS_ERR(pdev)) {
+			ret = PTR_ERR(pdev);
+			goto out_ports;
+		}
+		platform_set_drvdata(pdev, dev_get_drvdata(dev));
+		s->p[i].port.dev	= &pdev->dev;
+#else
 		s->p[i].port.dev	= dev;
+#endif
 		s->p[i].port.irq	= irq;
 		s->p[i].port.type	= PORT_SC16IS7XX;
 		s->p[i].port.fifosize	= SC16IS7XX_FIFO_SIZE;
@@ -1271,6 +1293,9 @@ out_ports:
 	for (i--; i >= 0; i--) {
 		uart_remove_one_port(&sc16is7xx_uart, &s->p[i].port);
 		clear_bit(s->p[i].port.line, &sc16is7xx_lines);
+#ifdef CONFIG_OF
+		of_platform_device_destroy(s->p[i].port.dev, NULL);
+#endif
 	}
 
 #ifdef CONFIG_GPIOLIB
