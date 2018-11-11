@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Dragino LG02 LoRa gateway
+ *
+ * Copyright (c) 2018-2019 Andreas Färber
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "ar9331_dragino_he.dtsi"
+
+/ {
+	compatible = "dragino,lg02", "dragino,he", "qca,ar9331";
+	model = "Dragino LG02";
+
+	chosen {
+		stdout-path = "serial0:115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wifi {
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			default-state = "off";
+		};
+
+		sys {
+			gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
+	};
+
+	gpio_spi: spi {
+		compatible = "spi-gpio";
+		sck-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio 26 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+		cs-gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	gpio_spi1: spi1 {
+		compatible = "spi-gpio";
+		sck-gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+		cs-gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&eth0 {
+	status = "disabled";
+};
+
+&eth1 {
+	status = "disabled";
+};
+
+&gpio {
+	status = "okay";
+};
+
+&uart {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
