@@ -150,6 +150,15 @@ static void enocean_esp_cleanup(struct enocean_device *edev)
 		edev->version->cleanup(edev);
 }
 
+static const struct enocean_esp_version enocean_esp2 = {
+	.version = 2,
+	.baudrate = 9600,
+	.serdev_client_ops = &enocean_esp2_serdev_client_ops,
+	.init = enocean_esp2_init,
+	.send = enocean_esp2_send,
+	.cleanup = enocean_esp2_cleanup,
+};
+
 static const struct enocean_esp_version enocean_esp3 = {
 	.version = 3,
 	.baudrate = 57600,
@@ -160,6 +169,7 @@ static const struct enocean_esp_version enocean_esp3 = {
 };
 
 static const struct of_device_id enocean_of_match[] = {
+	{ .compatible = "enocean,esp2", .data = &enocean_esp2 },
 	{ .compatible = "enocean,esp3", .data = &enocean_esp3 },
 	{}
 };
