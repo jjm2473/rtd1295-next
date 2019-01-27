@@ -9,4 +9,5 @@ lora-y += dgram.o
 
 obj-$(CONFIG_LORA) += cfglora.o
 
-cfglora-y := netlink.o
+cfglora-y := cfg.o
+cfglora-y += netlink.o
