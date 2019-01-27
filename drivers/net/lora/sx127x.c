@@ -16,6 +16,7 @@
 #include <linux/regmap.h>
 #include <linux/lora/dev.h>
 #include <linux/spi/spi.h>
+#include <net/cfglora.h>
 
 #define REG_FIFO			0x00
 #define REG_OPMODE			0x01
@@ -59,6 +60,7 @@ struct sx127x_model {
 
 struct sx127x_priv {
 	struct lora_dev_priv lora;
+	struct lora_phy *lora_phy;
 	struct spi_device *spi;
 	struct regmap *regmap;
 	struct gpio_desc *rst;
@@ -432,6 +434,45 @@ static const struct net_device_ops sx127x_netdev_ops =  {
 	.ndo_start_xmit = sx127x_loradev_start_xmit,
 };
 
+static int sx127x_lora_get_freq(struct lora_phy *phy, u32 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	struct spi_device *spi = priv->spi;
+	int ret;
+	unsigned int msb, mid, lsb;
+	u32 freq_xosc;
+	unsigned long long frf;
+
+	ret = of_property_read_u32(spi->dev.of_node, "clock-frequency", &freq_xosc);
+	if (ret)
+		return ret;
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, REG_FRF_MSB, &msb);
+	if (!ret)
+		ret = regmap_read(priv->regmap, REG_FRF_MID, &mid);
+	if (!ret)
+		ret = regmap_read(priv->regmap, REG_FRF_LSB, &lsb);
+
+	mutex_unlock(&priv->spi_lock);
+
+	if (ret)
+		return ret;
+
+	frf = freq_xosc;
+	frf *= ((ulong)msb << 16) | ((ulong)mid << 8) | lsb;
+	do_div(frf, 1 << 19);
+	*val = frf;
+
+	return 0;
+}
+
+static const struct cfglora_ops sx127x_lora_ops = {
+	.get_freq = sx127x_lora_get_freq,
+};
+
 static ssize_t sx127x_freq_read(struct file *file, char __user *user_buf,
 				 size_t count, loff_t *ppos)
 {
@@ -765,9 +806,21 @@ static int sx127x_probe(struct spi_device *spi)
 	spi_set_drvdata(spi, netdev);
 	SET_NETDEV_DEV(netdev, &spi->dev);
 
-	ret = register_loradev(netdev);
+	priv->lora_phy = devm_lora_phy_new(&spi->dev, &sx127x_lora_ops, 0);
+	if (!priv->lora_phy)
+		return -ENOMEM;
+
+	priv->lora_phy->netdev = netdev;
+
+	ret = lora_phy_register(priv->lora_phy);
 	if (ret)
 		return ret;
+
+	ret = register_loradev(netdev);
+	if (ret) {
+		lora_phy_unregister(priv->lora_phy);
+		return ret;
+	}
 
 	priv->debugfs = debugfs_create_dir(dev_name(&spi->dev), NULL);
 	debugfs_create_file("state", S_IRUGO, priv->debugfs, netdev, &sx127x_state_fops);
@@ -786,6 +839,8 @@ static int sx127x_remove(struct spi_device *spi)
 	debugfs_remove_recursive(priv->debugfs);
 
 	unregister_loradev(netdev);
+
+	lora_phy_unregister(priv->lora_phy);
 
 	dev_info(&spi->dev, "removed\n");
 
