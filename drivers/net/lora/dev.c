@@ -72,7 +72,6 @@ struct net_device *alloc_loradev(int sizeof_priv)
 		return NULL;
 
 	priv = netdev_priv(dev);
-	priv->magic = LORA_DEV_MAGIC;
 	priv->dev = dev;
 
 	return dev;

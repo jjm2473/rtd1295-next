@@ -38,13 +38,8 @@ void unregister_loradev(struct net_device *dev);
 int open_loradev(struct net_device *dev);
 void close_loradev(struct net_device *dev);
 
-#define LORA_DEV_MAGIC 0x4c6f5261 /* LoRa */
-
 struct lora_dev_priv {
-	u32 magic;
 	struct net_device *dev;
-
-	u32 (*get_freq)(struct net_device *netdev);
 };
 
 #endif /* _LORA_DEV_H */
