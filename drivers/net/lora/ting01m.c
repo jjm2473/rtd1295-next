@@ -15,6 +15,7 @@
 #include <linux/of.h>
 #include <linux/serdev.h>
 #include <linux/lora/dev.h>
+#include <net/cfglora.h>
 
 #include "ting01m.h"
 
@@ -44,12 +45,18 @@ static void ting01m_gpio_set(struct gpio_chip *chip, unsigned int offset, int va
 }
 #endif
 
-static u32 ting01m_get_freq(struct net_device *netdev)
+static int ting01m_lora_get_freq(struct lora_phy *phy, u32 *val)
 {
-	struct ting01m_priv *priv = netdev_priv(netdev);
+	struct ting01m_priv *priv = netdev_priv(phy->netdev);
 
-	return priv->freq;
+	*val = priv->freq;
+
+	return 0;
 }
+
+static const struct cfglora_ops ting01m_lora_ops = {
+	.get_freq = ting01m_lora_get_freq,
+};
 
 static netdev_tx_t ting01m_loradev_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
@@ -194,7 +201,6 @@ static int widora_probe(struct serdev_device *sdev)
 	SET_NETDEV_DEV(widev->netdev, &sdev->dev);
 
 	priv = netdev_priv(widev->netdev);
-	priv->lora.get_freq = ting01m_get_freq;
 	priv->freq = 433000000;
 
 #ifdef CONFIG_GPIOLIB
@@ -210,6 +216,16 @@ static int widora_probe(struct serdev_device *sdev)
 		goto err_gpiochip_add;
 #endif
 
+	widev->lora_phy = devm_lora_phy_new(&sdev->dev, &ting01m_lora_ops, 0);
+	if (!widev->lora_phy)
+		goto err_lora_phy_new;
+
+	widev->lora_phy->netdev = widev->netdev;
+
+	ret = lora_phy_register(widev->lora_phy);
+	if (ret)
+		goto err_lora_phy_register;
+
 	ret = register_loradev(widev->netdev);
 	if (ret)
 		goto err_register_loradev;
@@ -219,6 +235,9 @@ static int widora_probe(struct serdev_device *sdev)
 	return 0;
 
 err_register_loradev:
+	lora_phy_unregister(widev->lora_phy);
+err_lora_phy_register:
+err_lora_phy_new:
 #ifdef CONFIG_GPIOLIB
 	gpiochip_remove(&widev->gpio);
 err_gpiochip_add:
@@ -238,6 +257,7 @@ static void widora_remove(struct serdev_device *sdev)
 	struct widora_device *widev = serdev_device_get_drvdata(sdev);
 
 	unregister_loradev(widev->netdev);
+	lora_phy_unregister(widev->lora_phy);
 #ifdef CONFIG_GPIOLIB
 	gpiochip_remove(&widev->gpio);
 #endif

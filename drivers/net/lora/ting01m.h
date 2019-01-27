@@ -13,10 +13,12 @@
 #include <linux/gpio/driver.h>
 #include <linux/netdevice.h>
 #include <linux/serdev.h>
+#include <net/cfglora.h>
 
 struct widora_device {
 	struct serdev_device *serdev;
 	struct net_device *netdev;
+	struct lora_phy *lora_phy;
 
 	struct gpio_desc *rst;
 #ifdef CONFIG_GPIOLIB
