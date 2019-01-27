@@ -473,56 +473,6 @@ static const struct cfglora_ops sx127x_lora_ops = {
 	.get_freq = sx127x_lora_get_freq,
 };
 
-static ssize_t sx127x_freq_read(struct file *file, char __user *user_buf,
-				 size_t count, loff_t *ppos)
-{
-	struct net_device *netdev = file->private_data;
-	struct sx127x_priv *priv = netdev_priv(netdev);
-	struct spi_device *spi = priv->spi;
-	ssize_t size;
-	char *buf;
-	int ret;
-	unsigned int msb, mid, lsb;
-	u32 freq_xosc;
-	unsigned long long frf;
-
-	ret = of_property_read_u32(spi->dev.of_node, "clock-frequency", &freq_xosc);
-	if (ret)
-		return 0;
-
-	mutex_lock(&priv->spi_lock);
-
-	ret = regmap_read(priv->regmap, REG_FRF_MSB, &msb);
-	if (!ret)
-		ret = regmap_read(priv->regmap, REG_FRF_MID, &mid);
-	if (!ret)
-		ret = regmap_read(priv->regmap, REG_FRF_LSB, &lsb);
-
-	mutex_unlock(&priv->spi_lock);
-
-	if (ret)
-		return 0;
-
-	frf = freq_xosc;
-	frf *= ((ulong)msb << 16) | ((ulong)mid << 8) | lsb;
-	do_div(frf, 1 << 19);
-
-	buf = kasprintf(GFP_KERNEL, "%llu\n", frf);
-	if (!buf)
-		return 0;
-
-	size = simple_read_from_buffer(user_buf, count, ppos, buf, strlen(buf));
-	kfree(buf);
-
-	return size;
-}
-
-static const struct file_operations sx127x_freq_fops = {
-	.owner = THIS_MODULE,
-	.open = simple_open,
-	.read = sx127x_freq_read,
-};
-
 static ssize_t sx127x_state_read(struct file *file, char __user *user_buf,
 				 size_t count, loff_t *ppos)
 {
@@ -824,7 +774,6 @@ static int sx127x_probe(struct spi_device *spi)
 
 	priv->debugfs = debugfs_create_dir(dev_name(&spi->dev), NULL);
 	debugfs_create_file("state", S_IRUGO, priv->debugfs, netdev, &sx127x_state_fops);
-	debugfs_create_file("frequency", S_IRUGO, priv->debugfs, netdev, &sx127x_freq_fops);
 
 	dev_info(&spi->dev, "probed (SX%d)\n", model->number);
 
