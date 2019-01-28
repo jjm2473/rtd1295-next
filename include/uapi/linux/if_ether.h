@@ -152,6 +152,8 @@
 #define ETH_P_OOK	0x00FC		/* On/Off Keying modulation	*/
 #define ETH_P_FSK	0x00FD		/* Frequency Shift Keying mod.	*/
 #define ETH_P_FLRC	0x00FE		/* Fast Long Range Communication */
+#define ETH_P_ERP1	0x00FF		/* EnOcean Radio Protocol 1	*/
+#define ETH_P_ERP2	0x0100		/* EnOcean Radio Protocol 2	*/
 
 /*
  *	This is an Ethernet frame header.
