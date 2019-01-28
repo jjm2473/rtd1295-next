@@ -11,6 +11,11 @@
 #include <linux/netdevice.h>
 #include <net/rtnetlink.h>
 
+/* XXX for external module */
+#ifndef ARPHRD_ENOCEAN
+#define ARPHRD_ENOCEAN 832
+#endif
+
 int open_enocean_dev(struct net_device *dev)
 {
 	if (!netif_carrier_ok(dev))

@@ -15,6 +15,14 @@
 
 #include "enocean_esp.h"
 
+/* XXX for external module */
+#ifndef ETH_P_ERP1
+#define ETH_P_ERP1 0x00FF
+#endif
+#ifndef ETH_P_ERP2
+#define ETH_P_ERP2 0x0100
+#endif
+
 struct enocean_esp_version {
 	int version;
 	int baudrate;
