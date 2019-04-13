@@ -2,7 +2,7 @@
 /*
  * Semtech SX1272/SX1276 LoRa transceiver
  *
- * Copyright (c) 2016-2018 Andreas Färber
+ * Copyright (c) 2016-2019 Andreas Färber
  */
 
 #include <linux/debugfs.h>
@@ -78,6 +78,13 @@ struct sx127x_priv {
 
 	struct dentry *debugfs;
 };
+
+static int sx127x_get_xosc_freq(struct sx127x_priv *priv, u32 *val)
+{
+	struct spi_device *spi = priv->spi;
+
+	return of_property_read_u32(spi->dev.of_node, "clock-frequency", val);
+}
 
 static bool sx127x_volatile_reg(struct device *dev, unsigned int reg)
 {
@@ -434,17 +441,14 @@ static const struct net_device_ops sx127x_netdev_ops =  {
 	.ndo_start_xmit = sx127x_loradev_start_xmit,
 };
 
-static int sx127x_lora_get_freq(struct lora_phy *phy, u32 *val)
+static int sx127x_get_freq(struct sx127x_priv *priv, u32 *val)
 {
-	struct net_device *netdev = dev_get_drvdata(phy->dev);
-	struct sx127x_priv *priv = netdev_priv(netdev);
-	struct spi_device *spi = priv->spi;
 	int ret;
 	unsigned int msb, mid, lsb;
 	u32 freq_xosc;
 	unsigned long long frf;
 
-	ret = of_property_read_u32(spi->dev.of_node, "clock-frequency", &freq_xosc);
+	ret = sx127x_get_xosc_freq(priv, &freq_xosc);
 	if (ret)
 		return ret;
 
@@ -469,9 +473,227 @@ static int sx127x_lora_get_freq(struct lora_phy *phy, u32 *val)
 	return 0;
 }
 
+static int sx127x_set_freq(struct sx127x_priv *priv, u32 freq)
+{
+	struct spi_device *spi = priv->spi;
+	unsigned long long freq_rf;
+	u32 freq_xosc;
+	unsigned int val;
+	int ret;
+
+	ret = sx127x_get_xosc_freq(priv, &freq_xosc);
+	if (ret)
+		return ret;
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, REG_OPMODE, &val);
+	if (ret) {
+		dev_err(&spi->dev, "failed reading RegPaDac\n");
+		mutex_unlock(&priv->spi_lock);
+		return ret;
+	}
+	/* only write OpMode if necessary */
+	if ((freq < 525000000) == !(val & REG_OPMODE_LOW_FREQUENCY_MODE_ON)) {
+		if (freq < 525000000)
+			val |= REG_OPMODE_LOW_FREQUENCY_MODE_ON;
+		else
+			val &= ~REG_OPMODE_LOW_FREQUENCY_MODE_ON;
+		ret = regmap_write(priv->regmap, REG_OPMODE, val);
+		if (ret) {
+			dev_err(&spi->dev, "failed writing OpMode\n");
+			mutex_unlock(&priv->spi_lock);
+			return ret;
+		}
+		dev_info(&spi->dev, "wrote OpMode\n");
+	} else
+		dev_info(&spi->dev, "skipped writing OpMode\n");
+
+	freq_rf = freq;
+	freq_rf *= (1 << 19);
+	do_div(freq_rf, freq_xosc);
+	dev_dbg(&spi->dev, "Frf = %llu", freq_rf);
+
+	ret = regmap_write(priv->regmap, REG_FRF_MSB, freq_rf >> 16);
+	if (!ret)
+		ret = regmap_write(priv->regmap, REG_FRF_MID, freq_rf >> 8);
+	if (!ret)
+		ret = regmap_write(priv->regmap, REG_FRF_LSB, freq_rf);
+
+	mutex_unlock(&priv->spi_lock);
+
+	return ret;
+}
+
+static int sx127x_get_tx_power(struct sx127x_priv *priv, s32 *power)
+{
+	struct spi_device *spi = priv->spi;
+	unsigned int val, tmp;
+	int ret;
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, REG_PA_CONFIG, &val);
+	if (ret) {
+		dev_err(&spi->dev, "failed reading RegPaConfig\n");
+		goto out;
+	}
+	tmp = val & GENMASK(3, 0);
+	if (val & REG_PA_CONFIG_PA_SELECT) {
+		/* PA_BOOST */
+		if (tmp == 0xf) {
+			ret = regmap_read(priv->regmap, REG_PA_DAC, &val);
+			if (ret) {
+				dev_err(&spi->dev, "failed reading RegPaDac\n");
+				goto out;
+			}
+			if ((val & GENMASK(2, 0)) == 0x07) {
+				*power = 20;
+				ret = 0;
+				goto out;
+			}
+		}
+		*power = 2 + tmp;
+	} else {
+		/* RFO */
+		*power = -1 + tmp;
+	}
+
+out:
+	mutex_unlock(&priv->spi_lock);
+	return ret;
+}
+
+static int sx127x_set_tx_power(struct sx127x_priv *priv, s32 power)
+{
+	struct spi_device *spi = priv->spi;
+	unsigned int val;
+	int ret;
+
+	if (power > 20 || (power == 18 || power == 19))
+		return -EINVAL;
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, REG_PA_CONFIG, &val);
+	if (ret) {
+		dev_err(&spi->dev, "failed reading RegPaConfig\n");
+		goto out;
+	}
+	if (power > 13)
+		val |= REG_PA_CONFIG_PA_SELECT;
+	else
+		val &= ~REG_PA_CONFIG_PA_SELECT;
+	val &= ~GENMASK(3, 0);
+	if (val & REG_PA_CONFIG_PA_SELECT) {
+		/* PA_BOOST */
+		if (power == 20)
+			val |= 0xf;
+		else
+			val |= (power - 2) & GENMASK(3, 0);
+	} else /* RFO */
+		val |= (power + 1) & GENMASK(3, 0);
+	ret = regmap_write(priv->regmap, REG_PA_CONFIG, val);
+	if (ret) {
+		dev_err(&spi->dev, "failed writing RegPaConfig\n");
+		goto out;
+	}
+
+	ret = regmap_read(priv->regmap, REG_PA_DAC, &val);
+	if (ret) {
+		dev_err(&spi->dev, "failed reading RegPaDac\n");
+		goto out;
+	}
+	val &= ~GENMASK(2, 0);
+	val |= (power == 20) ? 0x07 : 0x04;
+	ret = regmap_write(priv->regmap, REG_PA_DAC, val);
+	if (ret) {
+		dev_err(&spi->dev, "failed writing RegPaDac\n");
+		goto out;
+	}
+
+out:
+	mutex_unlock(&priv->spi_lock);
+	return ret;
+}
+
+static int sx127x_lora_get_freq(struct lora_phy *phy, u32 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	return sx127x_get_freq(priv, val);
+}
+
+static int sx127x_lora_set_freq(struct lora_phy *phy, u32 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	return sx127x_set_freq(priv, val);
+}
+
+static int sx127x_lora_get_tx_power(struct lora_phy *phy, s32 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	return sx127x_get_tx_power(priv, val);
+}
+
+static int sx127x_lora_set_tx_power(struct lora_phy *phy, s32 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	return sx127x_set_tx_power(priv, val);
+}
+
 static const struct cfglora_ops sx127x_lora_ops = {
-	.get_freq = sx127x_lora_get_freq,
+	.get_freq	= sx127x_lora_get_freq,
+	.set_freq	= sx127x_lora_set_freq,
+	.get_tx_power	= sx127x_lora_get_tx_power,
+	.set_tx_power	= sx127x_lora_set_tx_power,
 };
+
+static int sx127x_lora_init(struct lora_phy *phy)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	struct spi_device *spi = priv->spi;
+	unsigned int val;
+	u32 freq_band;
+	int ret;
+
+	ret = of_property_read_u32(spi->dev.of_node, "radio-frequency", &freq_band);
+	if (ret) {
+		dev_err(&spi->dev, "failed reading radio-frequency");
+		return ret;
+	}
+
+	val = REG_OPMODE_LONG_RANGE_MODE | REG_OPMODE_MODE_SLEEP;
+	if (freq_band < 525000000)
+		val |= REG_OPMODE_LOW_FREQUENCY_MODE_ON;
+	ret = regmap_write(priv->regmap, REG_OPMODE, val);
+	if (ret) {
+		dev_err(&spi->dev, "failed writing opmode");
+		return ret;
+	}
+
+	ret = sx127x_lora_set_freq(priv->lora_phy, freq_band);
+	if (ret) {
+		dev_err(&spi->dev, "failed setting frequency (%d)", ret);
+		return ret;
+	}
+
+	ret = sx127x_lora_set_tx_power(priv->lora_phy, 14);
+	if (ret) {
+		dev_err(&spi->dev, "failed setting TX power (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
 
 static ssize_t sx127x_state_read(struct file *file, char __user *user_buf,
 				 size_t count, loff_t *ppos)
@@ -598,8 +820,6 @@ static int sx127x_probe(struct spi_device *spi)
 	struct net_device *netdev;
 	struct sx127x_priv *priv;
 	const struct sx127x_model *model = NULL;
-	u32 freq_xosc, freq_band;
-	unsigned long long freq_rf;
 	unsigned int val;
 	int ret, i;
 
@@ -689,70 +909,6 @@ static int sx127x_probe(struct spi_device *spi)
 		}
 	}
 
-	ret = of_property_read_u32(spi->dev.of_node, "clock-frequency", &freq_xosc);
-	if (ret) {
-		dev_err(&spi->dev, "failed reading clock-frequency");
-		return ret;
-	}
-
-	ret = of_property_read_u32(spi->dev.of_node, "radio-frequency", &freq_band);
-	if (ret) {
-		dev_err(&spi->dev, "failed reading radio-frequency");
-		return ret;
-	}
-
-	val = REG_OPMODE_LONG_RANGE_MODE | REG_OPMODE_MODE_SLEEP;
-	if (freq_band < 525000000)
-		val |= REG_OPMODE_LOW_FREQUENCY_MODE_ON;
-	ret = regmap_write(priv->regmap, REG_OPMODE, val);
-	if (ret) {
-		dev_err(&spi->dev, "failed writing opmode");
-		return ret;
-	}
-
-	freq_rf = freq_band;
-	freq_rf *= (1 << 19);
-	do_div(freq_rf, freq_xosc);
-	dev_dbg(&spi->dev, "Frf = %llu", freq_rf);
-
-	ret = regmap_write(priv->regmap, REG_FRF_MSB, freq_rf >> 16);
-	if (!ret)
-		ret = regmap_write(priv->regmap, REG_FRF_MID, freq_rf >> 8);
-	if (!ret)
-		ret = regmap_write(priv->regmap, REG_FRF_LSB, freq_rf);
-	if (ret) {
-		dev_err(&spi->dev, "failed writing frequency (%d)", ret);
-		return ret;
-	}
-
-	ret = regmap_read(priv->regmap, REG_PA_CONFIG, &val);
-	if (ret) {
-		dev_err(&spi->dev, "failed reading RegPaConfig\n");
-		return ret;
-	}
-	if (true)
-		val |= REG_PA_CONFIG_PA_SELECT;
-	val &= ~GENMASK(3, 0);
-	val |= (23 - 3) - 5;
-	ret = regmap_write(priv->regmap, REG_PA_CONFIG, val);
-	if (ret) {
-		dev_err(&spi->dev, "failed writing RegPaConfig\n");
-		return ret;
-	}
-
-	ret = regmap_read(priv->regmap, REG_PA_DAC, &val);
-	if (ret) {
-		dev_err(&spi->dev, "failed reading RegPaDac\n");
-		return ret;
-	}
-	val &= ~GENMASK(2, 0);
-	val |= 0x7;
-	ret = regmap_write(priv->regmap, REG_PA_DAC, val);
-	if (ret) {
-		dev_err(&spi->dev, "failed writing RegPaDac\n");
-		return ret;
-	}
-
 	spi_set_drvdata(spi, netdev);
 	SET_NETDEV_DEV(netdev, &spi->dev);
 
@@ -761,6 +917,12 @@ static int sx127x_probe(struct spi_device *spi)
 		return -ENOMEM;
 
 	priv->lora_phy->netdev = netdev;
+
+	ret = sx127x_lora_init(priv->lora_phy);
+	if (ret) {
+		dev_err(&spi->dev, "failed LoRa init (%d)", ret);
+		return ret;
+	}
 
 	ret = lora_phy_register(priv->lora_phy);
 	if (ret)
