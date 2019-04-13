@@ -2,7 +2,7 @@
 /*
  * LoRa Netlink interface
  *
- * Copyright (c) 2018 Andreas Färber
+ * Copyright (c) 2018-2019 Andreas Färber
  */
 #ifndef __LINUX_NLLORA_H
 #define __LINUX_NLLORA_H
@@ -24,6 +24,7 @@ enum nllora_commands {
 	NLLORA_CMD_UNSPEC = 0,
 
 	NLLORA_CMD_GET_FREQ,
+	NLLORA_CMD_SET_FREQ,
 
 	__NLLORA_CMD_AFTER_LAST,
 	NLLORA_CMD_MAX = __NLLORA_CMD_AFTER_LAST - 1,

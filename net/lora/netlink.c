@@ -55,6 +55,21 @@ static int nllora_cmd_get_freq(struct sk_buff *skb, struct genl_info *info)
 	return genlmsg_reply(msg, info);
 }
 
+static int nllora_cmd_set_freq(struct sk_buff *skb, struct genl_info *info)
+{
+	struct cfglora_registered_phy *rphy = info->user_ptr[0];
+	u32 val;
+
+	if (!info->attrs[NLLORA_ATTR_FREQ])
+		return -EINVAL;
+
+	if (!rphy->ops->set_freq)
+		return -EOPNOTSUPP;
+
+	val = nla_get_u32(info->attrs[NLLORA_ATTR_FREQ]);
+	return rphy->ops->set_freq(&rphy->lora_phy, val);
+}
+
 static const struct nla_policy nllora_policy[NLLORA_ATTR_MAX + 1] = {
 	[NLLORA_ATTR_IFINDEX] = { .type = NLA_U32 },
 	[NLLORA_ATTR_FREQ] = { .type = NLA_U32 },
@@ -88,7 +103,13 @@ static const struct genl_ops nllora_ops[] = {
 	{
 		.cmd = NLLORA_CMD_GET_FREQ,
 		.doit = nllora_cmd_get_freq,
-		.flags = 0/*GENL_ADMIN_PERM*/,
+		.flags = 0,
+		.internal_flags = NLLORA_FLAG_NEED_PHY,
+	},
+	{
+		.cmd = NLLORA_CMD_SET_FREQ,
+		.doit = nllora_cmd_set_freq,
+		.flags = GENL_ADMIN_PERM,
 		.internal_flags = NLLORA_FLAG_NEED_PHY,
 	},
 };
