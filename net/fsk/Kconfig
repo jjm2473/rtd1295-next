@@ -7,3 +7,9 @@ menuconfig FSK
 	tristate "FSK subsystem support"
 	help
 	  Frequency-Shift Keying (FSK) and variants
+
+if FSK
+
+source "drivers/net/fsk/Kconfig"
+
+endif
