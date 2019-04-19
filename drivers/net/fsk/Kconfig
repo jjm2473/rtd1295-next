@@ -8,4 +8,11 @@ menu "FSK Device Drivers"
 # Alphabetically sorted.
 #
 
+config FSK_NRF24L01P
+	tristate "Nordic nRF24L01+ driver"
+	default y
+	depends on SPI
+	help
+	  Nordic Semiconductor nRF24L01+
+
 endmenu
