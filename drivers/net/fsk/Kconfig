@@ -15,4 +15,11 @@ config FSK_NRF24L01P
 	help
 	  Nordic Semiconductor nRF24L01+
 
+config FSK_SI443X
+	tristate "SiLabs Si443x driver"
+	default y
+	depends on SPI
+	help
+	  Silicon Labs Si4432
+
 endmenu
