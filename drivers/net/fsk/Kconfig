@@ -8,6 +8,13 @@ menu "FSK Device Drivers"
 # Alphabetically sorted.
 #
 
+config FSK_CC1120
+	tristate "TI CC1120 driver"
+	default y
+	depends on SPI
+	help
+	  TI CC1120
+
 config FSK_NRF24L01P
 	tristate "Nordic nRF24L01+ driver"
 	default y
