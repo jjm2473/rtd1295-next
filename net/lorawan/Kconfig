@@ -9,3 +9,9 @@ config LORAWAN
 
 	  Say Y here to compile LoRaWAN support into the kernel or say M to
 	  compile it as a module.
+
+if LORAWAN
+
+source "drivers/net/lorawan/Kconfig"
+
+endif
