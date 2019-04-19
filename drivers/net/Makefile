@@ -47,6 +47,7 @@ obj-$(CONFIG_HIPPI) += hippi/
 obj-$(CONFIG_HAMRADIO) += hamradio/
 obj-$(CONFIG_FSK) += fsk/
 obj-$(CONFIG_LORA) += lora/
+obj-$(CONFIG_LORAWAN) += lorawan/
 obj-$(CONFIG_PLIP) += plip/
 obj-$(CONFIG_PPP) += ppp/
 obj-$(CONFIG_PPP_ASYNC) += ppp/
