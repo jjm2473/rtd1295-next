@@ -22,4 +22,11 @@ config FSK_SI443X
 	help
 	  Silicon Labs Si4432
 
+config FSK_S2LP
+	tristate "ST S2-LP driver"
+	default y
+	depends on SPI
+	help
+	  ST S2-LP
+
 endmenu
