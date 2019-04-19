@@ -15,6 +15,13 @@ config FSK_CC1120
 	help
 	  TI CC1120
 
+config FSK_MRF89XA
+	tristate "Microchip MRF89XA driver"
+	default y
+	depends on SPI
+	help
+	  Microchip MRF89XA
+
 config FSK_NRF24L01P
 	tristate "Nordic nRF24L01+ driver"
 	default y
