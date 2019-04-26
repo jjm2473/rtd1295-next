@@ -11,6 +11,7 @@
 #include <linux/of_device.h>
 #include <linux/regmap.h>
 #include <linux/spi/spi.h>
+#include <net/cfgfsk.h>
 
 static int nrf24l01p_command(struct spi_device *spi, u8 cmd, u8 *data, int data_len)
 {
@@ -24,6 +25,24 @@ static int nrf24l01p_read_reg(struct spi_device *spi, u8 reg, u8 *data, int data
 	return nrf24l01p_command(spi, cmd, data, data_len);
 }
 
+static int nrf24l01p_fsk_get_freq(struct fsk_phy *phy, u32 *val)
+{
+	struct spi_device *spi = to_spi_device(phy->dev);
+	u8 rf_ch;
+	int ret;
+
+	ret = nrf24l01p_read_reg(spi, 0x05, &rf_ch, 1);
+	if (ret)
+		return ret;
+
+	*val = (2400 + (rf_ch & GENMASK(6, 0))) * 1000000;
+	return 0;
+}
+
+static const struct cfgfsk_ops nrf24l01p_fsk_ops = {
+	.get_freq	= nrf24l01p_fsk_get_freq,
+};
+
 #ifdef CONFIG_OF
 static const struct of_device_id nrf24l01p_dt_ids[] = {
 	{ .compatible = "nordic,nrf24l01+" },
@@ -34,6 +53,8 @@ MODULE_DEVICE_TABLE(of, nrf24l01p_dt_ids);
 
 static int nrf24l01p_probe(struct spi_device *spi)
 {
+	struct fsk_phy *phy;
+	u32 freq;
 	u8 data;
 	int ret;
 
@@ -42,6 +63,17 @@ static int nrf24l01p_probe(struct spi_device *spi)
 		dev_err(&spi->dev, "spi error (%d)\n", ret);
 
 	dev_info(&spi->dev, "config = 0x%02x\n", (unsigned int)data);
+
+	phy = devm_fsk_phy_new(&spi->dev, &nrf24l01p_fsk_ops, 0);
+	if (!phy)
+		return -ENOMEM;
+
+	ret = nrf24l01p_fsk_get_freq(phy, &freq);
+	if (ret) {
+		dev_err(&spi->dev, "failed to get frequency (%d)\n", ret);
+		return ret;
+	}
+	dev_info(&spi->dev, "frequency: %u\n", freq);
 
 	dev_info(&spi->dev, "probed\n");
 
