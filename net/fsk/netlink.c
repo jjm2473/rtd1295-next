@@ -55,6 +55,21 @@ static int nlfsk_cmd_get_freq(struct sk_buff *skb, struct genl_info *info)
 	return genlmsg_reply(msg, info);
 }
 
+static int nlfsk_cmd_set_freq(struct sk_buff *skb, struct genl_info *info)
+{
+	struct cfgfsk_registered_phy *rphy = info->user_ptr[0];
+	u32 val;
+
+	if (!info->attrs[NLFSK_ATTR_FREQ])
+		return -EINVAL;
+
+	if (!rphy->ops->set_freq)
+		return -EOPNOTSUPP;
+
+	val = nla_get_u32(info->attrs[NLFSK_ATTR_FREQ]);
+	return rphy->ops->set_freq(&rphy->fsk_phy, val);
+}
+
 static const struct nla_policy nlfsk_policy[NLFSK_ATTR_MAX + 1] = {
 	[NLFSK_ATTR_IFINDEX] = { .type = NLA_U32 },
 	[NLFSK_ATTR_FREQ] = { .type = NLA_U32 },
@@ -88,7 +103,13 @@ static const struct genl_ops nlfsk_ops[] = {
 	{
 		.cmd = NLFSK_CMD_GET_FREQ,
 		.doit = nlfsk_cmd_get_freq,
-		.flags = 0/*GENL_ADMIN_PERM*/,
+		.flags = 0,
+		.internal_flags = NLFSK_FLAG_NEED_PHY,
+	},
+	{
+		.cmd = NLFSK_CMD_SET_FREQ,
+		.doit = nlfsk_cmd_set_freq,
+		.flags = GENL_ADMIN_PERM,
 		.internal_flags = NLFSK_FLAG_NEED_PHY,
 	},
 };
