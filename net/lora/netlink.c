@@ -24,21 +24,14 @@ static struct genl_family nllora_fam;
 
 static int nllora_cmd_get_freq(struct sk_buff *skb, struct genl_info *info)
 {
-	struct nlattr **attrs = genl_family_attrbuf(&nllora_fam);
-	bool have_ifindex = attrs[NLLORA_ATTR_IFINDEX];
+	struct cfglora_registered_phy *rphy = info->user_ptr[0];
 	struct sk_buff *msg;
-	struct cfglora_registered_phy *rphy;
 	void *hdr;
 	u32 val;
-	int ifindex = -1;
 	int ret;
 
-	if (have_ifindex)
-		ifindex = nla_get_u32(attrs[NLLORA_ATTR_IFINDEX]);
-
-	rphy = cfglora_get_phy_by_ifindex(ifindex);
-	if (!rphy)
-		return -ENOBUFS;
+	if (!rphy->ops->get_freq)
+		return -EOPNOTSUPP;
 
 	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
 	if (!msg) {
@@ -46,13 +39,7 @@ static int nllora_cmd_get_freq(struct sk_buff *skb, struct genl_info *info)
 	}
 
 	hdr = genlmsg_put(msg, info->snd_portid, info->snd_seq, &nllora_fam, 0, NLLORA_CMD_GET_FREQ);
-	nla_put_u32(msg, NLLORA_ATTR_IFINDEX, ifindex);
-
-	if (!rphy->ops->get_freq) {
-		genlmsg_cancel(msg, hdr);
-		nlmsg_free(msg);
-		return -ENOBUFS;
-	}
+	nla_put_u32(msg, NLLORA_ATTR_IFINDEX, rphy->lora_phy.netdev->ifindex);
 
 	ret = rphy->ops->get_freq(&rphy->lora_phy, &val);
 	if (ret) {
@@ -73,12 +60,36 @@ static const struct nla_policy nllora_policy[NLLORA_ATTR_MAX + 1] = {
 	[NLLORA_ATTR_FREQ] = { .type = NLA_U32 },
 };
 
+#define NLLORA_FLAG_NEED_PHY	BIT(0)
+
+static int nllora_pre_doit(const struct genl_ops *ops, struct sk_buff *skb,
+			   struct genl_info *info)
+{
+	struct nlattr **attrs = info->attrs;
+
+	if (ops->internal_flags & NLLORA_FLAG_NEED_PHY) {
+		struct cfglora_registered_phy *rphy;
+		int ifindex = -1;
+
+		if (attrs[NLLORA_ATTR_IFINDEX])
+			ifindex = nla_get_u32(attrs[NLLORA_ATTR_IFINDEX]);
+
+		rphy = cfglora_get_phy_by_ifindex(ifindex);
+		if (!rphy)
+			return -ENODEV;
+
+		info->user_ptr[0] = rphy;
+	}
+
+	return 0;
+}
+
 static const struct genl_ops nllora_ops[] = {
 	{
 		.cmd = NLLORA_CMD_GET_FREQ,
 		.doit = nllora_cmd_get_freq,
 		.flags = 0/*GENL_ADMIN_PERM*/,
-		.internal_flags = 0,
+		.internal_flags = NLLORA_FLAG_NEED_PHY,
 	},
 };
 
@@ -92,6 +103,7 @@ static struct genl_family nllora_fam __ro_after_init = {
 	.policy = nllora_policy,
 	.ops = nllora_ops,
 	.n_ops = ARRAY_SIZE(nllora_ops),
+	.pre_doit = nllora_pre_doit,
 	.mcgrps = nllora_mcgrps,
 	.n_mcgrps = ARRAY_SIZE(nllora_mcgrps),
 };
