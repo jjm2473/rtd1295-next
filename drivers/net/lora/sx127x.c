@@ -16,6 +16,7 @@
 #include <linux/regmap.h>
 #include <linux/lora/dev.h>
 #include <linux/spi/spi.h>
+#include <net/cfgfsk.h>
 #include <net/cfglora.h>
 
 #define REG_FIFO			0x00
@@ -61,6 +62,7 @@ struct sx127x_model {
 struct sx127x_priv {
 	struct lora_dev_priv lora;
 	struct lora_phy *lora_phy;
+	struct fsk_phy *fsk_phy;
 	struct spi_device *spi;
 	struct regmap *regmap;
 	struct gpio_desc *rst;
@@ -695,6 +697,45 @@ static int sx127x_lora_init(struct lora_phy *phy)
 	return 0;
 }
 
+static int sx127x_fsk_get_freq(struct fsk_phy *phy, u32 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	return sx127x_get_freq(priv, val);
+}
+
+static int sx127x_fsk_set_freq(struct fsk_phy *phy, u32 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	return sx127x_set_freq(priv, val);
+}
+
+static int sx127x_fsk_get_tx_power(struct fsk_phy *phy, s32 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	return sx127x_get_tx_power(priv, val);
+}
+
+static int sx127x_fsk_set_tx_power(struct fsk_phy *phy, s32 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+
+	return sx127x_set_tx_power(priv, val);
+}
+
+static const struct cfgfsk_ops sx127x_fsk_ops = {
+	.get_freq	= sx127x_fsk_get_freq,
+	.set_freq	= sx127x_fsk_set_freq,
+	.get_tx_power	= sx127x_fsk_get_tx_power,
+	.set_tx_power	= sx127x_fsk_set_tx_power,
+};
+
 static ssize_t sx127x_state_read(struct file *file, char __user *user_buf,
 				 size_t count, loff_t *ppos)
 {
@@ -918,6 +959,14 @@ static int sx127x_probe(struct spi_device *spi)
 
 	priv->lora_phy->netdev = netdev;
 
+	if (IS_ENABLED(CONFIG_FSK)) {
+		priv->fsk_phy = devm_fsk_phy_new(&spi->dev, &sx127x_fsk_ops, 0);
+		if (!priv->fsk_phy)
+			return -ENOMEM;
+
+		priv->fsk_phy->netdev = netdev;
+	}
+
 	ret = sx127x_lora_init(priv->lora_phy);
 	if (ret) {
 		dev_err(&spi->dev, "failed LoRa init (%d)", ret);
@@ -928,8 +977,18 @@ static int sx127x_probe(struct spi_device *spi)
 	if (ret)
 		return ret;
 
+	if (IS_ENABLED(CONFIG_FSK)) {
+		ret = fsk_phy_register(priv->fsk_phy);
+		if (ret) {
+			lora_phy_unregister(priv->lora_phy);
+			return ret;
+		}
+	}
+
 	ret = register_loradev(netdev);
 	if (ret) {
+		if (IS_ENABLED(CONFIG_FSK))
+			fsk_phy_unregister(priv->fsk_phy);
 		lora_phy_unregister(priv->lora_phy);
 		return ret;
 	}
@@ -952,6 +1011,9 @@ static int sx127x_remove(struct spi_device *spi)
 	unregister_loradev(netdev);
 
 	lora_phy_unregister(priv->lora_phy);
+
+	if (IS_ENABLED(CONFIG_FSK))
+		fsk_phy_unregister(priv->fsk_phy);
 
 	dev_info(&spi->dev, "removed\n");
 
