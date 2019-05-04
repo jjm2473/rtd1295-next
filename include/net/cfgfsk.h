@@ -14,6 +14,10 @@ struct fsk_phy;
 struct cfgfsk_ops {
 	int (*get_freq)(struct fsk_phy *phy, u32 *val);
 	int (*set_freq)(struct fsk_phy *phy, u32 val);
+	int (*get_freq_dev)(struct fsk_phy *phy, u32 *val);
+	int (*set_freq_dev)(struct fsk_phy *phy, u32 val);
+	int (*get_tx_power)(struct fsk_phy *phy, s32 *val);
+	int (*set_tx_power)(struct fsk_phy *phy, s32 val);
 };
 
 struct fsk_phy {
