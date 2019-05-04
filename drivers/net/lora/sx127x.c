@@ -21,6 +21,8 @@
 
 #define REG_FIFO			0x00
 #define REG_OPMODE			0x01
+#define FSKOOK_REG_FDEV_MSB		0x04
+#define FSKOOK_REG_FDEV_LSB		0x05
 #define REG_FRF_MSB			0x06
 #define REG_FRF_MID			0x07
 #define REG_FRF_LSB			0x08
@@ -37,6 +39,10 @@
 #define REG_PA_DAC			0x4d
 
 #define REG_OPMODE_LONG_RANGE_MODE		BIT(7)
+#define FSKOOK_REG_OPMODE_MODULATION_TYPE_SHIFT	5
+#define FSKOOK_REG_OPMODE_MODULATION_TYPE_MASK	GENMASK(6, 5)
+#define FSKOOK_REG_OPMODE_MODULATION_TYPE_FSK	(0x0 << 5)
+#define FSKOOK_REG_OPMODE_MODULATION_TYPE_OOK	(0x1 << 5)
 #define REG_OPMODE_LOW_FREQUENCY_MODE_ON	BIT(3)
 #define REG_OPMODE_MODE_MASK			GENMASK(2, 0)
 #define REG_OPMODE_MODE_SLEEP			(0x0 << 0)
@@ -44,6 +50,8 @@
 #define REG_OPMODE_MODE_TX			(0x3 << 0)
 #define REG_OPMODE_MODE_RXCONTINUOUS		(0x5 << 0)
 #define REG_OPMODE_MODE_RXSINGLE		(0x6 << 0)
+
+#define FSKOOK_REG_FDEV_MSB_MASK		GENMASK(5, 0)
 
 #define REG_PA_CONFIG_PA_SELECT			BIT(7)
 
@@ -697,6 +705,24 @@ static int sx127x_lora_init(struct lora_phy *phy)
 	return 0;
 }
 
+static int sx127x_is_fsk(struct sx127x_priv *priv, bool *val)
+{
+	unsigned int opmode;
+	int ret;
+
+	ret = regmap_read(priv->regmap, REG_OPMODE, &opmode);
+	if (ret)
+		return ret;
+
+	if (opmode & REG_OPMODE_LONG_RANGE_MODE) {
+		*val = false;
+	} else {
+		unsigned int modtype = opmode & FSKOOK_REG_OPMODE_MODULATION_TYPE_MASK;
+		*val = (modtype == FSKOOK_REG_OPMODE_MODULATION_TYPE_FSK);
+	}
+	return 0;
+}
+
 static int sx127x_fsk_get_freq(struct fsk_phy *phy, u32 *val)
 {
 	struct net_device *netdev = dev_get_drvdata(phy->dev);
@@ -711,6 +737,79 @@ static int sx127x_fsk_set_freq(struct fsk_phy *phy, u32 val)
 	struct sx127x_priv *priv = netdev_priv(netdev);
 
 	return sx127x_set_freq(priv, val);
+}
+
+static int sx127x_fsk_get_freq_dev(struct fsk_phy *phy, u32 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned long long fdev;
+	unsigned int msb, lsb;
+	u32 freq_xosc;
+	bool fsk;
+	int ret;
+
+	ret = sx127x_is_fsk(priv, &fsk);
+	if (ret)
+		return ret;
+	if (!fsk)
+		return -EBUSY;
+
+	ret = sx127x_get_xosc_freq(priv, &freq_xosc);
+	if (ret)
+		return ret;
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, FSKOOK_REG_FDEV_MSB, &msb);
+	if (!ret)
+		ret = regmap_read(priv->regmap, FSKOOK_REG_FDEV_LSB, &lsb);
+
+	mutex_unlock(&priv->spi_lock);
+
+	if (ret)
+		return ret;
+
+	fdev = (((ulong)msb & FSKOOK_REG_FDEV_MSB_MASK) << 8) | lsb;
+	fdev *= freq_xosc;
+	do_div(fdev, 1 << 19);
+	*val = fdev;
+
+	return 0;
+}
+
+static int sx127x_fsk_set_freq_dev(struct fsk_phy *phy, u32 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned long long fdev;
+	u32 freq_xosc;
+	bool fsk;
+	int ret;
+
+	ret = sx127x_is_fsk(priv, &fsk);
+	if (ret)
+		return ret;
+	if (!fsk)
+		return -EBUSY;
+
+	ret = sx127x_get_xosc_freq(priv, &freq_xosc);
+	if (ret)
+		return ret;
+
+	fdev = val;
+	fdev *= 1 << 19;
+	do_div(fdev, freq_xosc);
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_write(priv->regmap, FSKOOK_REG_FDEV_MSB, (fdev >> 8) & FSKOOK_REG_FDEV_MSB_MASK);
+	if (!ret)
+		ret = regmap_write(priv->regmap, FSKOOK_REG_FDEV_LSB, fdev & 0xff);
+
+	mutex_unlock(&priv->spi_lock);
+
+	return ret;
 }
 
 static int sx127x_fsk_get_tx_power(struct fsk_phy *phy, s32 *val)
@@ -732,6 +831,8 @@ static int sx127x_fsk_set_tx_power(struct fsk_phy *phy, s32 val)
 static const struct cfgfsk_ops sx127x_fsk_ops = {
 	.get_freq	= sx127x_fsk_get_freq,
 	.set_freq	= sx127x_fsk_set_freq,
+	.get_freq_dev	= sx127x_fsk_get_freq_dev,
+	.set_freq_dev	= sx127x_fsk_set_freq_dev,
 	.get_tx_power	= sx127x_fsk_get_tx_power,
 	.set_tx_power	= sx127x_fsk_set_tx_power,
 };
