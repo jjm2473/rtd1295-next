@@ -54,10 +54,19 @@
 #define FSKOOK_REG_FDEV_MSB_MASK		GENMASK(5, 0)
 
 #define REG_PA_CONFIG_PA_SELECT			BIT(7)
+#define REG_PA_CONFIG_PA_SELECT_RFO		0
+#define REG_PA_CONFIG_PA_SELECT_PA_BOOST	BIT(7)
+#define SX1276_REG_PA_CONFIG_MAX_POWER_SHIFT	4
+#define SX1276_REG_PA_CONFIG_MAX_POWER_MASK	GENMASK(6, 4)
+#define REG_PA_CONFIG_OUTPUT_POWER_MASK		GENMASK(3, 0)
 
 #define LORA_REG_IRQ_FLAGS_TX_DONE		BIT(3)
 
 #define REG_DIO_MAPPING1_DIO0_MASK	GENMASK(7, 6)
+
+#define REG_PA_DAC_PA_DAC_MASK		GENMASK(2, 0)
+#define REG_PA_DAC_PA_DAC_DEFAULT	0x04
+#define REG_PA_DAC_PA_DAC_20_DBM	0x07
 
 struct sx127x_priv;
 
@@ -539,7 +548,7 @@ static int sx127x_set_freq(struct sx127x_priv *priv, u32 freq)
 static int sx127x_get_tx_power(struct sx127x_priv *priv, s32 *power)
 {
 	struct spi_device *spi = priv->spi;
-	unsigned int val, tmp;
+	unsigned int val, output_power;
 	int ret;
 
 	mutex_lock(&priv->spi_lock);
@@ -549,25 +558,38 @@ static int sx127x_get_tx_power(struct sx127x_priv *priv, s32 *power)
 		dev_err(&spi->dev, "failed reading RegPaConfig\n");
 		goto out;
 	}
-	tmp = val & GENMASK(3, 0);
-	if (val & REG_PA_CONFIG_PA_SELECT) {
-		/* PA_BOOST */
-		if (tmp == 0xf) {
+	output_power = val & REG_PA_CONFIG_OUTPUT_POWER_MASK;
+	switch (val & REG_PA_CONFIG_PA_SELECT) {
+	case REG_PA_CONFIG_PA_SELECT_PA_BOOST:
+		if (output_power == 0xf) {
 			ret = regmap_read(priv->regmap, REG_PA_DAC, &val);
 			if (ret) {
 				dev_err(&spi->dev, "failed reading RegPaDac\n");
 				goto out;
 			}
-			if ((val & GENMASK(2, 0)) == 0x07) {
+			if ((val & REG_PA_DAC_PA_DAC_MASK) == REG_PA_DAC_PA_DAC_20_DBM) {
 				*power = 20;
 				ret = 0;
 				goto out;
 			}
 		}
-		*power = 2 + tmp;
-	} else {
-		/* RFO */
-		*power = -1 + tmp;
+		if (priv->model->number == 1272)
+			*power = 2 + output_power;
+		else
+			*power = 17 - (15 - output_power);
+		break;
+	case REG_PA_CONFIG_PA_SELECT_RFO:
+		if (priv->model->number == 1272)
+			*power = -1 + output_power;
+		else {
+			unsigned int max_power, pmax;
+			max_power = (val & SX1276_REG_PA_CONFIG_MAX_POWER_MASK);
+			max_power >>= SX1276_REG_PA_CONFIG_MAX_POWER_SHIFT;
+			pmax = 108 + 6 * max_power;
+			do_div(pmax, 10);
+			*power = pmax - (15 - output_power);
+		}
+		break;
 	}
 
 out:
@@ -591,19 +613,33 @@ static int sx127x_set_tx_power(struct sx127x_priv *priv, s32 power)
 		dev_err(&spi->dev, "failed reading RegPaConfig\n");
 		goto out;
 	}
-	if (power > 13)
-		val |= REG_PA_CONFIG_PA_SELECT;
+	if ((power > 13 && priv->model->number == 1272) ||
+	    (power > 14 && priv->model->number == 1276))
+		val |= REG_PA_CONFIG_PA_SELECT_PA_BOOST;
 	else
 		val &= ~REG_PA_CONFIG_PA_SELECT;
-	val &= ~GENMASK(3, 0);
-	if (val & REG_PA_CONFIG_PA_SELECT) {
-		/* PA_BOOST */
+	val &= ~REG_PA_CONFIG_OUTPUT_POWER_MASK;
+	switch (val & REG_PA_CONFIG_PA_SELECT) {
+	case REG_PA_CONFIG_PA_SELECT_PA_BOOST:
 		if (power == 20)
 			val |= 0xf;
 		else
-			val |= (power - 2) & GENMASK(3, 0);
-	} else /* RFO */
-		val |= (power + 1) & GENMASK(3, 0);
+			val |= (power - 2) & REG_PA_CONFIG_OUTPUT_POWER_MASK;
+		break;
+	case REG_PA_CONFIG_PA_SELECT_RFO:
+		if (priv->model->number == 1272)
+			val |= (power + 1) & REG_PA_CONFIG_OUTPUT_POWER_MASK;
+		else {
+			unsigned int max_power = (power >= 0) ? 7 : 2;
+			int pmax;
+			val &= ~SX1276_REG_PA_CONFIG_MAX_POWER_MASK;
+			val |= (max_power << SX1276_REG_PA_CONFIG_MAX_POWER_SHIFT) & SX1276_REG_PA_CONFIG_MAX_POWER_MASK;
+			pmax = 108 + 6 * max_power;
+			do_div(pmax, 10);
+			val |= (u32)(power + 15 - pmax) & REG_PA_CONFIG_OUTPUT_POWER_MASK;
+		}
+		break;
+	}
 	ret = regmap_write(priv->regmap, REG_PA_CONFIG, val);
 	if (ret) {
 		dev_err(&spi->dev, "failed writing RegPaConfig\n");
@@ -615,8 +651,8 @@ static int sx127x_set_tx_power(struct sx127x_priv *priv, s32 power)
 		dev_err(&spi->dev, "failed reading RegPaDac\n");
 		goto out;
 	}
-	val &= ~GENMASK(2, 0);
-	val |= (power == 20) ? 0x07 : 0x04;
+	val &= ~REG_PA_DAC_PA_DAC_MASK;
+	val |= (power == 20) ? REG_PA_DAC_PA_DAC_20_DBM : REG_PA_DAC_PA_DAC_DEFAULT;
 	ret = regmap_write(priv->regmap, REG_PA_DAC, val);
 	if (ret) {
 		dev_err(&spi->dev, "failed writing RegPaDac\n");
