@@ -75,6 +75,7 @@ struct sx127x_priv {
 	struct regmap *regmap;
 	struct gpio_desc *rst;
 	struct gpio_desc *dio[6];
+	const struct sx127x_model *model;
 
 	size_t fifosize;
 
@@ -961,7 +962,6 @@ static int sx127x_probe(struct spi_device *spi)
 {
 	struct net_device *netdev;
 	struct sx127x_priv *priv;
-	const struct sx127x_model *model = NULL;
 	unsigned int val;
 	int ret, i;
 
@@ -996,9 +996,9 @@ static int sx127x_probe(struct spi_device *spi)
 	spi->bits_per_word = 8;
 	spi_setup(spi);
 
-	model = of_device_get_match_data(&spi->dev);
-	if (model) {
-		ret = model->reset(priv);
+	priv->model = of_device_get_match_data(&spi->dev);
+	if (priv->model) {
+		ret = priv->model->reset(priv);
 		if (ret) {
 			dev_err(&spi->dev, "reset failed (%d)\n", ret);
 			return ret;
@@ -1009,7 +1009,7 @@ static int sx127x_probe(struct spi_device *spi)
 			dev_err(&spi->dev, "version read failed\n");
 			return ret;
 		}
-		if (val != model->version) {
+		if (val != priv->model->version) {
 			dev_err(&spi->dev, "unexpected version read: 0x%x\n", val);
 			return -EINVAL;
 		}
@@ -1028,7 +1028,7 @@ static int sx127x_probe(struct spi_device *spi)
 		}
 
 		if (val == sx1272_model.version)
-			model = &sx1272_model;
+			priv->model = &sx1272_model;
 		else {
 			ret = sx1276_reset(priv);
 			if (ret) {
@@ -1043,7 +1043,7 @@ static int sx127x_probe(struct spi_device *spi)
 			}
 
 			if (val == sx1276_model.version)
-				model = &sx1276_model;
+				priv->model = &sx1276_model;
 			else {
 				dev_err(&spi->dev, "transceiver not recognized (RegVersion = 0x%02x)\n", val);
 				return -EINVAL;
@@ -1097,7 +1097,7 @@ static int sx127x_probe(struct spi_device *spi)
 	priv->debugfs = debugfs_create_dir(dev_name(&spi->dev), NULL);
 	debugfs_create_file("state", S_IRUGO, priv->debugfs, netdev, &sx127x_state_fops);
 
-	dev_info(&spi->dev, "probed (SX%d)\n", model->number);
+	dev_info(&spi->dev, "probed (SX%d)\n", priv->model->number);
 
 	return 0;
 }
