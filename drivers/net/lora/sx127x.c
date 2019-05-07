@@ -64,6 +64,9 @@
 
 #define REG_DIO_MAPPING1_DIO0_MASK	GENMASK(7, 6)
 
+#define SX1272_REG_VERSION_V2B	0x22
+#define SX1276_REG_VERSION_V1B	0x12
+
 #define REG_PA_DAC_PA_DAC_MASK		GENMASK(2, 0)
 #define REG_PA_DAC_PA_DAC_DEFAULT	0x04
 #define REG_PA_DAC_PA_DAC_20_DBM	0x07
@@ -975,13 +978,13 @@ static int sx1276_reset(struct sx127x_priv *priv)
 
 static struct sx127x_model sx1272_model = {
 	.number = 1272,
-	.version = 0x22,
+	.version = SX1272_REG_VERSION_V2B,
 	.reset = sx1272_reset,
 };
 
 static struct sx127x_model sx1276_model = {
 	.number = 1276,
-	.version = 0x12,
+	.version = SX1276_REG_VERSION_V1B,
 	.reset = sx1276_reset,
 };
 
