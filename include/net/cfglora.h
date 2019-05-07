@@ -14,6 +14,8 @@ struct lora_phy;
 struct cfglora_ops {
 	int (*get_freq)(struct lora_phy *phy, u32 *val);
 	int (*set_freq)(struct lora_phy *phy, u32 val);
+	int (*get_sync_word)(struct lora_phy *phy, u8 *val);
+	int (*set_sync_word)(struct lora_phy *phy, u8 val);
 	int (*get_tx_power)(struct lora_phy *phy, s32 *val);
 	int (*set_tx_power)(struct lora_phy *phy, s32 val);
 };
