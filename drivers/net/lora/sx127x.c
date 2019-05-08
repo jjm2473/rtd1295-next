@@ -667,6 +667,21 @@ out:
 	return ret;
 }
 
+static int sx127x_is_lora(struct sx127x_priv *priv, bool *val)
+{
+	unsigned int opmode;
+	int ret;
+
+	mutex_lock(&priv->spi_lock);
+	ret = regmap_read(priv->regmap, REG_OPMODE, &opmode);
+	mutex_unlock(&priv->spi_lock);
+	if (ret)
+		return ret;
+
+	*val = (opmode & REG_OPMODE_LONG_RANGE_MODE) ? true : false;
+	return 0;
+}
+
 static int sx127x_lora_get_freq(struct lora_phy *phy, u32 *val)
 {
 	struct net_device *netdev = dev_get_drvdata(phy->dev);
@@ -681,6 +696,50 @@ static int sx127x_lora_set_freq(struct lora_phy *phy, u32 val)
 	struct sx127x_priv *priv = netdev_priv(netdev);
 
 	return sx127x_set_freq(priv, val);
+}
+
+static int sx127x_lora_get_sync_word(struct lora_phy *phy, u8 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned int sync_word;
+	bool lora;
+	int ret;
+
+	ret = sx127x_is_lora(priv, &lora);
+	if (ret)
+		return ret;
+	if (!lora)
+		return -EBUSY;
+
+	mutex_lock(&priv->spi_lock);
+	ret = regmap_read(priv->regmap, LORA_REG_SYNC_WORD, &sync_word);
+	mutex_unlock(&priv->spi_lock);
+	if (ret)
+		return ret;
+
+	*val = sync_word;
+	return 0;
+}
+
+static int sx127x_lora_set_sync_word(struct lora_phy *phy, u8 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	bool lora;
+	int ret;
+
+	ret = sx127x_is_lora(priv, &lora);
+	if (ret)
+		return ret;
+	if (!lora)
+		return -EBUSY;
+
+	mutex_lock(&priv->spi_lock);
+	ret = regmap_write(priv->regmap, LORA_REG_SYNC_WORD, val);
+	mutex_unlock(&priv->spi_lock);
+
+	return ret;
 }
 
 static int sx127x_lora_get_tx_power(struct lora_phy *phy, s32 *val)
@@ -702,6 +761,8 @@ static int sx127x_lora_set_tx_power(struct lora_phy *phy, s32 val)
 static const struct cfglora_ops sx127x_lora_ops = {
 	.get_freq	= sx127x_lora_get_freq,
 	.set_freq	= sx127x_lora_set_freq,
+	.get_sync_word	= sx127x_lora_get_sync_word,
+	.set_sync_word	= sx127x_lora_set_sync_word,
 	.get_tx_power	= sx127x_lora_get_tx_power,
 	.set_tx_power	= sx127x_lora_set_tx_power,
 };
