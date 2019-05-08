@@ -31,6 +31,7 @@
 #define LORA_REG_FIFO_TX_BASE_ADDR	0x0e
 #define LORA_REG_IRQ_FLAGS_MASK		0x11
 #define LORA_REG_IRQ_FLAGS		0x12
+#define LORA_REG_MODEM_CONFIG1		0x1d
 #define LORA_REG_PAYLOAD_LENGTH		0x22
 #define LORA_REG_SYNC_WORD		0x39
 #define REG_DIO_MAPPING1		0x40
@@ -61,6 +62,9 @@
 #define REG_PA_CONFIG_OUTPUT_POWER_MASK		GENMASK(3, 0)
 
 #define LORA_REG_IRQ_FLAGS_TX_DONE		BIT(3)
+
+#define LORA_REG_MODEM_CONFIG1_BW_MASK		GENMASK(7, 4)
+#define LORA_REG_MODEM_CONFIG1_BW_SHIFT		4
 
 #define REG_DIO_MAPPING1_DIO0_MASK	GENMASK(7, 6)
 
@@ -698,6 +702,89 @@ static int sx127x_lora_set_freq(struct lora_phy *phy, u32 val)
 	return sx127x_set_freq(priv, val);
 }
 
+static u32 sx127x_lora_to_bandwidth(unsigned int bw)
+{
+	switch (bw) {
+	case 0: return   7800;
+	case 1: return  10400;
+	case 2: return  15600;
+	case 3: return  20800;
+	case 4: return  31250;
+	case 5: return  41700;
+	case 6: return  62500;
+	case 7: return 125000;
+	case 8: return 250000;
+	case 9: return 500000;
+	default: return 0;
+	}
+}
+
+static int sx127x_lora_get_bandwidth(struct lora_phy *phy, u32 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned int reg;
+	bool lora;
+	int ret;
+
+	ret = sx127x_is_lora(priv, &lora);
+	if (ret)
+		return ret;
+	if (!lora)
+		return -EBUSY;
+
+	mutex_lock(&priv->spi_lock);
+	ret = regmap_read(priv->regmap, LORA_REG_MODEM_CONFIG1, &reg);
+	mutex_unlock(&priv->spi_lock);
+	if (ret)
+		return ret;
+
+	*val = sx127x_lora_to_bandwidth((reg & LORA_REG_MODEM_CONFIG1_BW_MASK) >> LORA_REG_MODEM_CONFIG1_BW_SHIFT);
+	return 0;
+}
+
+static int sx127x_lora_set_bandwidth(struct lora_phy *phy, u32 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned int cfg, bw;
+	bool lora;
+	int ret;
+
+	ret = sx127x_is_lora(priv, &lora);
+	if (ret)
+		return ret;
+	if (!lora)
+		return -EBUSY;
+
+	switch (val) {
+	case   7800: bw = 0; break;
+	case  10400: bw = 1; break;
+	case  15600: bw = 2; break;
+	case  20800: bw = 3; break;
+	case  31250: bw = 4; break;
+	case  41700: bw = 5; break;
+	case  62500: bw = 6; break;
+	case 125000: bw = 7; break;
+	case 250000: bw = 8; break;
+	case 500000: bw = 9; break;
+	default: return -EINVAL;
+	}
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, LORA_REG_MODEM_CONFIG1, &cfg);
+	if (ret)
+		goto out;
+	cfg &= ~LORA_REG_MODEM_CONFIG1_BW_MASK;
+	cfg |= bw << LORA_REG_MODEM_CONFIG1_BW_SHIFT;
+	ret = regmap_write(priv->regmap, LORA_REG_MODEM_CONFIG1, cfg);
+
+out:
+	mutex_unlock(&priv->spi_lock);
+	return ret;
+}
+
 static int sx127x_lora_get_sync_word(struct lora_phy *phy, u8 *val)
 {
 	struct net_device *netdev = dev_get_drvdata(phy->dev);
@@ -761,6 +848,8 @@ static int sx127x_lora_set_tx_power(struct lora_phy *phy, s32 val)
 static const struct cfglora_ops sx127x_lora_ops = {
 	.get_freq	= sx127x_lora_get_freq,
 	.set_freq	= sx127x_lora_set_freq,
+	.get_bandwidth	= sx127x_lora_get_bandwidth,
+	.set_bandwidth	= sx127x_lora_set_bandwidth,
 	.get_sync_word	= sx127x_lora_get_sync_word,
 	.set_sync_word	= sx127x_lora_set_sync_word,
 	.get_tx_power	= sx127x_lora_get_tx_power,
