@@ -66,6 +66,8 @@
 
 #define LORA_REG_MODEM_CONFIG1_BW_MASK		GENMASK(7, 4)
 #define LORA_REG_MODEM_CONFIG1_BW_SHIFT		4
+#define LORA_REG_MODEM_CONFIG1_CR_MASK		GENMASK(3, 1)
+#define LORA_REG_MODEM_CONFIG1_CR_SHIFT		1
 
 #define LORA_REG_MODEM_CONFIG2_SF_MASK		GENMASK(7, 4)
 #define LORA_REG_MODEM_CONFIG2_SF_SHIFT		4
@@ -841,6 +843,58 @@ out:
 	return ret;
 }
 
+static int sx127x_lora_get_cr(struct lora_phy *phy, u8 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned int cfg;
+	bool lora;
+	int ret;
+
+	ret = sx127x_is_lora(priv, &lora);
+	if (ret)
+		return ret;
+	if (!lora)
+		return -EBUSY;
+
+	mutex_lock(&priv->spi_lock);
+	ret = regmap_read(priv->regmap, LORA_REG_MODEM_CONFIG1, &cfg);
+	mutex_unlock(&priv->spi_lock);
+	if (ret)
+		return ret;
+
+	*val = (cfg & LORA_REG_MODEM_CONFIG1_CR_MASK) >> LORA_REG_MODEM_CONFIG1_CR_SHIFT;
+	return 0;
+}
+
+static int sx127x_lora_set_cr(struct lora_phy *phy, u8 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned int cfg;
+	bool lora;
+	int ret;
+
+	ret = sx127x_is_lora(priv, &lora);
+	if (ret)
+		return ret;
+	if (!lora)
+		return -EBUSY;
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, LORA_REG_MODEM_CONFIG1, &cfg);
+	if (ret)
+		goto out;
+	cfg &= ~LORA_REG_MODEM_CONFIG1_CR_MASK;
+	cfg |= val << LORA_REG_MODEM_CONFIG1_CR_SHIFT;
+	ret = regmap_write(priv->regmap, LORA_REG_MODEM_CONFIG1, cfg);
+
+out:
+	mutex_unlock(&priv->spi_lock);
+	return ret;
+}
+
 static int sx127x_lora_get_sync_word(struct lora_phy *phy, u8 *val)
 {
 	struct net_device *netdev = dev_get_drvdata(phy->dev);
@@ -908,6 +962,8 @@ static const struct cfglora_ops sx127x_lora_ops = {
 	.set_bandwidth	= sx127x_lora_set_bandwidth,
 	.get_sf		= sx127x_lora_get_sf,
 	.set_sf		= sx127x_lora_set_sf,
+	.get_cr		= sx127x_lora_get_cr,
+	.set_cr		= sx127x_lora_set_cr,
 	.get_sync_word	= sx127x_lora_get_sync_word,
 	.set_sync_word	= sx127x_lora_set_sync_word,
 	.get_tx_power	= sx127x_lora_get_tx_power,
