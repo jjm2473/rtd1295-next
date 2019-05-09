@@ -16,6 +16,8 @@ struct cfglora_ops {
 	int (*set_freq)(struct lora_phy *phy, u32 val);
 	int (*get_bandwidth)(struct lora_phy *phy, u32 *val);
 	int (*set_bandwidth)(struct lora_phy *phy, u32 val);
+	int (*get_sf)(struct lora_phy *phy, u8 *val);
+	int (*set_sf)(struct lora_phy *phy, u8 val);
 	int (*get_sync_word)(struct lora_phy *phy, u8 *val);
 	int (*set_sync_word)(struct lora_phy *phy, u8 val);
 	int (*get_tx_power)(struct lora_phy *phy, s32 *val);
