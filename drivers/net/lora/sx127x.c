@@ -32,6 +32,7 @@
 #define LORA_REG_IRQ_FLAGS_MASK		0x11
 #define LORA_REG_IRQ_FLAGS		0x12
 #define LORA_REG_MODEM_CONFIG1		0x1d
+#define LORA_REG_MODEM_CONFIG2		0x1e
 #define LORA_REG_PAYLOAD_LENGTH		0x22
 #define LORA_REG_SYNC_WORD		0x39
 #define REG_DIO_MAPPING1		0x40
@@ -65,6 +66,9 @@
 
 #define LORA_REG_MODEM_CONFIG1_BW_MASK		GENMASK(7, 4)
 #define LORA_REG_MODEM_CONFIG1_BW_SHIFT		4
+
+#define LORA_REG_MODEM_CONFIG2_SF_MASK		GENMASK(7, 4)
+#define LORA_REG_MODEM_CONFIG2_SF_SHIFT		4
 
 #define REG_DIO_MAPPING1_DIO0_MASK	GENMASK(7, 6)
 
@@ -785,6 +789,58 @@ out:
 	return ret;
 }
 
+static int sx127x_lora_get_sf(struct lora_phy *phy, u8 *val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned int cfg;
+	bool lora;
+	int ret;
+
+	ret = sx127x_is_lora(priv, &lora);
+	if (ret)
+		return ret;
+	if (!lora)
+		return -EBUSY;
+
+	mutex_lock(&priv->spi_lock);
+	ret = regmap_read(priv->regmap, LORA_REG_MODEM_CONFIG2, &cfg);
+	mutex_unlock(&priv->spi_lock);
+	if (ret)
+		return ret;
+
+	*val = (cfg & LORA_REG_MODEM_CONFIG2_SF_MASK) >> LORA_REG_MODEM_CONFIG2_SF_SHIFT;
+	return 0;
+}
+
+static int sx127x_lora_set_sf(struct lora_phy *phy, u8 val)
+{
+	struct net_device *netdev = dev_get_drvdata(phy->dev);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned int cfg;
+	bool lora;
+	int ret;
+
+	ret = sx127x_is_lora(priv, &lora);
+	if (ret)
+		return ret;
+	if (!lora)
+		return -EBUSY;
+
+	mutex_lock(&priv->spi_lock);
+
+	ret = regmap_read(priv->regmap, LORA_REG_MODEM_CONFIG2, &cfg);
+	if (ret)
+		goto out;
+	cfg &= ~LORA_REG_MODEM_CONFIG2_SF_MASK;
+	cfg |= val << LORA_REG_MODEM_CONFIG2_SF_SHIFT;
+	ret = regmap_write(priv->regmap, LORA_REG_MODEM_CONFIG2, cfg);
+
+out:
+	mutex_unlock(&priv->spi_lock);
+	return ret;
+}
+
 static int sx127x_lora_get_sync_word(struct lora_phy *phy, u8 *val)
 {
 	struct net_device *netdev = dev_get_drvdata(phy->dev);
@@ -850,6 +906,8 @@ static const struct cfglora_ops sx127x_lora_ops = {
 	.set_freq	= sx127x_lora_set_freq,
 	.get_bandwidth	= sx127x_lora_get_bandwidth,
 	.set_bandwidth	= sx127x_lora_set_bandwidth,
+	.get_sf		= sx127x_lora_get_sf,
+	.set_sf		= sx127x_lora_set_sf,
 	.get_sync_word	= sx127x_lora_get_sync_word,
 	.set_sync_word	= sx127x_lora_set_sync_word,
 	.get_tx_power	= sx127x_lora_get_tx_power,
