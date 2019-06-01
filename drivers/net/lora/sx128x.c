@@ -190,7 +190,18 @@ static const struct net_device_ops sx128x_netdev_ops =  {
 	.ndo_start_xmit = sx128x_loradev_start_xmit,
 };
 
+static int sx128x_lora_set_tx_power(struct lora_phy *phy, s32 value)
+{
+	struct sx128x_device *sxdev = dev_get_drvdata(phy->dev);
+
+	if (value < 0 || value > 255)
+		return -EINVAL;
+
+	return sx128x_set_tx_params(sxdev, value, SX128X_RADIO_RAMP_20_US);
+}
+
 static const struct cfglora_ops sx128x_lora_ops = {
+	.set_tx_power	= sx128x_lora_set_tx_power,
 };
 
 static int sx128x_probe(struct sx128x_device *sxdev)
