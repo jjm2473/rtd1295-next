@@ -18,6 +18,7 @@
 #include <linux/of_gpio.h>
 #include <linux/lora/dev.h>
 #include <linux/spi/spi.h>
+#include <net/cfglora.h>
 
 #define SX128X_CMD_GET_SILICON_VERSION		0x14
 #define SX128X_CMD_WRITE_REGISTER		0x18
@@ -67,6 +68,7 @@ struct sx128x_device {
 
 struct sx128x_priv {
 	struct sx128x_device *sxdev;
+	struct lora_phy *lora_phy;
 };
 
 static int sx128x_get_status(struct sx128x_device *sxdev, u8 *val)
@@ -188,6 +190,9 @@ static const struct net_device_ops sx128x_netdev_ops =  {
 	.ndo_start_xmit = sx128x_loradev_start_xmit,
 };
 
+static const struct cfglora_ops sx128x_lora_ops = {
+};
+
 static int sx128x_probe(struct sx128x_device *sxdev)
 {
 	struct device *dev = sxdev->dev;
@@ -272,9 +277,20 @@ static int sx128x_probe(struct sx128x_device *sxdev)
 	sxdev->netdev = netdev;
 	SET_NETDEV_DEV(netdev, dev);
 
+	priv->lora_phy = devm_lora_phy_new(dev, &sx128x_lora_ops, 0);
+	if (!priv->lora_phy)
+		return -ENOMEM;
+
+	priv->lora_phy->netdev = netdev;
+
+	ret = lora_phy_register(priv->lora_phy);
+	if (ret)
+		return ret;
+
 	ret = register_loradev(netdev);
 	if (ret) {
 		dev_err(dev, "registering loradev failed (%d)\n", ret);
+		lora_phy_unregister(priv->lora_phy);
 		return ret;
 	}
 
@@ -285,7 +301,11 @@ static int sx128x_probe(struct sx128x_device *sxdev)
 
 static int sx128x_remove(struct sx128x_device *sxdev)
 {
+	struct sx128x_priv *priv = netdev_priv(sxdev->netdev);
+
 	unregister_loradev(sxdev->netdev);
+
+	lora_phy_unregister(priv->lora_phy);
 
 	dev_info(sxdev->dev, "removed\n");
 
