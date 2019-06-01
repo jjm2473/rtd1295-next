@@ -33,6 +33,7 @@ lora-sx127x-y := sx127x.o
 
 obj-$(CONFIG_LORA_SX128X) += lora-sx128x.o
 lora-sx128x-y := sx128x.o
+lora-sx128x-$(CONFIG_LORA_SX128X_SPI) += sx128x_spi.o
 
 obj-$(CONFIG_LORA_SX130X) += lora-sx130x.o
 lora-sx130x-y := sx130x.o

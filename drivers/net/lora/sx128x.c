@@ -2,7 +2,7 @@
 /*
  * Semtech SX1280/SX1281 LoRa transceiver
  *
- * Copyright (c) 2018 Andreas Färber
+ * Copyright (c) 2018-2019 Andreas Färber
  *
  * Based on sx1276.c:
  * Copyright (c) 2016-2018 Andreas Färber
@@ -17,54 +17,9 @@
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 #include <linux/lora/dev.h>
-#include <linux/spi/spi.h>
 #include <net/cfglora.h>
 
-#define SX128X_CMD_GET_SILICON_VERSION		0x14
-#define SX128X_CMD_WRITE_REGISTER		0x18
-#define SX128X_CMD_READ_REGISTER		0x19
-#define SX128X_CMD_SET_STANDBY			0x80
-#define SX128X_CMD_SET_PACKET_TYPE		0x8a
-#define SX128X_CMD_SET_TX_PARAMS		0x8e
-#define SX128X_CMD_SET_REGULATOR_MODE		0x96
-#define SX128X_CMD_GET_STATUS			0xc0
-
-#define SX128X_STATUS_COMMAND_MASK			GENMASK(4, 2)
-#define SX128X_STATUS_COMMAND_TIMEOUT			(0x3 << 2)
-#define SX128X_STATUS_COMMAND_PROCESSING_ERROR		(0x4 << 2)
-#define SX128X_STATUS_COMMAND_FAILURE_TO_EXECUTE	(0x5 << 2)
-
-#define SX128X_STATUS_MODE_MASK				GENMASK(7, 5)
-#define SX128X_STATUS_MODE_STDBY_RC			(0x2 << 5)
-#define SX128X_STATUS_MODE_STDBY_XOSC			(0x3 << 5)
-
-#define SX128X_STANDBY_CONFIG_STDBY_RC		0
-#define SX128X_STANDBY_CONFIG_STDBY_XOSC	1
-
-#define SX128X_PACKET_TYPE_GFSK		0x00
-#define SX128X_PACKET_TYPE_LORA		0x01
-
-#define SX128X_RADIO_RAMP_20_US		0xe0
-
-#define SX128X_REGULATOR_MODE_LDO	0
-#define SX128X_REGULATOR_MODE_DCDC	1
-
-struct sx128x_device;
-
-struct sx128x_ops {
-	int (*send_command)(struct sx128x_device *sxdev, u8 opcode, u8 argc, const u8 *argv, u8 *buf, size_t buf_len);
-	int (*send_addr_command)(struct sx128x_device *sxdev, u8 opcode, u16 addr, u8 argc, const u8 *argv, u8 *buf, size_t buf_len);
-};
-
-struct sx128x_device {
-	struct device *dev;
-	struct gpio_desc *rst;
-	struct gpio_desc *busy_gpio;
-
-	const struct sx128x_ops *cmd_ops;
-
-	struct net_device *netdev;
-};
+#include "sx128x.h"
 
 struct sx128x_priv {
 	struct sx128x_device *sxdev;
@@ -204,7 +159,7 @@ static const struct cfglora_ops sx128x_lora_ops = {
 	.set_tx_power	= sx128x_lora_set_tx_power,
 };
 
-static int sx128x_probe(struct sx128x_device *sxdev)
+int sx128x_probe(struct sx128x_device *sxdev)
 {
 	struct device *dev = sxdev->dev;
 	struct net_device *netdev;
@@ -310,7 +265,7 @@ static int sx128x_probe(struct sx128x_device *sxdev)
 	return 0;
 }
 
-static int sx128x_remove(struct sx128x_device *sxdev)
+int sx128x_remove(struct sx128x_device *sxdev)
 {
 	struct sx128x_priv *priv = netdev_priv(sxdev->netdev);
 
@@ -324,14 +279,14 @@ static int sx128x_remove(struct sx128x_device *sxdev)
 }
 
 #ifdef CONFIG_OF
-static const struct of_device_id sx128x_dt_ids[] = {
+const struct of_device_id sx128x_dt_ids[] = {
 	{ .compatible = "semtech,sx1280" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, sx128x_dt_ids);
 #endif
 
-static inline int sx128x_status_to_errno(struct sx128x_device *sxdev, u8 status)
+int sx128x_status_to_errno(struct sx128x_device *sxdev, u8 status)
 {
 	dev_dbg(sxdev->dev, "%s: 0x%02x\n", __func__, (unsigned int)status);
 
@@ -347,7 +302,7 @@ static inline int sx128x_status_to_errno(struct sx128x_device *sxdev, u8 status)
 	}
 }
 
-static inline int sx128x_busy_check_pre(struct sx128x_device *sxdev)
+int sx128x_busy_check_pre(struct sx128x_device *sxdev)
 {
 	int ret;
 
@@ -366,7 +321,7 @@ static inline int sx128x_busy_check_pre(struct sx128x_device *sxdev)
 	return 0;
 }
 
-static inline int sx128x_busy_wait_post(struct sx128x_device *sxdev)
+int sx128x_busy_wait_post(struct sx128x_device *sxdev)
 {
 	int ret, i;
 
@@ -386,141 +341,12 @@ static inline int sx128x_busy_wait_post(struct sx128x_device *sxdev)
 	return 0;
 }
 
-#ifdef CONFIG_SPI
-static int sx128x_spi_send_command(struct sx128x_device *sxdev, u8 opcode, u8 argc, const u8 *argv, u8 *buf, size_t buf_len)
-{
-	struct spi_device *spi = to_spi_device(sxdev->dev);
-	u8 status;
-	struct spi_transfer xfers[] = {
-		{
-			.tx_buf = &opcode,
-			.len = 1,
-		},
-		{
-			.tx_buf = argv,
-			.len = (argc > 0) ? argc - 1 : 0,
-		},
-		{
-			.tx_buf = argv ? argv + (argc - 1) : NULL,
-			.rx_buf = &status,
-			.len = 1,
-		},
-		{
-			.rx_buf = buf,
-			.len = (opcode == SX128X_CMD_GET_STATUS) ? 0 : buf_len,
-		},
-	};
-	int ret;
-
-	ret = sx128x_busy_check_pre(sxdev);
-	if (ret)
-		return ret;
-
-	ret = spi_sync_transfer(spi, xfers, ARRAY_SIZE(xfers));
-	if (ret)
-		return ret;
-
-	if (buf && opcode == SX128X_CMD_GET_STATUS)
-		*buf = status;
-
-	sx128x_busy_wait_post(sxdev);
-
-	return sx128x_status_to_errno(sxdev, status);
-}
-
-static int sx128x_spi_send_addr_command(struct sx128x_device *sxdev, u8 opcode, u16 addr, u8 argc, const u8 *argv, u8 *buf, size_t buf_len)
-{
-	struct spi_device *spi = to_spi_device(sxdev->dev);
-	u8 addr_buf[2];
-	u8 status;
-	struct spi_transfer xfers[] = {
-		{
-			.tx_buf = &opcode,
-			.len = 1,
-		},
-		{
-			.tx_buf = addr_buf,
-			.len = 2,
-		},
-		{
-			.tx_buf = argv,
-			.len = (argc > 0) ? argc - 1 : 0,
-		},
-		{
-			.tx_buf = argv ? argv + (argc - 1) : NULL,
-			.rx_buf = &status,
-			.len = 1,
-		},
-		{
-			.rx_buf = buf,
-			.len = buf_len,
-		},
-	};
-	int ret;
-
-	addr_buf[0] = addr >> 8;
-	addr_buf[1] = addr;
-
-	ret = sx128x_busy_check_pre(sxdev);
-	if (ret)
-		return ret;
-
-	ret = spi_sync_transfer(spi, xfers, ARRAY_SIZE(xfers));
-	if (ret)
-		return ret;
-
-	sx128x_busy_wait_post(sxdev);
-
-	return sx128x_status_to_errno(sxdev, status);
-}
-
-static const struct sx128x_ops sx128x_spi_cmd_ops = {
-	.send_command = sx128x_spi_send_command,
-	.send_addr_command = sx128x_spi_send_addr_command,
-};
-
-static int sx128x_spi_probe(struct spi_device *spi)
-{
-	struct sx128x_device *sxdev;
-
-	sxdev = devm_kzalloc(&spi->dev, sizeof(*sxdev), GFP_KERNEL);
-	if (!sxdev)
-		return -ENOMEM;
-
-	sxdev->dev = &spi->dev;
-	sxdev->cmd_ops = &sx128x_spi_cmd_ops;
-
-	spi_set_drvdata(spi, sxdev);
-
-	spi->bits_per_word = 8;
-	spi_setup(spi);
-
-	return sx128x_probe(sxdev);
-}
-
-static int sx128x_spi_remove(struct spi_device *spi)
-{
-	struct sx128x_device *sxdev = spi_get_drvdata(spi);
-
-	return sx128x_remove(sxdev);
-}
-
-static struct spi_driver sx128x_spi_driver = {
-	.driver = {
-		.name = "sx128x-spi",
-		.of_match_table = of_match_ptr(sx128x_dt_ids),
-	},
-	.probe = sx128x_spi_probe,
-	.remove = sx128x_spi_remove,
-};
-#endif
-
 static int __init sx128x_init(void)
 {
 	int ret = 0;
 
-#ifdef CONFIG_SPI
-	ret = spi_register_driver(&sx128x_spi_driver);
+#ifdef CONFIG_LORA_SX128X_SPI
+	ret = sx128x_spi_init();
 	if (ret)
 		return ret;
 #endif
@@ -529,14 +355,14 @@ static int __init sx128x_init(void)
 
 static void __exit sx128x_exit(void)
 {
-#ifdef CONFIG_SPI
-	spi_unregister_driver(&sx128x_spi_driver);
+#ifdef CONFIG_LORA_SX128X_SPI
+	sx128x_spi_exit();
 #endif
 }
 
 module_init(sx128x_init);
 module_exit(sx128x_exit);
 
-MODULE_DESCRIPTION("SX1280 SPI driver");
+MODULE_DESCRIPTION("SX1280 driver");
 MODULE_AUTHOR("Andreas Färber <afaerber@suse.de>");
 MODULE_LICENSE("GPL");
