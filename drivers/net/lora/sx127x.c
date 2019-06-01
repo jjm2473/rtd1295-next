@@ -595,7 +595,8 @@ static int sx127x_get_tx_power(struct sx127x_priv *priv, s32 *power)
 		if (priv->model->number == 1272)
 			*power = -1 + output_power;
 		else {
-			unsigned int max_power, pmax;
+			unsigned int max_power;
+			u64 pmax;
 			max_power = (val & SX1276_REG_PA_CONFIG_MAX_POWER_MASK);
 			max_power >>= SX1276_REG_PA_CONFIG_MAX_POWER_SHIFT;
 			pmax = 108 + 6 * max_power;
@@ -644,7 +645,7 @@ static int sx127x_set_tx_power(struct sx127x_priv *priv, s32 power)
 			val |= (power + 1) & REG_PA_CONFIG_OUTPUT_POWER_MASK;
 		else {
 			unsigned int max_power = (power >= 0) ? 7 : 2;
-			int pmax;
+			u64 pmax;
 			val &= ~SX1276_REG_PA_CONFIG_MAX_POWER_MASK;
 			val |= (max_power << SX1276_REG_PA_CONFIG_MAX_POWER_SHIFT) & SX1276_REG_PA_CONFIG_MAX_POWER_MASK;
 			pmax = 108 + 6 * max_power;
