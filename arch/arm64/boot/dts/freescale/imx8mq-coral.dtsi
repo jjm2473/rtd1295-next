@@ -1,0 +1,386 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+#include "imx8mq.dtsi"
+
+/ {
+	model = "Google Coral SoM";
+	compatible = "fsl,imx8mq";
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+	};
+
+	pcie0_refclk: clock-pcie0-refclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+	};
+
+	pcie1_refclk: clock-pcie1-refclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+	};
+
+	pmic_osc: clock-pmic {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+		clock-output-names = "pmic_osc";
+	};
+};
+
+&A53_0 {
+	cpu-supply = <&buck2_reg>;
+};
+
+&A53_1 {
+	cpu-supply = <&buck2_reg>;
+};
+
+&A53_2 {
+	cpu-supply = <&buck2_reg>;
+};
+
+&A53_3 {
+	cpu-supply = <&buck2_reg>;
+};
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c1>;
+	clock-frequency = <400000>;
+	status = "okay";
+
+	pmic: pmic@4b {
+		compatible = "rohm,bd71837";
+		reg = <0x4b>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_pmic>;
+		clocks = <&pmic_osc>;
+		clock-names = "osc";
+		clock-output-names = "pmic_clk";
+		interrupt-parent = <&gpio1>;
+		interrupts = <3 GPIO_ACTIVE_LOW>;
+		interrupt-names = "irq";
+
+		regulators {
+			buck1_reg: BUCK1 {
+				regulator-name = "buck1";
+				regulator-min-microvolt = <700000>;
+				regulator-max-microvolt = <1300000>;
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-ramp-delay = <1250>;
+				rohm,dvs-run-voltage = <900000>;
+				rohm,dvs-idle-voltage = <900000>;
+				rohm,dvs-suspend-voltage = <800000>;
+			};
+
+			buck2_reg: BUCK2 {
+				regulator-name = "buck2";
+				regulator-min-microvolt = <850000>;
+				regulator-max-microvolt = <1000000>;
+				regulator-boot-on;
+				regulator-always-on;
+				rohm,dvs-run-voltage = <1000000>;
+				rohm,dvs-idle-voltage = <900000>;
+			};
+
+			buck3_reg: BUCK3 {
+				regulator-name = "buck3";
+				regulator-min-microvolt = <700000>;
+				regulator-max-microvolt = <1300000>;
+				regulator-boot-on;
+				rohm,dvs-run-voltage = <900000>;
+			};
+
+			buck4_reg: BUCK4 {
+				regulator-name = "buck4";
+				regulator-min-microvolt = <700000>;
+				regulator-max-microvolt = <1300000>;
+				regulator-boot-on;
+				rohm,dvs-run-voltage = <900000>;
+			};
+
+			buck5_reg: BUCK5 {
+				regulator-name = "buck5";
+				regulator-min-microvolt = <700000>;
+				regulator-max-microvolt = <1350000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			buck6_reg: BUCK6 {
+				regulator-name = "buck6";
+				regulator-min-microvolt = <3000000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			buck7_reg: BUCK7 {
+				regulator-name = "buck7";
+				regulator-min-microvolt = <1605000>;
+				regulator-max-microvolt = <1995000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			buck8_reg: BUCK8 {
+				regulator-name = "buck8";
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo1_reg: LDO1 {
+				regulator-name = "ldo1";
+				regulator-min-microvolt = <3000000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo2_reg: LDO2 {
+				regulator-name = "ldo2";
+				regulator-min-microvolt = <900000>;
+				regulator-max-microvolt = <900000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo3_reg: LDO3 {
+				regulator-name = "ldo3";
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo4_reg: LDO4 {
+				regulator-name = "ldo4";
+				regulator-min-microvolt = <900000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo5_reg: LDO5 {
+				regulator-name = "ldo5";
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo6_reg: LDO6 {
+				regulator-name = "ldo6";
+				regulator-min-microvolt = <900000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo7_reg: LDO7 {
+				regulator-name = "ldo7";
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+		};
+	};
+};
+
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c2>;
+	clock-frequency = <100000>;
+	status = "okay";
+
+	power_monitor_a: power-monitor@40 {
+		compatible = "ti,ina226";
+		reg = <0x40>;
+		shunt-resistor = <68000>;
+	};
+
+	power_monitor_b: power-monitor@41 {
+		compatible = "ti,ina226";
+		reg = <0x41>;
+		shunt-resistor = <68000>;
+	};
+};
+
+&i2c3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c3>;
+	clock-frequency = <100000>;
+	status = "okay";
+};
+
+&iomuxc {
+	pinctrl_i2c1: i2c1grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_I2C1_SCL_I2C1_SCL		0x4000007f>,
+			<MX8MQ_IOMUXC_I2C1_SDA_I2C1_SDA		0x4000007f>;
+	};
+
+	pinctrl_i2c2: i2c2grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_I2C2_SCL_I2C2_SCL		0x4000007f>,
+			<MX8MQ_IOMUXC_I2C2_SDA_I2C2_SDA		0x4000007f>;
+	};
+
+	pinctrl_i2c3: i2c3grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_I2C3_SCL_I2C3_SCL		0x4000007f>,
+			<MX8MQ_IOMUXC_I2C3_SDA_I2C3_SDA		0x4000007f>;
+	};
+
+	pinctrl_pcie0: pcie0grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_I2C4_SCL_PCIE1_CLKREQ_B		0x76>,
+			/*<MX8MQ_IOMUXC_NAND_DATA05_GPIO3_IO11		0x16>,*/
+			<MX8MQ_IOMUXC_NAND_DATA04_GPIO3_IO10		0x16>/*,
+			<MX8MQ_IOMUXC_GPIO1_IO00_ANAMIX_REF_CLK_32K	0x5>*/;
+	};
+
+	pinctrl_pcie1: pcie1grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_I2C4_SDA_PCIE2_CLKREQ_B		0x76>,
+			<MX8MQ_IOMUXC_NAND_WP_B_GPIO3_IO18		0x19>;
+	};
+
+	pinctrl_pmic: pmicgrp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_GPIO1_IO03_GPIO1_IO3	0x41>;
+	};
+
+	pinctrl_uart1: uart1grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_UART1_RXD_UART1_DCE_RX	0x49>,
+			<MX8MQ_IOMUXC_UART1_TXD_UART1_DCE_TX	0x49>;
+	};
+
+	pinctrl_uart2: uart2grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_UART2_RXD_UART2_DCE_RX		0x49>,
+			<MX8MQ_IOMUXC_UART2_TXD_UART2_DCE_TX		0x49>,
+			<MX8MQ_IOMUXC_UART4_RXD_UART2_DCE_CTS_B		0x49>,
+			<MX8MQ_IOMUXC_UART4_TXD_UART2_DCE_RTS_B		0x49>;
+	};
+
+	pinctrl_uart2_bt: uart2btgrp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_NAND_DATA00_GPIO3_IO6		0x19>;
+	};
+
+	pinctrl_usdhc1: usdhc1grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_SD1_CLK_USDHC1_CLK		0x83>,
+			<MX8MQ_IOMUXC_SD1_CMD_USDHC1_CMD		0xc3>,
+			<MX8MQ_IOMUXC_SD1_DATA0_USDHC1_DATA0		0xc3>,
+			<MX8MQ_IOMUXC_SD1_DATA1_USDHC1_DATA1		0xc3>,
+			<MX8MQ_IOMUXC_SD1_DATA2_USDHC1_DATA2		0xc3>,
+			<MX8MQ_IOMUXC_SD1_DATA3_USDHC1_DATA3		0xc3>,
+			<MX8MQ_IOMUXC_SD1_DATA4_USDHC1_DATA4		0xc3>,
+			<MX8MQ_IOMUXC_SD1_DATA5_USDHC1_DATA5		0xc3>,
+			<MX8MQ_IOMUXC_SD1_DATA6_USDHC1_DATA6		0xc3>,
+			<MX8MQ_IOMUXC_SD1_DATA7_USDHC1_DATA7		0xc3>,
+			<MX8MQ_IOMUXC_SD1_STROBE_USDHC1_STROBE		0x83>,
+			<MX8MQ_IOMUXC_SD1_RESET_B_USDHC1_RESET_B	0xc1>;
+	};
+
+	pinctrl_usdhc1_100mhz: usdhc1-100grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_SD1_CLK_USDHC1_CLK		0x85>,
+			<MX8MQ_IOMUXC_SD1_CMD_USDHC1_CMD		0xc5>,
+			<MX8MQ_IOMUXC_SD1_DATA0_USDHC1_DATA0		0xc5>,
+			<MX8MQ_IOMUXC_SD1_DATA1_USDHC1_DATA1		0xc5>,
+			<MX8MQ_IOMUXC_SD1_DATA2_USDHC1_DATA2		0xc5>,
+			<MX8MQ_IOMUXC_SD1_DATA3_USDHC1_DATA3		0xc5>,
+			<MX8MQ_IOMUXC_SD1_DATA4_USDHC1_DATA4		0xc5>,
+			<MX8MQ_IOMUXC_SD1_DATA5_USDHC1_DATA5		0xc5>,
+			<MX8MQ_IOMUXC_SD1_DATA6_USDHC1_DATA6		0xc5>,
+			<MX8MQ_IOMUXC_SD1_DATA7_USDHC1_DATA7		0xc5>,
+			<MX8MQ_IOMUXC_SD1_STROBE_USDHC1_STROBE		0x85>,
+			<MX8MQ_IOMUXC_SD1_RESET_B_USDHC1_RESET_B	0xc1>;
+	};
+
+	pinctrl_usdhc1_200mhz: usdhc1-200grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_SD1_CLK_USDHC1_CLK		0x87>,
+			<MX8MQ_IOMUXC_SD1_CMD_USDHC1_CMD		0xc7>,
+			<MX8MQ_IOMUXC_SD1_DATA0_USDHC1_DATA0		0xc7>,
+			<MX8MQ_IOMUXC_SD1_DATA1_USDHC1_DATA1		0xc7>,
+			<MX8MQ_IOMUXC_SD1_DATA2_USDHC1_DATA2		0xc7>,
+			<MX8MQ_IOMUXC_SD1_DATA3_USDHC1_DATA3		0xc7>,
+			<MX8MQ_IOMUXC_SD1_DATA4_USDHC1_DATA4		0xc7>,
+			<MX8MQ_IOMUXC_SD1_DATA5_USDHC1_DATA5		0xc7>,
+			<MX8MQ_IOMUXC_SD1_DATA6_USDHC1_DATA6		0xc7>,
+			<MX8MQ_IOMUXC_SD1_DATA7_USDHC1_DATA7		0xc7>,
+			<MX8MQ_IOMUXC_SD1_STROBE_USDHC1_STROBE		0x87>,
+			<MX8MQ_IOMUXC_SD1_RESET_B_USDHC1_RESET_B	0xc1>;
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pcie0>;
+	reset-gpio = <&gpio3 10 GPIO_ACTIVE_LOW>;
+	clocks = <&clk IMX8MQ_CLK_PCIE1_ROOT>,
+	         <&clk IMX8MQ_CLK_PCIE1_AUX>,
+	         <&clk IMX8MQ_CLK_PCIE1_PHY>,
+	         <&pcie0_refclk>;
+	clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
+	/*status = "okay";*/
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pcie1>;
+	reset-gpio = <&gpio3 18 GPIO_ACTIVE_LOW>;
+	clocks = <&clk IMX8MQ_CLK_PCIE2_ROOT>,
+	         <&clk IMX8MQ_CLK_PCIE2_AUX>,
+	         <&clk IMX8MQ_CLK_PCIE2_PHY>,
+	         <&pcie1_refclk>;
+	clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
+	status = "okay";
+};
+
+&pgc_gpu {
+	power-supply = <&buck3_reg>;
+};
+
+&pgc_vpu {
+	power-supply = <&buck4_reg>;
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1>;
+};
+
+/* Bluetooth */
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2>, <&pinctrl_uart2_bt>;
+	uart-has-rtscts;
+	status = "okay";
+};
+
+/* eMMC */
+&usdhc1 {
+	pinctrl-names = "default", "state_100mhz", "state_200mhz";
+	pinctrl-0 = <&pinctrl_usdhc1>;
+	pinctrl-1 = <&pinctrl_usdhc1_100mhz>;
+	pinctrl-2 = <&pinctrl_usdhc1_200mhz>;
+	bus-width = <8>;
+	non-removable;
+	no-sd;
+	no-sdio;
+	status = "okay";
+};

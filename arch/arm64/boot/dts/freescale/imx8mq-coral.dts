@@ -1,0 +1,224 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+
+#include "imx8mq-coral.dtsi"
+
+/ {
+	model = "Google Coral Dev Board";
+	compatible = "fsl,imx8mq";
+
+	chosen {
+		stdout-path = &uart1;
+	};
+
+	gpio_fan: gpio-fan {
+		compatible = "gpio-fan";
+		gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
+		gpio-fan,speed-map =
+			<0	0>,
+			<8600	1>;
+		#cooling-cells = <2>;
+	};
+
+	reg_usdhc2_vmmc: regulator-usdhc2-vmmc {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usdhc2_pwr>;
+		regulator-name = "VSD_3V3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&gpio2 19 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	thermal-zones {
+		cpu-thermal {
+			trips {
+				cpu_active: cpu-active {
+					temperature = <65000>;
+					hysteresis = <10000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				map4 {
+					trip = <&cpu_active>;
+					cooling-device = <&gpio_fan 0 1>;
+				};
+			};
+		};
+	};
+};
+
+&fec1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_fec1>, <&pinctrl_fec1_phy_reset>;
+	phy-mode = "rgmii-id";
+	phy-handle = <&ethphy0>;
+	fsl,magic-packet;
+	status = "okay";
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethphy0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+			/*eee-broken-100tx;
+			eee-broken-1000t;*/
+		};
+	};
+};
+
+&i2c3 {
+	status = "okay";
+
+	codec: codec@1a {
+		compatible = "realtek,rt5645";
+		reg = <0x1a>;
+		realtek,dmic1-data-pin = <2>;
+		realtek,jd-mode = <0>;
+		hp-detect-gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <4 IRQ_TYPE_EDGE_BOTH>;
+	};
+
+	typec_cc: configuration-channel@3d {
+		compatible = "nxp,ptn5150";
+		reg = <0x3d>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_typec>;
+		int-gpio = <&gpio3 0 GPIO_ACTIVE_LOW>;
+		/*vbus-gpio*/
+	};
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog>;
+
+	pinctrl_hog: hoggrp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_NAND_READY_B_GPIO3_IO16	0x19>,
+			<MX8MQ_IOMUXC_NAND_WE_B_GPIO3_IO17	0x19>;
+	};
+
+	pinctrl_fec1: fec1grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_ENET_MDC_ENET1_MDC		0x3>,
+			<MX8MQ_IOMUXC_ENET_MDIO_ENET1_MDIO		0x23>,
+			<MX8MQ_IOMUXC_ENET_TD3_ENET1_RGMII_TD3		0x1f>,
+			<MX8MQ_IOMUXC_ENET_TD2_ENET1_RGMII_TD2		0x1f>,
+			<MX8MQ_IOMUXC_ENET_TD1_ENET1_RGMII_TD1		0x1f>,
+			<MX8MQ_IOMUXC_ENET_TD0_ENET1_RGMII_TD0		0x1f>,
+			<MX8MQ_IOMUXC_ENET_RD3_ENET1_RGMII_RD3		0x91>,
+			<MX8MQ_IOMUXC_ENET_RD2_ENET1_RGMII_RD2		0x91>,
+			<MX8MQ_IOMUXC_ENET_RD1_ENET1_RGMII_RD1		0x91>,
+			<MX8MQ_IOMUXC_ENET_RD0_ENET1_RGMII_RD0		0x91>,
+			<MX8MQ_IOMUXC_ENET_TXC_ENET1_RGMII_TXC		0x1f>,
+			<MX8MQ_IOMUXC_ENET_RXC_ENET1_RGMII_RXC		0x91>,
+			<MX8MQ_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL	0x91>,
+			<MX8MQ_IOMUXC_ENET_TX_CTL_ENET1_RGMII_TX_CTL	0x1f>;
+	};
+
+	pinctrl_fec1_phy_reset: fec1phyresetgrp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x19>;
+	};
+
+	pinctrl_typec: typecgrp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_NAND_ALE_GPIO3_IO0	0x19>;
+	};
+
+	pinctrl_usdhc2_pwr: usdhc2grppwr {
+		fsl,pins =
+			<MX8MQ_IOMUXC_SD2_RESET_B_GPIO2_IO19	0x41>;
+	};
+
+	pinctrl_usdhc2: usdhc2grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_SD2_CLK_USDHC2_CLK	0x83>,
+			<MX8MQ_IOMUXC_SD2_CMD_USDHC2_CMD	0xc3>,
+			<MX8MQ_IOMUXC_SD2_DATA0_USDHC2_DATA0	0xc3>,
+			<MX8MQ_IOMUXC_SD2_DATA1_USDHC2_DATA1	0xc3>,
+			<MX8MQ_IOMUXC_SD2_DATA2_USDHC2_DATA2	0xc3>,
+			<MX8MQ_IOMUXC_SD2_DATA3_USDHC2_DATA3	0xc3>;
+	};
+
+	pinctrl_usdhc2_100mhz: usdhc2grp100mhz {
+		fsl,pins =
+			<MX8MQ_IOMUXC_SD2_CLK_USDHC2_CLK	0x85>,
+			<MX8MQ_IOMUXC_SD2_CMD_USDHC2_CMD	0xc5>,
+			<MX8MQ_IOMUXC_SD2_DATA0_USDHC2_DATA0	0xc5>,
+			<MX8MQ_IOMUXC_SD2_DATA1_USDHC2_DATA1	0xc5>,
+			<MX8MQ_IOMUXC_SD2_DATA2_USDHC2_DATA2	0xc5>,
+			<MX8MQ_IOMUXC_SD2_DATA3_USDHC2_DATA3	0xc5>;
+	};
+
+	pinctrl_usdhc2_200mhz: usdhc2grp200mhz {
+		fsl,pins =
+			<MX8MQ_IOMUXC_SD2_CLK_USDHC2_CLK	0x87>,
+			<MX8MQ_IOMUXC_SD2_CMD_USDHC2_CMD	0xc7>,
+			<MX8MQ_IOMUXC_SD2_DATA0_USDHC2_DATA0	0xc7>,
+			<MX8MQ_IOMUXC_SD2_DATA1_USDHC2_DATA1	0xc7>,
+			<MX8MQ_IOMUXC_SD2_DATA2_USDHC2_DATA2	0xc7>,
+			<MX8MQ_IOMUXC_SD2_DATA3_USDHC2_DATA3	0xc7>;
+	};
+
+	pinctrl_wdog: wdog1grp {
+		fsl,pins =
+			<MX8MQ_IOMUXC_GPIO1_IO02_WDOG1_WDOG_B	0xc6>;
+	};
+};
+
+/* Micro USB + Raspberry Pi compatible GPIO connector pins */
+&uart1 {
+	status = "okay";
+};
+
+/* 40-pin GPIO connector */
+&uart3 {
+	status = "disabled";
+};
+
+&usb3_phy0 {
+	status = "okay";
+};
+
+&usb3_phy1 {
+	status = "okay";
+};
+
+&usb_dwc3_0 {
+	dr_mode = "otg";
+	status = "okay";
+};
+
+&usb_dwc3_1 {
+	dr_mode = "host";
+	status = "okay";
+};
+
+/* microSD */
+&usdhc2 {
+	pinctrl-names = "default", "state_100mhz", "state_200mhz";
+	pinctrl-0 = <&pinctrl_usdhc2>;
+	pinctrl-1 = <&pinctrl_usdhc2_100mhz>;
+	pinctrl-2 = <&pinctrl_usdhc2_200mhz>;
+	vmmc-supply = <&reg_usdhc2_vmmc>;
+	status = "okay";
+};
+
+&wdog1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_wdog>;
+	fsl,ext-reset-output;
+	status = "okay";
+};
