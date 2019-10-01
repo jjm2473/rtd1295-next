@@ -49,6 +49,15 @@
 		cs-gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		lora0: lora@0 {
+			compatible = "semtech,sx1276";
+			reg = <0>;
+			spi-max-frequency = <8000000>;
+			reset-gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
+			dio-gpios = <&gpio 7 GPIO_ACTIVE_HIGH>,
+			            <&gpio 6 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	gpio_spi1: spi1 {
@@ -60,6 +69,15 @@
 		cs-gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		lora1: lora@0 {
+			compatible = "semtech,sx1276";
+			reg = <0>;
+			spi-max-frequency = <8000000>;
+			reset-gpios = <&gpio 23 GPIO_ACTIVE_HIGH>;
+			dio-gpios = <&gpio 22 GPIO_ACTIVE_HIGH>,
+			            <&gpio 20 GPIO_ACTIVE_HIGH>;
+		};
 	};
 };
 
