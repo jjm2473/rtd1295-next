@@ -62,15 +62,23 @@ static void rtd119x_mux_irq_handle(struct irq_desc *desc)
 static void rtd119x_mux_mask_irq(struct irq_data *data)
 {
 	struct rtd119x_irq_mux_data *mux_data = irq_data_get_irq_chip_data(data);
+	u32 val;
 
-	writel_relaxed(BIT(data->hwirq), mux_data->reg_isr);
+	//writel_relaxed(BIT(data->hwirq), mux_data->reg_isr);
+	val = readl_relaxed(mux_data->reg_isr);
+	val |= BIT(data->hwirq);
+	writel_relaxed(val, mux_data->reg_isr);
 }
 
 static void rtd119x_mux_unmask_irq(struct irq_data *data)
 {
 	struct rtd119x_irq_mux_data *mux_data = irq_data_get_irq_chip_data(data);
+	u32 val;
 
-	writel_relaxed(BIT(data->hwirq), mux_data->reg_umsk_isr);
+	//writel_relaxed(BIT(data->hwirq), mux_data->reg_umsk_isr);
+	val = readl_relaxed(mux_data->reg_umsk_isr);
+	val |= BIT(data->hwirq);
+	writel_relaxed(val, mux_data->reg_umsk_isr);
 }
 
 static void rtd119x_mux_enable_irq(struct irq_data *data)
@@ -341,6 +349,7 @@ static int __init rtd119x_irq_mux_init(struct device_node *node,
 	const struct of_device_id *match;
 	const struct rtd119x_irq_mux_info *info;
 	void __iomem *base;
+	u32 val;
 
 	match = of_match_node(rtd1295_irq_mux_dt_matches, node);
 	if (!match)
@@ -376,6 +385,20 @@ static int __init rtd119x_irq_mux_init(struct device_node *node,
 	if (!data->domain) {
 		kfree(data);
 		return -ENOMEM;
+	}
+
+	if (of_device_is_compatible(node, "realtek,rtd1295-iso-irq-mux")) {
+		const int uart0_irq = 2;
+
+		spin_lock(&data->lock);
+
+		val = readl(data->reg_scpu_int_en);
+		val &= ~BIT(uart0_irq);
+		writel(val, data->reg_scpu_int_en);
+
+		writel(BIT(uart0_irq), data->reg_isr);
+
+		spin_unlock(&data->lock);
 	}
 
 	irq_set_chained_handler_and_data(data->irq, rtd119x_mux_irq_handle, data);
