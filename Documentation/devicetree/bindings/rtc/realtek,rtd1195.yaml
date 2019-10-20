@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/rtc/realtek,rtd1195.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD129x Real-Time Clock
+
+allOf:
+  - $ref: "rtc.yaml#"
+
+maintainers:
+  - Andreas Färber <afaerber@suse.de>
+
+properties:
+  compatible:
+    const: realtek,rtd1295-rtc
+
+  reg:
+    maxItems: 1
+
+  clocks:
+    maxItems: 1
+    description: Specifies the clock gate
+
+required:
+  - compatible
+  - reg
+  - clocks
+
+examples:
+  - |
+    rtc@9801b600 {
+        compatible = "realtek,rtd1295-rtc";
+        reg = <0x9801b600 0x100>;
+        clocks = <&clkc 42>;
+    };
+...
