@@ -204,6 +204,7 @@
 	chip-info@200 {
 		compatible = "realtek,rtd1195-chip";
 		reg = <0x200 0x8>;
+		iso-syscon = <&iso>;
 	};
 
 	sb2_hd_sem_new: hwspinlock@620 {
