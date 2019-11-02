@@ -59,6 +59,11 @@ static const struct dhc_soc_revision rtd1619_revisions[] = {
 	{ }
 };
 
+static const struct dhc_soc_revision rtd1319_revisions[] = {
+	{ "A00", 0x0000 },
+	{ }
+};
+
 struct dhc_soc {
 	u16 chip_id;
 	const char *family;
@@ -103,6 +108,7 @@ static const struct dhc_soc dhc_soc_families[] = {
 	{ 0x6421, "RTD1295", rtd1295_name, rtd1295_revisions, "Kylin" },
 	{ 0x6481, "RTD1395", default_name, rtd1395_revisions, "Hercules" },
 	{ 0x6525, "RTD1619", default_name, rtd1619_revisions, "Thor" },
+	{ 0x6570, "RTD1319", default_name, rtd1319_revisions, "Hank" },
 };
 
 static const struct dhc_soc *dhc_soc_by_chip_id(u16 chip_id)
