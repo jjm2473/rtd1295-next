@@ -75,8 +75,11 @@ static const char *rtd1295_name(struct device *dev, const struct dhc_soc *s)
 		ret = regmap_read(regmap, REG_ISO_CHIP_INFO1, &val);
 		if (ret)
 			dev_warn(dev, "Could not read chip_info1 (%d)\n", ret);
-		else if (val & BIT(11))
+		else if (val & BIT(11)) {
+			if (val & BIT(4))
+				return "RTD1293";
 			return "RTD1296";
+		}
 	}
 
 	return "RTD1295";
