@@ -269,6 +269,7 @@
 	rtc: rtc@600 {
 		compatible = "realtek,rtd1195-rtc", "realtek,rtd1295-rtc";
 		reg = <0x600 0x100>;
+		resets = <&reset2 RTD1195_RSTN_RTC>;
 		clocks = <&clkc RTD1195_CLK_EN_MISC_RTC>;
 	};
 };
