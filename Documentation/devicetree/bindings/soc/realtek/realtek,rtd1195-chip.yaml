@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: "http://devicetree.org/schemas/soc/realtek/realtek,rtd1195-chip.yaml#"
+$schema: "http://devicetree.org/meta-schemas/core.yaml#"
+
+title: Realtek Digital Home Center chip identification
+
+maintainers:
+  - Andreas Färber <afaerber@suse.de>
+
+description: |
+  The Realtek DHC SoCs have some registers to identify the chip and revision.
+
+properties:
+  compatible:
+    const: realtek,rtd1195-chip
+
+  reg:
+    maxItems: 1
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false
+
+examples:
+  - |
+    chip-info@1801a200 {
+        compatible = "realtek,rtd1195-chip";
+        reg = <0x1801a200 0x8>;
+    };
+...
