@@ -10,6 +10,7 @@
 #include <linux/io.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
+#include <linux/nvmem-consumer.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/platform_device.h>
@@ -25,6 +26,8 @@
 #define SB2_CHIP_INFO_REVISE_ID		GENMASK(31, 16)
 
 #define REG_ISO_CHIP_INFO1	0x028
+
+#define REG_EFUSE_PACKAGE_ID	0x1d8
 
 struct dhc_soc_revision {
 	const char *name;
@@ -76,6 +79,33 @@ struct dhc_soc {
 	const char *codename;
 };
 
+static int dhc_efuse_read_u8(struct device *dev, const char *cell_id, u8 *val)
+{
+	struct nvmem_cell *cell;
+	void *buf;
+	size_t len;
+
+	cell = nvmem_cell_get(dev, cell_id);
+	if (IS_ERR(cell))
+		return PTR_ERR(cell);
+
+	buf = nvmem_cell_read(cell, &len);
+	if (IS_ERR(buf)) {
+		nvmem_cell_put(cell);
+		return PTR_ERR(buf);
+	}
+	if (len != sizeof(*val)) {
+		kfree(buf);
+		nvmem_cell_put(cell);
+		return -EINVAL;
+	}
+	memcpy(val, buf, 1);
+	kfree(buf);
+	nvmem_cell_put(cell);
+
+	return 0;
+}
+
 static const char *default_name(struct device *dev, const struct dhc_soc *s)
 {
 	return s->family;
@@ -86,6 +116,15 @@ static const char *rtd1295_name(struct device *dev, const struct dhc_soc *s)
 	struct regmap *regmap;
 	unsigned int val;
 	int ret;
+	u8 b;
+
+	ret = dhc_efuse_read_u8(dev, "efuse_package_id", &b);
+	if (ret == -EPROBE_DEFER)
+		return ERR_PTR(ret);
+	else if (ret)
+		dev_warn(dev, "Could not read efuse package_id (%d)\n", ret);
+	else if (b == 0x1)
+		return "RTD1294";
 
 	regmap = syscon_regmap_lookup_by_phandle(dev->of_node, "iso-syscon");
 	if (IS_ERR(regmap)) {
