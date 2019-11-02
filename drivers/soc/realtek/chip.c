@@ -23,6 +23,8 @@
 
 #define SB2_CHIP_INFO_REVISE_ID		GENMASK(31, 16)
 
+#define REG_ISO_CHIP_INFO1	0x028
+
 struct dhc_soc_revision {
 	const char *name;
 	u16 chip_rev;
@@ -57,9 +59,32 @@ static const char *default_name(struct device *dev, const struct dhc_soc *s)
 	return s->family;
 }
 
+static const char *rtd1295_name(struct device *dev, const struct dhc_soc *s)
+{
+	struct regmap *regmap;
+	unsigned int val;
+	int ret;
+
+	regmap = syscon_regmap_lookup_by_phandle(dev->of_node, "iso-syscon");
+	if (IS_ERR(regmap)) {
+		ret = PTR_ERR(regmap);
+		if (ret == -EPROBE_DEFER)
+			return ERR_PTR(ret);
+		dev_warn(dev, "Could not check iso (%d)\n", ret);
+	} else {
+		ret = regmap_read(regmap, REG_ISO_CHIP_INFO1, &val);
+		if (ret)
+			dev_warn(dev, "Could not read chip_info1 (%d)\n", ret);
+		else if (val & BIT(11))
+			return "RTD1296";
+	}
+
+	return "RTD1295";
+}
+
 static const struct dhc_soc dhc_soc_families[] = {
 	{ 0x6329, "RTD1195", default_name, rtd1195_revisions, "Phoenix" },
-	{ 0x6421, "RTD1295", default_name, rtd1295_revisions, "Kylin" },
+	{ 0x6421, "RTD1295", rtd1295_name, rtd1295_revisions, "Kylin" },
 };
 
 static const struct dhc_soc *dhc_soc_by_chip_id(u16 chip_id)
