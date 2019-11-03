@@ -172,6 +172,25 @@
 				#size-cells = <1>;
 				ranges = <0x0 0x1d000 0x1000>;
 			};
+
+			/* TODO 0x18030000 0x10000 or 0x18003000 0x1000? */
+			mali: gpu@30000 {
+				compatible = "realtek,rtd1195-mali", "arm,mali-400";
+				reg = <0x30000 0x10000>;
+				/* TODO which bus clk to pass? */
+				clocks = <&clkc RTD1195_CLK_EN_GPU>, <&osc27M>;
+				clock-names = "core", "bus";
+				resets = <&reset1 RTD1195_RSTN_GPU>;
+				interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>,
+					     <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>,
+					     <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>,
+					     <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>,
+					     <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>,
+					     <GIC_SPI 29 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-names = "gp",  "gpmmu",
+						  "pp0", "ppmmu0",
+						  "pp1", "ppmmu1";
+			};
 		};
 
 		gic: interrupt-controller@ff011000 {
