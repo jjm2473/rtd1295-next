@@ -46,6 +46,10 @@ properties:
               - mediatek,mt7623-mali
               - rockchip,rk3328-mali
           - const: arm,mali-450
+      - items:
+          - enum:
+              - realtek,rtd1395-mali
+          - const: arm,mali-470
 
       # "arm,mali-300"
 
