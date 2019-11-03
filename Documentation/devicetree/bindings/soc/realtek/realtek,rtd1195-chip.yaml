@@ -22,6 +22,10 @@ properties:
 
   iso-syscon: true
 
+  nvmem-cells: true
+
+  nvmem-cell-names: true
+
 required:
   - compatible
   - reg
@@ -39,5 +43,13 @@ examples:
         compatible = "realtek,rtd1195-chip";
         reg = <0x9801a200 0x8>;
         iso-syscon = <&iso>;
+    };
+  - |
+    chip-info@9801a200 {
+        compatible = "realtek,rtd1195-chip";
+        reg = <0x9801a200 0x8>;
+        iso-syscon = <&iso>;
+        nvmem-cells = <&efuse_package_id>;
+        nvmem-cell-names = "efuse_package_id";
     };
 ...
