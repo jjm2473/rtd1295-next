@@ -230,6 +230,7 @@
 	mali: gpu@50000 {
 		compatible = "realtek,rtd1295-mali", "arm,mali-t820";
 		reg = <0x50000 0x10000>;
+		power-domains = <&powerctrl 0>;
 		clocks = <&clkc RTD1295_CLK_EN_GPU>;
 		clock-names = "core";
 		resets = <&reset1 RTD1295_RSTN_GPU>;
