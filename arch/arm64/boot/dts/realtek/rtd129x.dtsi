@@ -281,6 +281,12 @@
 		#clock-cells = <1>;
 	};
 
+	powerctrl: powerctrl@0 {
+		compatible = "realtek,rtd1295-powerctrl";
+		reg = <0x0 0x1000>;
+		#power-domain-cells = <1>;
+	};
+
 	reset1: reset-controller@0 {
 		compatible = "snps,dw-low-reset";
 		reg = <0x0 0x4>;
