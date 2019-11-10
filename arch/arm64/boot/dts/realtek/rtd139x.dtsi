@@ -155,6 +155,14 @@
 };
 
 &iso {
+	iso_irq_mux: interrupt-controller@0 {
+		compatible = "realtek,rtd1395-iso-irq-mux";
+		reg = <0x0 0x100>;
+		interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
 	iso_reset: reset-controller@88 {
 		compatible = "snps,dw-low-reset";
 		reg = <0x88 0x4>;
@@ -174,11 +182,21 @@
 		reg-io-width = <4>;
 		clock-frequency = <27000000>;
 		resets = <&iso_reset RTD1295_ISO_RSTN_UR0>;
+		interrupt-parent = <&iso_irq_mux>;
+		interrupts = <2>;
 		status = "disabled";
 	};
 };
 
 &misc {
+	misc_irq_mux: interrupt-controller@0 {
+		compatible = "realtek,rtd1395-misc-irq-mux";
+		reg = <0x0 0x100>;
+		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
 	uart1: serial@200 {
 		compatible = "snps,dw-apb-uart";
 		reg = <0x200 0x100>;
@@ -186,6 +204,8 @@
 		reg-io-width = <4>;
 		clock-frequency = <432000000>;
 		resets = <&reset2 RTD1295_RSTN_UR1>;
+		interrupt-parent = <&misc_irq_mux>;
+		interrupts = <3>;
 		status = "disabled";
 	};
 
@@ -196,6 +216,8 @@
 		reg-io-width = <4>;
 		clock-frequency = <432000000>;
 		resets = <&reset2 RTD1295_RSTN_UR2>;
+		interrupt-parent = <&misc_irq_mux>;
+		interrupts = <8>;
 		status = "disabled";
 	};
 };
