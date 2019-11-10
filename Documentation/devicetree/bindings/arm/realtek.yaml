@@ -39,6 +39,7 @@ properties:
       - description: RTD1296 SoC based boards
         items:
           - enum:
+              - bananapi,bpi-w2 # Banana Pi BPI-W2
               - realtek,saola # Realtek Saola EVB
               - synology,ds418 # Synology DiskStation DS418
           - const: realtek,rtd1296
