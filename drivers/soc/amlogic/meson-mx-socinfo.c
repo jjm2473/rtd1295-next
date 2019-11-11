@@ -167,8 +167,8 @@ static int __init meson_mx_socinfo_init(void)
 		return PTR_ERR(soc_dev);
 	}
 
-	dev_info(soc_device_to_device(soc_dev), "Amlogic %s %s detected\n",
-		 soc_dev_attr->soc_id, soc_dev_attr->revision);
+	pr_info("Amlogic %s %s detected\n",
+		soc_dev_attr->soc_id, soc_dev_attr->revision);
 
 	return 0;
 }

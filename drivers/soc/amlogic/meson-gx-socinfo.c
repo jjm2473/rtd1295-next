@@ -129,7 +129,6 @@ static int __init meson_gx_socinfo_init(void)
 	struct device_node *np;
 	struct regmap *regmap;
 	unsigned int socinfo;
-	struct device *dev;
 	int ret;
 
 	/* look up for chipid node */
@@ -192,9 +191,8 @@ static int __init meson_gx_socinfo_init(void)
 		kfree(soc_dev_attr);
 		return PTR_ERR(soc_dev);
 	}
-	dev = soc_device_to_device(soc_dev);
 
-	dev_info(dev, "Amlogic Meson %s Revision %x:%x (%x:%x) Detected\n",
+	pr_info("Amlogic Meson %s Revision %x:%x (%x:%x) detected\n",
 			soc_dev_attr->soc_id,
 			socinfo_to_major(socinfo),
 			socinfo_to_minor(socinfo),
