@@ -19,6 +19,8 @@ properties:
       - realtek,rtd1195-iso-irq-mux
       - realtek,rtd1295-misc-irq-mux
       - realtek,rtd1295-iso-irq-mux
+      - realtek,rtd1395-misc-irq-mux
+      - realtek,rtd1395-iso-irq-mux
 
   reg:
     maxItems: 1
