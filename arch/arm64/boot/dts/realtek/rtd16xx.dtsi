@@ -203,6 +203,14 @@
 };
 
 &iso {
+	iso_irq_mux: interrupt-controller@0 {
+		compatible = "realtek,rtd1619-iso-irq-mux";
+		reg = <0x0 0x100>;
+		interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
 	uart0: serial0@800 {
 		compatible = "snps,dw-apb-uart";
 		reg = <0x800 0x400>;
@@ -215,6 +223,14 @@
 };
 
 &misc {
+	misc_irq_mux: interrupt-controller@0 {
+		compatible = "realtek,rtd1619-misc-irq-mux";
+		reg = <0x0 0x100>;
+		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
 	uart1: serial1@200 {
 		compatible = "snps,dw-apb-uart";
 		reg = <0x200 0x400>;
