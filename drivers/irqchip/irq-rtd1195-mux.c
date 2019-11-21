@@ -7,6 +7,7 @@
 
 #include <linux/bitops.h>
 #include <linux/io.h>
+#include <linux/interrupt.h>
 #include <linux/irqchip.h>
 #include <linux/irqchip/chained_irq.h>
 #include <linux/irqdomain.h>
@@ -96,10 +97,45 @@ static void rtd1195_mux_unmask_irq(struct irq_data *data)
 	raw_spin_unlock_irqrestore(&mux->lock, flags);
 }
 
+static int rtd1195_mux_get_irqchip_state(struct irq_data *data,
+	enum irqchip_irq_state which, bool *state)
+{
+	struct rtd1195_irq_mux_data *mux = irq_data_get_irq_chip_data(data);
+	u32 val;
+
+	switch (which) {
+	case IRQCHIP_STATE_PENDING:
+		/*
+		 * UMSK_ISR provides the unmasked pending interrupts,
+		 * except UART and I2C.
+		 */
+		val = readl_relaxed(mux->reg_umsk_isr);
+		*state = !!(val & BIT(data->hwirq));
+		break;
+	case IRQCHIP_STATE_ACTIVE:
+		/*
+		 * ISR provides the masked pending interrupts,
+		 * including UART and I2C.
+		 */
+		val = readl_relaxed(mux->reg_isr);
+		*state = !!(val & BIT(data->hwirq));
+		break;
+	case IRQCHIP_STATE_MASKED:
+		val = mux->info->isr_to_int_en_mask[data->hwirq];
+		*state = !(mux->scpu_int_en & val);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static const struct irq_chip rtd1195_mux_irq_chip = {
 	.irq_ack		= rtd1195_mux_ack_irq,
 	.irq_mask		= rtd1195_mux_mask_irq,
 	.irq_unmask		= rtd1195_mux_unmask_irq,
+	.irq_get_irqchip_state	= rtd1195_mux_get_irqchip_state,
 };
 
 static int rtd1195_mux_irq_domain_map(struct irq_domain *d,
