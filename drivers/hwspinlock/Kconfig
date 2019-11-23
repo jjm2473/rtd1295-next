@@ -28,6 +28,17 @@ config HWSPINLOCK_QCOM
 
 	  If unsure, say N.
 
+config HWSPINLOCK_RTD1195_SB2
+	tristate "Realtek RTD1195 SB2 Hardware Spinlock device"
+	depends on HWSPINLOCK
+	depends on ARCH_REALTEK || COMPILE_TEST
+	default ARCH_REALTEK
+	help
+	  Say y here to support the Realtek Hardware Semaphore functionality,
+	  found on the RTD1195 and later SoC families.
+
+	  If unsure, say N.
+
 config HWSPINLOCK_SIRF
 	tristate "SIRF Hardware Spinlock device"
 	depends on ARCH_SIRF || COMPILE_TEST
