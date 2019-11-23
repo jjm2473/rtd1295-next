@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/hwlock/realtek,rtd1195-sb2-sem.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek RTD1195 SB2 hardware semaphore device tree binding
+
+maintainers:
+  - Andreas Färber <afaerber@suse.de>
+
+properties:
+  compatible:
+    const: realtek,rtd1195-sb2-sem
+
+  reg:
+    maxItems: 1
+
+  "#hwlock-cells":
+    enum: [ 0, 1 ]
+
+required:
+  - compatible
+  - reg
+  - "#hwlock-cells"
+
+additionalProperties: false
+
+examples:
+  - |
+    hwspinlock@9801a000 {
+      compatible = "realtek,rtd1195-sb2-sem";
+      reg = <0x9801a000 0x4>;
+      #hwlock-cells = <0>;
+    };
+  - |
+    hwspinlock@9801a620 {
+      compatible = "realtek,rtd1195-sb2-sem";
+      reg = <0x9801a620 0x20>;
+      #hwlock-cells = <1>;
+    };
+...
