@@ -13,7 +13,7 @@
 
 	memory@1f000 {
 		device_type = "memory";
-		reg = <0x1f000 0x3ffe1000>; /* boot ROM to 1 GiB or 2 GiB */
+		reg = <0x1f000 0x7ffe1000>; /* boot ROM to 1 GiB or 2 GiB */
 	};
 
 	aliases {
