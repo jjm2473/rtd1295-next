@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
 /*
- * Copyright (c) 2016-2017 Andreas Färber
+ * Copyright (c) 2016-2019 Andreas Färber
  */
 
 /dts-v1/;
@@ -41,6 +41,26 @@
 		regulator-max-microvolt = <5000000>;
 		gpio = <&misc_gpio 16 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
+	};
+
+	spi {
+		compatible = "spi-gpio";
+		sck-gpios = <&iso_gpio 4 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&iso_gpio 3 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&iso_gpio 2 GPIO_ACTIVE_LOW>;
+		num-chipselects = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		tm1628: led-controller@0 {
+			compatible = "titanmec,tm1628";
+			reg = <0>;
+			spi-3wire;
+			spi-lsb-first;
+			spi-rx-delay-us = <1>;
+			spi-max-frequency = <500000>;
+			#grids = <7>;
+		};
 	};
 };
 
