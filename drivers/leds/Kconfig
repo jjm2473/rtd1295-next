@@ -921,6 +921,17 @@ config LEDS_SGM3140
 	  This option enables support for the SGM3140 500mA Buck/Boost Charge
 	  Pump LED Driver.
 
+config LEDS_TM1628
+	tristate "LED driver for TM1628"
+	depends on LEDS_CLASS
+	depends on SPI
+	depends on OF || COMPILE_TEST
+	help
+	  Say Y to enable support for Titan Micro Electronics TM1628
+	  LED controllers.
+	  They are 3-wire SPI devices controlling a two-dimensional grid of
+	  LEDs. Dimming is applied to all outputs through an internal PWM.
+
 comment "LED Triggers"
 source "drivers/leds/trigger/Kconfig"
 
