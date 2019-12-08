@@ -5,6 +5,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+
 #include "rtd1295.dtsi"
 
 / {
@@ -22,6 +24,26 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
+	};
+
+	spi {
+		compatible = "spi-gpio";
+		sck-gpios = <&iso_gpio 4 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&iso_gpio 3 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&iso_gpio 2 GPIO_ACTIVE_LOW>;
+		num-chipselects = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		fd628: led-controller@0 {
+			compatible = "fdhisi,fd628";
+			reg = <0>;
+			spi-3wire;
+			spi-lsb-first;
+			spi-rx-delay-us = <1>;
+			spi-max-frequency = <500000>;
+			#grids = <7>;
+		};
 	};
 };
 
