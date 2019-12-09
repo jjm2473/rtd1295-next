@@ -47,6 +47,10 @@
 			#address-cells = <2>;
 			#size-cells = <0>;
 
+			display@0,8 {
+				reg = <0 8>, <0 7>, <0 6>, <0 5>;
+			};
+
 			apps@1,4 {
 				reg = <1 4>;
 				color = <LED_COLOR_ID_WHITE>;
