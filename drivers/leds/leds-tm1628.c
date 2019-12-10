@@ -16,6 +16,8 @@
 #include <linux/pwm.h>
 #include <linux/spi/spi.h>
 
+#include <uapi/linux/map_to_7segment.h>
+
 #define TM1628_CMD_MASK			GENMASK(7, 6)
 #define TM1628_CMD_DISPLAY_MODE		(0x0 << 6)
 #define TM1628_CMD_DATA_SETTING		(0x1 << 6)
@@ -49,6 +51,15 @@ struct tm1628_info {
 	int				default_pwm;
 };
 
+struct tm1628_segment {
+	u32 grid;
+	u32 seg;
+};
+
+struct tm1628_display {
+	struct tm1628_segment segments[8];
+};
+
 struct tm1628_led {
 	struct led_classdev	leddev;
 	struct tm1628		*ctrl;
@@ -63,6 +74,8 @@ struct tm1628 {
 	int				pwm_index;
 	u8				*data, *nextdata;
 	unsigned int			data_len;
+	unsigned int			num_displays;
+	struct tm1628_display		*displays;
 	struct backlight_device		*backlight;
 	unsigned int			num_leds;
 	struct tm1628_led		leds[];
@@ -287,6 +300,137 @@ static int tm1628_register_led(struct tm1628 *s,
 	return devm_led_classdev_register_ext(dev, &led->leddev, &init_data);
 }
 
+static SEG7_DEFAULT_MAP(tm1628_map_seg7);
+
+static int tm1628_display_apply_map(struct tm1628 *s,
+	struct tm1628_display *display, int map)
+{
+	struct tm1628_segment *segment;
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		segment = &display->segments[i];
+		tm1628_set_led(s, segment->grid, segment->seg, map & BIT(i));
+	}
+
+	return 0;
+}
+
+static ssize_t text_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct tm1628 *s = dev_get_drvdata(dev);
+	size_t offset, len = count;
+	int map;
+	int i, ret;
+
+	if (len > 0 && buf[len - 1] == '\n')
+		len--;
+
+	for (i = 0, offset = 0; i < s->num_displays; i++) {
+		if (likely(offset < len)) {
+			map = map_to_seg7(&tm1628_map_seg7, buf[offset]);
+			offset++;
+		} else
+			map = map_to_seg7(&tm1628_map_seg7, ' ');
+
+		if (unlikely(map < 0))
+			map = 0x0;
+
+		tm1628_display_apply_map(s, &s->displays[i], map);
+	}
+
+	ret = tm1628_set_address(s->spi, 0x0);
+	if (ret)
+		return ret;
+
+	ret = tm1628_write_data(s->spi, s->data, 14);
+	if (ret)
+		return ret;
+
+	return count;
+}
+
+static struct device_attribute tm1628_attr =
+	__ATTR_WO(text);
+
+static int tm1628_register_display(struct tm1628 *s,
+	struct fwnode_handle *node)
+{
+	struct device *dev = &s->spi->dev;
+	struct tm1628_display *display;
+	u32 *reg;
+	u32 grid, seg;
+	int i, j, ret, reg_count;
+
+	reg_count = fwnode_property_count_u32(node, "reg");
+	if (reg_count < 0)
+		return reg_count;
+
+	if (reg_count % 2) {
+		dev_warn(dev, "Ignoring extra cell in %s reg property\n",
+			 fwnode_get_name(node));
+		reg_count--;
+	}
+
+	if (s->displays) {
+		dev_warn(dev, "Only one display supported\n");
+		return -EINVAL;
+	}
+
+	s->num_displays = reg_count >> 1;
+
+	reg = devm_kzalloc(dev, reg_count * sizeof(*reg), GFP_KERNEL);
+	if (!reg)
+		return -ENOMEM;
+
+	ret = fwnode_property_read_u32_array(node, "reg", reg, reg_count);
+	if (ret) {
+		dev_err(dev, "Reading %s reg property failed (%d)\n",
+			fwnode_get_name(node), ret);
+		return ret;
+	}
+
+	s->displays = devm_kzalloc(dev, s->num_displays * sizeof(*s->displays), GFP_KERNEL);
+	if (!s->displays)
+		return -ENOMEM;
+
+	for (i = 0; i < s->num_displays; i++) {
+		display = &s->displays[i];
+		grid = reg[i * 2];
+		seg  = reg[i * 2 + 1];
+		if (grid == 0 && seg != 0) {
+			if (!tm1628_is_valid_seg(s, seg)) {
+				dev_warn(dev, "%s reg out of range\n", fwnode_get_name(node));
+				return -EINVAL;
+			}
+			grid = s->info->modes[s->mode_index].grid_mask;
+			for (j = 0; grid && j < 7; j++) {
+				display->segments[j].seg = seg;
+				display->segments[j].grid = __ffs(grid);
+				grid &= ~BIT(display->segments[j].grid);
+			}
+		} else if (grid != 0 && seg == 0) {
+			if (!tm1628_is_valid_grid(s, grid)) {
+				dev_warn(dev, "%s reg out of range\n", fwnode_get_name(node));
+				return -EINVAL;
+			}
+			seg = s->info->modes[s->mode_index].seg_mask;
+			for (j = 0; seg && j < 8; j++) {
+				display->segments[j].grid = grid;
+				display->segments[j].seg = __ffs(seg);
+				seg &= ~BIT(display->segments[j].seg);
+			}
+		}
+	}
+
+	devm_kfree(dev, reg);
+
+	device_create_file(dev, &tm1628_attr);
+
+	return 0;
+}
+
 /* Work around __builtin_popcount() */
 static u32 tm1628_grid_popcount(u8 grid_mask)
 {
@@ -367,7 +511,7 @@ static int tm1628_spi_probe(struct spi_device *spi)
 			return ret;
 		}
 
-		if (fwnode_property_count_u32(child, "reg") == 2) {
+		if (reg[0] != 0 && reg[1] != 0 && fwnode_property_count_u32(child, "reg") == 2) {
 			ret = tm1628_register_led(s, child, reg[0], reg[1], &s->leds[i++]);
 			if (ret && ret != -EINVAL) {
 				dev_err(&spi->dev, "Failed to register LED %s (%d)\n",
@@ -376,6 +520,14 @@ static int tm1628_spi_probe(struct spi_device *spi)
 				return ret;
 			}
 			s->num_leds++;
+		} else {
+			ret = tm1628_register_display(s, child);
+			if (ret) {
+				dev_err(&spi->dev, "Failed to register display %s (%d)\n",
+					fwnode_get_name(child), ret);
+				fwnode_handle_put(child);
+				return ret;
+			}
 		}
 	}
 
