@@ -12,6 +12,7 @@ maintainers:
 properties:
   compatible:
     enum:
+    - fdhisi,fd628
     - titanmec,tm1628
 
   reg:
