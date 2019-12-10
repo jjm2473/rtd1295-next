@@ -1033,6 +1033,8 @@ patternProperties:
     description: Synaptics Inc.
   "^synology,.*":
     description: Synology, Inc.
+  "^szfdwdz,.*":
+    description: Shenzhen Fude Microelectronics Co., Ltd.
   "^tbs,.*":
     description: TBS Technologies
   "^tbs-biometrics,.*":
