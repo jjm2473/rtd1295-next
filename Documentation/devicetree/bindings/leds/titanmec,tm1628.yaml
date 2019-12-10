@@ -13,6 +13,7 @@ properties:
   compatible:
     enum:
     - fdhisi,fd628
+    - szfdwdz,aip1618
     - titanmec,tm1628
 
   reg:
