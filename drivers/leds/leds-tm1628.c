@@ -3,6 +3,7 @@
  * Titan Micro Electronics TM1628 LED controller
  * Also compatible:
  * Fuda Hisi Microelectronics FD628
+ * Fude Microelectronics AiP1618
  *
  * Copyright (c) 2019 Andreas Färber
  */
@@ -466,9 +467,38 @@ static const struct tm1628_info fd628_info = {
 	.default_pwm = 0,
 };
 
+static const struct tm1628_mode aip1618_modes[4] = {
+	{
+		.grid_mask = GENMASK(4, 1),
+		.seg_mask = GENMASK(14, 12) | GENMASK(5, 1),
+	},
+	{
+		.grid_mask = GENMASK(5, 1),
+		.seg_mask = GENMASK(13, 12) | GENMASK(5, 1),
+	},
+	{
+		.grid_mask = GENMASK(6, 1),
+		.seg_mask = BIT(12) | GENMASK(5, 1),
+	},
+	{
+		.grid_mask = GENMASK(7, 1),
+		.seg_mask = GENMASK(5, 1),
+	},
+};
+
+static const struct tm1628_info aip1618_info = {
+	.grid_mask = GENMASK(7, 1),
+	.seg_mask = GENMASK(14, 12) | GENMASK(5, 1),
+	.modes = aip1618_modes,
+	.default_mode = 3,
+	.pwm_map = tm1628_pwm_map,
+	.default_pwm = 0,
+};
+
 static const struct of_device_id tm1628_spi_of_matches[] = {
 	{ .compatible = "titanmec,tm1628", .data = &tm1628_info },
 	{ .compatible = "fdhisi,fd628", .data = &fd628_info },
+	{ .compatible = "szfdwdz,aip1618", .data = &aip1618_info },
 	{}
 };
 MODULE_DEVICE_TABLE(of, tm1628_spi_of_matches);

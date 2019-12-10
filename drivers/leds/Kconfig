@@ -928,8 +928,9 @@ config LEDS_TM1628
 	depends on OF || COMPILE_TEST
 	depends on BACKLIGHT_CLASS_DEVICE
 	help
-	  Say Y to enable support for Titan Micro Electronics TM1628 and
-	  Fuda Hisi Microelectronics FD628 LED controllers.
+	  Say Y to enable support for Titan Micro Electronics TM1628,
+	  Fuda Hisi Microelectronics FD628 and Fude Microelectronics AiP1618
+	  LED controllers.
 	  They are 3-wire SPI devices controlling a two-dimensional grid of
 	  LEDs. Dimming is applied to all outputs through an internal PWM.
 
