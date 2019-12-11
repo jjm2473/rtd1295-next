@@ -10,6 +10,7 @@
 
 #include <linux/backlight.h>
 #include <linux/bitops.h>
+#include <linux/input.h>
 #include <linux/leds.h>
 #include <linux/module.h>
 #include <linux/property.h>
@@ -49,6 +50,10 @@ struct tm1628_info {
 	int				default_mode;
 	const struct pwm_capture	*pwm_map;
 	int				default_pwm;
+
+	unsigned long			k_mask;
+	unsigned long			ks_mask;
+	int				bits_per_ks;
 };
 
 struct tm1628_segment {
@@ -74,9 +79,13 @@ struct tm1628 {
 	int				pwm_index;
 	u8				*data, *nextdata;
 	unsigned int			data_len;
+	unsigned int			ks_per_byte;
+	u8				*keydata, *lastkeydata;
+	unsigned int			keydata_len;
 	unsigned int			num_displays;
 	struct tm1628_display		*displays;
 	struct backlight_device		*backlight;
+	struct input_dev		*input;
 	unsigned int			num_leds;
 	struct tm1628_led		leds[];
 };
@@ -115,6 +124,23 @@ static int tm1628_write_data(struct spi_device *spi, const u8 *data, unsigned in
 	return spi_sync_transfer(spi, xfers, ARRAY_SIZE(xfers));
 }
 
+static int tm1628_read_keys(struct spi_device *spi, u8 *buf, unsigned int len)
+{
+	u8 cmd = TM1628_CMD_DATA_SETTING | TM1628_DATA_SETTING_READ_DATA;
+	struct spi_transfer xfers[] = {
+		{
+			.tx_buf = &cmd,
+			.len = 1,
+		},
+		{
+			.rx_buf = buf,
+			.len = len,
+		},
+	};
+
+	return spi_sync_transfer(spi, xfers, ARRAY_SIZE(xfers));
+}
+
 /* Command 3: Address Setting */
 static int tm1628_set_address(struct spi_device *spi, u8 addr)
 {
@@ -139,6 +165,20 @@ static int tm1628_set_display_ctrl(struct spi_device *spi, bool on, u8 pwm_index
 	cmd |= pwm_index;
 
 	return spi_write(spi, &cmd, 1);
+}
+
+static inline unsigned long tm1628_max_ks(struct tm1628 *s)
+{
+	return find_last_bit(&s->info->ks_mask,
+		BITS_PER_TYPE(s->info->ks_mask));
+}
+
+static void tm1628_input_poll(struct input_dev *input)
+{
+	struct tm1628 *s = input_get_drvdata(input);
+
+	memcpy(s->lastkeydata, s->keydata, s->keydata_len);
+	tm1628_read_keys(s->spi, s->keydata, s->keydata_len);
 }
 
 static int tm1628_bl_update_status(struct backlight_device *bldev)
@@ -573,6 +613,37 @@ static int tm1628_spi_probe(struct spi_device *spi)
 		return ret;
 	}
 
+	for (i = 0; i + s->info->bits_per_ks <= 8; i += s->info->bits_per_ks)
+		s->ks_per_byte++;
+
+	s->keydata_len = tm1628_max_ks(s);
+	s->keydata = devm_kcalloc(&spi->dev, 2, s->keydata_len, GFP_KERNEL);
+	if (!s->keydata)
+		return -ENOMEM;
+
+	s->lastkeydata = s->keydata + s->keydata_len;
+
+	s->input = devm_input_allocate_device(&spi->dev);
+	if (!s->input)
+		return -ENOMEM;
+
+	s->input->name = dev_name(&spi->dev);
+	s->input->phys = "tm1628/input0";
+	s->input->id.bustype = BUS_SPI;
+	s->input->id.vendor  = 0x0001;
+	s->input->id.product = 0x0001;
+	s->input->id.version = 0x0100;
+	__set_bit(EV_KEY, s->input->evbit);
+	input_set_drvdata(s->input, s);
+
+	ret = input_setup_polling(s->input, tm1628_input_poll);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to set up polling (%d)\n", ret);
+		return ret;
+	}
+
+	input_set_poll_interval(s->input, 200);
+
 	ret = tm1628_set_address(spi, 0x0);
 	if (ret) {
 		dev_err(&spi->dev, "Setting address failed (%d)\n", ret);
@@ -637,6 +708,10 @@ static const struct tm1628_info tm1628_info = {
 	.default_mode = 3,
 	.pwm_map = tm1628_pwm_map,
 	.default_pwm = 0,
+
+	.k_mask = GENMASK(2, 1),
+	.ks_mask = GENMASK(10, 1),
+	.bits_per_ks = 3,
 };
 
 static const struct tm1628_info fd628_info = {
