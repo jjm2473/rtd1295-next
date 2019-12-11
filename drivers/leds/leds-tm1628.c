@@ -830,6 +830,10 @@ static const struct tm1628_info aip1618_info = {
 	.default_mode = 3,
 	.pwm_map = tm1628_pwm_map,
 	.default_pwm = 0,
+
+	.k_mask = BIT(2),
+	.ks_mask = GENMASK(5, 1),
+	.bits_per_ks = 3,
 };
 
 static const struct of_device_id tm1628_spi_of_matches[] = {
