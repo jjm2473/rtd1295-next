@@ -54,6 +54,24 @@ patternProperties:
     required:
       - reg
 
+  "^display@([1-7],0|0,([1-9]|1[02-4]))$":
+    type: object
+    description: |
+      Properties for a sequence of 7-segment digits composed of multiple LEDs.
+
+    properties:
+      reg:
+        description: |
+          One or more tuples of grid number and segment number in visual order.
+          A segment of zero indicates that the corresponding grid output lines
+          represent the individual segments; a grid of zero indicates that the
+          corresponding segment output lines represent the individual segments.
+        minItems: 1
+        maxItems: 7
+
+    required:
+      - reg
+
 examples:
   - |
     #include <dt-bindings/leds/common.h>
@@ -71,6 +89,40 @@ examples:
             #grids = <7>;
             #address-cells = <2>;
             #size-cells = <0>;
+
+            display@0,8 {
+                reg = <0 8>, <0 7>, <0 6>, <0 5>;
+            };
+
+            colon@5,4 {
+                reg = <5 4>;
+                color = <LED_COLOR_ID_WHITE>;
+                function = LED_FUNCTION_INDICATOR;
+                linux,default-trigger = "heartbeat";
+            };
+        };
+    };
+
+  - |
+    #include <dt-bindings/leds/common.h>
+
+    spi {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        led-controller@0 {
+            compatible = "titanmec,tm1628";
+            reg = <0>;
+            spi-3-wire;
+            spi-lsb-first;
+            spi-max-frequency = <500000>;
+            #grids = <6>;
+            #address-cells = <2>;
+            #size-cells = <0>;
+
+            display@1,0 {
+                reg = <1 0>, <2 0>, <3 0>, <4 0>;
+            };
 
             colon@5,4 {
                 reg = <5 4>;
