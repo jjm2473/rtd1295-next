@@ -261,7 +261,7 @@ static int tm1628_get_led(struct tm1628 *s,
 }
 
 static int tm1628_set_led(struct tm1628 *s,
-	unsigned int grid, unsigned int seg, bool on)
+	unsigned int grid, unsigned int seg, bool on, int *poffset)
 {
 	int offset, bit;
 	int ret;
@@ -275,6 +275,10 @@ static int tm1628_set_led(struct tm1628 *s,
 	else
 		s->data[offset] &= ~BIT(bit);
 
+
+	if (poffset)
+		*poffset = offset;
+
 	return 0;
 }
 
@@ -285,12 +289,8 @@ static int tm1628_led_set_brightness(struct led_classdev *led_cdev,
 	struct tm1628 *s = led->ctrl;
 	int ret, offset;
 
-	ret = tm1628_set_led(s, led->grid, led->seg, brightness != LED_OFF);
+	ret = tm1628_set_led(s, led->grid, led->seg, brightness != LED_OFF, &offset);
 	if (ret)
-		return ret;
-
-	ret = tm1628_get_led_offset(s, led->grid, led->seg, &offset, NULL);
-	if (unlikely(ret))
 		return ret;
 
 	ret = tm1628_set_address(s->spi, offset);
@@ -371,7 +371,7 @@ static int tm1628_display_apply_map(struct tm1628 *s,
 
 	for (i = 0; i < 8; i++) {
 		segment = &display->segments[i];
-		tm1628_set_led(s, segment->grid, segment->seg, map & BIT(i));
+		tm1628_set_led(s, segment->grid, segment->seg, map & BIT(i), NULL);
 	}
 
 	return 0;
