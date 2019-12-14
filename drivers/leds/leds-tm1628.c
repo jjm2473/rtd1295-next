@@ -26,6 +26,7 @@
 
 #define TM1628_DATA_SETTING_MODE_MASK	GENMASK(1, 0)
 #define TM1628_DATA_SETTING_WRITE_DATA	0x0
+#define TM1628_DATA_SETTING_WRITE_LEDS	0x1
 #define TM1628_DATA_SETTING_READ_DATA	0x2
 #define TM1628_DATA_SETTING_FIXED_ADDR	BIT(2)
 #define TM1628_DATA_SETTING_TEST_MODE	BIT(3)
@@ -467,6 +468,83 @@ static const struct tm1628_info fd628_info = {
 	.default_pwm = 0,
 };
 
+static const struct tm1628_mode ht16515_modes[16] = {
+	{
+		.grid_mask = GENMASK(4, 1),
+		.seg_mask = GENMASK(24, 1),
+	},
+	{
+		.grid_mask = GENMASK(5, 1),
+		.seg_mask = GENMASK(23, 1),
+	},
+	{
+		.grid_mask = GENMASK(6, 1),
+		.seg_mask = GENMASK(22, 1),
+	},
+	{
+		.grid_mask = GENMASK(7, 1),
+		.seg_mask = GENMASK(21, 1),
+	},
+	{
+		.grid_mask = GENMASK(8, 1),
+		.seg_mask = GENMASK(20, 1),
+	},
+	{
+		.grid_mask = GENMASK(9, 1),
+		.seg_mask = GENMASK(19, 1),
+	},
+	{
+		.grid_mask = GENMASK(10, 1),
+		.seg_mask = GENMASK(18, 1),
+	},
+	{
+		.grid_mask = GENMASK(11, 1),
+		.seg_mask = GENMASK(17, 1),
+	},
+	/* All with BIT(3) set */
+	{
+		.grid_mask = GENMASK(12, 1),
+		.seg_mask = GENMASK(6, 1),
+	},
+	{
+		.grid_mask = GENMASK(12, 1),
+		.seg_mask = GENMASK(6, 1),
+	},
+	{
+		.grid_mask = GENMASK(12, 1),
+		.seg_mask = GENMASK(6, 1),
+	},
+	{
+		.grid_mask = GENMASK(12, 1),
+		.seg_mask = GENMASK(6, 1),
+	},
+	{
+		.grid_mask = GENMASK(12, 1),
+		.seg_mask = GENMASK(6, 1),
+	},
+	{
+		.grid_mask = GENMASK(12, 1),
+		.seg_mask = GENMASK(6, 1),
+	},
+	{
+		.grid_mask = GENMASK(12, 1),
+		.seg_mask = GENMASK(6, 1),
+	},
+	{
+		.grid_mask = GENMASK(12, 1),
+		.seg_mask = GENMASK(6, 1),
+	},
+};
+
+static const struct tm1628_info ht16515_info = {
+	.grid_mask = GENMASK(12, 1),
+	.seg_mask = GENMASK(24, 1),
+	.modes = ht16515_modes,
+	.default_mode = 8,
+	.pwm_map = tm1628_pwm_map,
+	.default_pwm = 0,
+};
+
 static const struct tm1628_mode aip1618_modes[4] = {
 	{
 		.grid_mask = GENMASK(4, 1),
@@ -498,6 +576,7 @@ static const struct tm1628_info aip1618_info = {
 static const struct of_device_id tm1628_spi_of_matches[] = {
 	{ .compatible = "titanmec,tm1628", .data = &tm1628_info },
 	{ .compatible = "fdhisi,fd628", .data = &fd628_info },
+	{ .compatible = "holtek,ht16515", .data = &ht16515_info },
 	{ .compatible = "szfdwdz,aip1618", .data = &aip1618_info },
 	{}
 };
