@@ -926,6 +926,7 @@ config LEDS_TM1628
 	depends on LEDS_CLASS
 	depends on SPI
 	depends on OF || COMPILE_TEST
+	depends on BACKLIGHT_CLASS_DEVICE
 	help
 	  Say Y to enable support for Titan Micro Electronics TM1628
 	  LED controllers.

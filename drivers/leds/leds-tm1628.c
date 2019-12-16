@@ -5,6 +5,7 @@
  * Copyright (c) 2019 Andreas Färber
  */
 
+#include <linux/backlight.h>
 #include <linux/bitops.h>
 #include <linux/leds.h>
 #include <linux/module.h>
@@ -58,6 +59,7 @@ struct tm1628 {
 	int				pwm_index;
 	u8				*data, *nextdata;
 	unsigned int			data_len;
+	struct backlight_device		*backlight;
 	unsigned int			num_leds;
 	struct tm1628_led		leds[];
 };
@@ -121,6 +123,26 @@ static int tm1628_set_display_ctrl(struct spi_device *spi, bool on, u8 pwm_index
 
 	return spi_write(spi, &cmd, 1);
 }
+
+static int tm1628_bl_update_status(struct backlight_device *bldev)
+{
+	struct tm1628 *s = bl_get_data(bldev);
+
+	return tm1628_set_display_ctrl(s->spi,
+		!(bldev->props.state & BL_CORE_FBBLANK),
+		bldev->props.brightness);
+}
+
+static int tm1628_bl_check_fb(struct backlight_device *bd, struct fb_info *fb)
+{
+	/* Our LED VFD displays never have a framebuffer associated. */
+	return 0;
+}
+
+static const struct backlight_ops tm1628_backlight_ops = {
+	.update_status	= tm1628_bl_update_status,
+	.check_fb	= tm1628_bl_check_fb,
+};
 
 static inline unsigned long tm1628_max_grid(struct tm1628 *s)
 {
@@ -279,6 +301,7 @@ static int tm1628_spi_probe(struct spi_device *spi)
 {
 	struct tm1628 *s;
 	struct fwnode_handle *child;
+	struct backlight_properties bl_props;
 	u32 grids;
 	u32 reg[2];
 	size_t leds;
@@ -352,6 +375,20 @@ static int tm1628_spi_probe(struct spi_device *spi)
 		}
 	}
 
+	memset(&bl_props, 0, sizeof(bl_props));
+	bl_props.type = BACKLIGHT_RAW;
+	bl_props.scale = BACKLIGHT_SCALE_NON_LINEAR;
+	bl_props.brightness = s->pwm_index;
+	bl_props.max_brightness = 7;
+
+	s->backlight = devm_backlight_device_register(&spi->dev,
+		dev_name(&spi->dev), &spi->dev, s,
+		&tm1628_backlight_ops, &bl_props);
+	if (IS_ERR(s->backlight)) {
+		dev_err(&spi->dev, "Failed to register backlight (%d)\n", ret);
+		return ret;
+	}
+
 	ret = tm1628_set_address(spi, 0x0);
 	if (ret) {
 		dev_err(&spi->dev, "Setting address failed (%d)\n", ret);
@@ -370,9 +407,9 @@ static int tm1628_spi_probe(struct spi_device *spi)
 		return ret;
 	}
 
-	ret = tm1628_set_display_ctrl(spi, true, s->pwm_index);
+	ret = backlight_update_status(s->backlight);
 	if (ret) {
-		dev_err(&spi->dev, "Turning display on failed (%d)\n", ret);
+		dev_err(&spi->dev, "Setting backlight failed (%d)\n", ret);
 		return ret;
 	}
 
