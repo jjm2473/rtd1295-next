@@ -802,6 +802,10 @@ static const struct tm1628_info ht16515_info = {
 	.default_mode = 8,
 	.pwm_map = tm1628_pwm_map,
 	.default_pwm = 0,
+
+	.k_mask = GENMASK(2, 1),
+	.ks_mask = GENMASK(16, 1),
+	.bits_per_ks = 2,
 };
 
 static const struct tm1628_mode aip1618_modes[4] = {
