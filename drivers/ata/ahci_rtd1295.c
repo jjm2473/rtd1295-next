@@ -263,18 +263,36 @@ static void rtd129x_ahci_mac_init(struct device *dev, void __iomem *base, int po
 		writel_delay(0x0, base + 0xF68);
 }
 
+#define REG_SB2_SATA_PHY_CTRL	0x80
+
+#define SB2_SATA_PHY_CTRL_SATA_BG_EN_0		BIT(0)
+#define SB2_SATA_PHY_CTRL_SATA_BG_EN_1		BIT(1)
+#define SB2_SATA_PHY_CTRL_SATA_MBIAS_EN_0	BIT(2)
+#define SB2_SATA_PHY_CTRL_SATA_MBIAS_EN_1	BIT(3)
+#define SB2_SATA_PHY_CTRL_SATA_RX50_LINK_0	BIT(4)
+#define SB2_SATA_PHY_CTRL_SATA_RX50_LINK_1	BIT(5)
+#define SB2_SATA_PHY_CTRL_ISOLATE_SATA_SGMII_0	BIT(6)
+#define SB2_SATA_PHY_CTRL_ISOLATE_SATA_SGMII_1	BIT(7)
+#define SB2_SATA_PHY_CTRL_SATA_SGMII_SEL	BIT(8)
+
 static int send_oob(void __iomem *ukbase, unsigned int port)
 {
 	u32 val = 0;
 
 	if (port == 0) {
-		val = readl(ukbase + 0x80);
-		val |= 0x115;
+		val = readl(ukbase + REG_SB2_SATA_PHY_CTRL);
+		val |= SB2_SATA_PHY_CTRL_SATA_SGMII_SEL |
+			SB2_SATA_PHY_CTRL_SATA_RX50_LINK_0 |
+			SB2_SATA_PHY_CTRL_SATA_MBIAS_EN_0 |
+			SB2_SATA_PHY_CTRL_SATA_BG_EN_0;
 	} else if (port == 1) {
-		val = readl(ukbase + 0x80);
-		val |= 0x12A;
+		val = readl(ukbase + REG_SB2_SATA_PHY_CTRL);
+		val |= SB2_SATA_PHY_CTRL_SATA_SGMII_SEL |
+			SB2_SATA_PHY_CTRL_SATA_RX50_LINK_1 |
+			SB2_SATA_PHY_CTRL_SATA_MBIAS_EN_1 |
+			SB2_SATA_PHY_CTRL_SATA_BG_EN_1;
 	}
-	writel(val, ukbase + 0x80);
+	writel(val, ukbase + REG_SB2_SATA_PHY_CTRL);
 
 	return 0;
 }
