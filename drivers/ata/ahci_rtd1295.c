@@ -18,7 +18,7 @@ static void writel_delay(unsigned int value, void __iomem *address)
 	mdelay(1);
 }
 
-static void rtd129x_ahci_phy_init(struct device *dev, void __iomem *base, int port)
+static void rtd1295_ahci_phy_init(struct device *dev, void __iomem *base, int port)
 {
 	writel_delay(port, base + 0xF64);
 
@@ -211,7 +211,7 @@ static void rtd129x_ahci_phy_init(struct device *dev, void __iomem *base, int po
 	writel_delay(0x00279711, base + 0xF60);
 }
 
-static void rtd129x_ahci_mac_init(struct device *dev, void __iomem *base, int port)
+static void rtd1295_ahci_mac_init(struct device *dev, void __iomem *base, int port)
 {
 	void __iomem *port_base = base + port * 0x80;
 	u32 val;
@@ -297,23 +297,23 @@ static int send_oob(void __iomem *ukbase, unsigned int port)
 	return 0;
 }
 
-static const struct ata_port_info rtd129x_ahci_port_info = {
+static const struct ata_port_info rtd1295_ahci_port_info = {
 	.flags		= AHCI_FLAG_COMMON | ATA_FLAG_EM | ATA_FLAG_SW_ACTIVITY,
 	.pio_mask	= ATA_PIO4,
 	.udma_mask	= ATA_UDMA6,
 	.port_ops	= &ahci_platform_ops,
 };
 
-static struct scsi_host_template rtd129x_ahci_scsi_host_template = {
+static struct scsi_host_template rtd1295_ahci_scsi_host_template = {
 	AHCI_SHT(DRV_NAME),
 };
 
-static const struct of_device_id rtd129x_ahci_dt_ids[] = {
+static const struct of_device_id rtd1295_ahci_dt_ids[] = {
 	{ .compatible = "realtek,rtd1295-ahci" },
 	{ }
 };
 
-static int rtd129x_ahci_probe(struct platform_device *pdev)
+static int rtd1295_ahci_probe(struct platform_device *pdev)
 {
 	struct ahci_host_priv *hpriv;
 	void __iomem *ukbase;
@@ -391,8 +391,8 @@ static int rtd129x_ahci_probe(struct platform_device *pdev)
 				reset_control_put(phy_reset);
 		}
 
-		rtd129x_ahci_mac_init(&pdev->dev, hpriv->mmio, port);
-		rtd129x_ahci_phy_init(&pdev->dev, hpriv->mmio, port);
+		rtd1295_ahci_mac_init(&pdev->dev, hpriv->mmio, port);
+		rtd1295_ahci_phy_init(&pdev->dev, hpriv->mmio, port);
 
 		if (phy_pow_reset) {
 			dev_info(port_dev, "resetting PHY Pow for port %u", port);
@@ -404,8 +404,8 @@ static int rtd129x_ahci_probe(struct platform_device *pdev)
 		send_oob(ukbase, port);
 	}
 
-	rc = ahci_platform_init_host(pdev, hpriv, &rtd129x_ahci_port_info,
-				     &rtd129x_ahci_scsi_host_template);
+	rc = ahci_platform_init_host(pdev, hpriv, &rtd1295_ahci_port_info,
+				     &rtd1295_ahci_scsi_host_template);
 	if (rc)
 		goto disable_resources;
 
@@ -416,11 +416,11 @@ disable_resources:
 	return rc;
 }
 
-static struct platform_driver rtd129x_ahci_platform_driver = {
+static struct platform_driver rtd1295_ahci_platform_driver = {
 	.driver = {
 		.name = DRV_NAME,
-		.of_match_table = rtd129x_ahci_dt_ids,
+		.of_match_table = rtd1295_ahci_dt_ids,
 	},
-	.probe = rtd129x_ahci_probe,
+	.probe = rtd1295_ahci_probe,
 };
-builtin_platform_driver(rtd129x_ahci_platform_driver);
+builtin_platform_driver(rtd1295_ahci_platform_driver);
