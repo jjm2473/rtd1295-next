@@ -1,4 +1,5 @@
 #include <linux/ahci_platform.h>
+#include <linux/bitfield.h>
 #include <linux/bitops.h>
 #include <linux/gpio.h>
 #include <linux/module.h>
@@ -12,211 +13,273 @@
 
 #define DRV_NAME "ahci_rtd129x"
 
+#define REG_SATA_CTR	0xf20
+#define REG_MDIO_CTR	0xf60
+#define REG_MDIO_CTR1	0xf64
+#define REG_SPD		0xf68
+
+#define SATA_CTR_CKBUF_EN0			BIT(8)
+#define SATA_CTR_CKBUF_EN1			BIT(9)
+#define SATA_CTR_RX_ERROR_SEL			GENMASK(15, 14)
+#define SATA_CTR_RX_ERROR_SEL_MAC_ORIG		(0x3 << 14)
+#define SATA_CTR_RX_ERROR_CDR_SEL		GENMASK(17, 16)
+#define SATA_CTR_RX_ERROR_CDR_SEL_MAC_ORIG	(0x3 << 16)
+
+#define MDIO_CTR_MDIO_RDWR_WRITE	BIT(0)
+#define MDIO_CTR_MDIO_SRST		BIT(1)
+#define MDIO_CTR_MCLK_RATE_MASK		GENMASK(3, 2)
+#define MDIO_CTR_MDIO_RDY		BIT(4)
+#define MDIO_CTR_MDIO_ST_MASK		GENMASK(6, 5)
+#define MDIO_CTR_MDIO_BUSY		BIT(7)
+#define MDIO_CTR_PHY_REG_ADDR_MASK	GENMASK(13, 8)
+#define MDIO_CTR_PHY_ADDR_MASK		GENMASK(15, 14)
+#define MDIO_CTR_DATA_MASK		GENMASK(31, 16)
+
+#define MDIO_CTR1_PHY_SEL_MASK	BIT(0)
+
 static void writel_delay(unsigned int value, void __iomem *address)
 {
 	writel(value, address);
 	mdelay(1);
 }
 
+static int rtd1295_ahci_mdio_wait_busy(void __iomem *base, u32 *pval)
+{
+	u32 val;
+	int i = 0;
+
+	val = readl_relaxed(base + REG_MDIO_CTR);
+	while ((val & MDIO_CTR_MDIO_BUSY) && i < 10) {
+		mdelay(1);
+		i++;
+		val = readl_relaxed(base + REG_MDIO_CTR);
+	}
+
+	if (val & MDIO_CTR_MDIO_BUSY)
+		return -EBUSY;
+
+	if (pval)
+		*pval = val;
+
+	return 0;
+}
+
+static int rtd1295_ahci_mdio_phy_select(void __iomem *base, unsigned int port)
+{
+	u32 val;
+	int ret;
+
+	if (port > 1)
+		return -EINVAL;
+
+	ret = rtd1295_ahci_mdio_wait_busy(base, NULL);
+	if (ret)
+		return ret;
+
+	val = readl_relaxed(base + REG_MDIO_CTR1);
+	val &= ~MDIO_CTR1_PHY_SEL_MASK;
+	val |= FIELD_PREP(MDIO_CTR1_PHY_SEL_MASK, port);
+	writel_relaxed(val, base + REG_MDIO_CTR1);
+
+	return 0;
+}
+
+enum rtd1295_ahci_mdio_phy_addr {
+	MDIO_CTR_PHY_ADDR_SATA1_0	= 0,
+	MDIO_CTR_PHY_ADDR_SATA2_0	= 1,
+	MDIO_CTR_PHY_ADDR_SATA3_0	= 2,
+	MDIO_CTR_PHY_ADDR_SGMII		= 3,
+};
+
+static int rtd1295_ahci_mdio_phy_write(void __iomem *base,
+	enum rtd1295_ahci_mdio_phy_addr addr, u8 reg, u16 data)
+{
+	u32 val;
+	int ret;
+
+	ret = rtd1295_ahci_mdio_wait_busy(base, &val);
+	if (ret)
+		return ret;
+
+	val = (val & MDIO_CTR_MCLK_RATE_MASK) | (val & MDIO_CTR_MDIO_SRST);
+	val |= FIELD_PREP(MDIO_CTR_DATA_MASK, data) |
+		FIELD_PREP(MDIO_CTR_PHY_ADDR_MASK, addr) |
+		FIELD_PREP(MDIO_CTR_PHY_REG_ADDR_MASK, reg) |
+		MDIO_CTR_MDIO_RDWR_WRITE;
+	pr_info("%s: 0x%08x\n", __func__, val);
+	writel_relaxed(val, base + REG_MDIO_CTR);
+
+	return 0;
+}
+
+static inline int rtd1295_ahci_mdio_sata1_phy_write(void __iomem *base,
+	u8 reg, u16 data)
+{
+	return rtd1295_ahci_mdio_phy_write(base, MDIO_CTR_PHY_ADDR_SATA1_0,
+		reg, data);
+}
+
+static inline int rtd1295_ahci_mdio_sata2_phy_write(void __iomem *base,
+	u8 reg, u16 data)
+{
+	return rtd1295_ahci_mdio_phy_write(base, MDIO_CTR_PHY_ADDR_SATA2_0,
+		reg, data);
+}
+
+static inline int rtd1295_ahci_mdio_sata3_phy_write(void __iomem *base,
+	u8 reg, u16 data)
+{
+	return rtd1295_ahci_mdio_phy_write(base, MDIO_CTR_PHY_ADDR_SATA3_0,
+		reg, data);
+}
+
+static int rtd1295_ahci_mdio_sata_phy_write(void __iomem *base,
+	u8 reg, u16 data)
+{
+	int ret;
+
+	ret = rtd1295_ahci_mdio_sata1_phy_write(base, reg, data);
+	if (ret)
+		return ret;
+
+	ret = rtd1295_ahci_mdio_sata2_phy_write(base, reg, data);
+	if (ret)
+		return ret;
+
+	return rtd1295_ahci_mdio_sata3_phy_write(base, reg, data);
+}
+
+#define REG_PHY_ANA04		0x04
+#define REG_PHY_ANA08		0x08
+#define REG_PHY_BACR		0x11
+#define REG_PHY_ANA27		0x27
+
 static void rtd1295_ahci_phy_init(struct device *dev, void __iomem *base, int port)
 {
-	writel_delay(port, base + 0xF64);
+	int ret;
 
-	writel_delay(0x00001111, base + 0xF60);
-	writel_delay(0x00005111, base + 0xF60);
-	writel_delay(0x00009111, base + 0xF60);
+	ret = rtd1295_ahci_mdio_phy_select(base, port);
+	if (ret)
+		return;
+
+	rtd1295_ahci_mdio_sata_phy_write(base, REG_PHY_BACR, 0x0);
+
 #if 0
-	writel_delay(0x538E0411, base + 0xF60);
-	writel_delay(0x538E4411, base + 0xF60);
-	writel_delay(0x538E8411, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, REG_PHY_ANA04, 0x538E);
 
-	writel_delay(0x3b6a0511, base + 0xF60);
-	writel_delay(0x3b6a4511, base + 0xF60);
-	writel_delay(0x3b6a8511, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x05, 0x3b6a);
 
-	writel_delay(0xE0500111, base + 0xF60);
-	writel_delay(0xE0504111, base + 0xF60);
-	writel_delay(0xE04C8111, base + 0xF60);
+	rtd1295_ahci_mdio_sata1_phy_write(base, 0x01, 0xE050);
+	rtd1295_ahci_mdio_sata2_phy_write(base, 0x01, 0xE050);
+	rtd1295_ahci_mdio_sata3_phy_write(base, 0x01, 0xE04C);
 
-	writel_delay(0x00110611, base + 0xF60);
-	writel_delay(0x00114611, base + 0xF60);
-	writel_delay(0x00118611, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x06, 0x0011);
 
-	writel_delay(0xA6000A11, base + 0xF60);
-	writel_delay(0xA6004A11, base + 0xF60);
-	writel_delay(0xA6008A11, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x0a, 0xA600);
 
-	writel_delay(0x27FD8211, base + 0xF60);
-	writel_delay(0xA6408A11, base + 0xF60);
-	writel_delay(0x041BA611, base + 0xF60);
+	rtd1295_ahci_mdio_sata3_phy_write(base, 0x02, 0x27FD);
+	rtd1295_ahci_mdio_sata3_phy_write(base, 0x0a, 0xA640);
+	rtd1295_ahci_mdio_sata3_phy_write(base, 0x26, 0x041B);
 #else
 	if (true) {
 		dev_info(dev, "disabling spread-spectrum\n");
-		writel_delay(0x538E0411, base + 0xF60);
-		writel_delay(0x538E4411, base + 0xF60);
-		writel_delay(0x538E8411, base + 0xF60);
+		rtd1295_ahci_mdio_sata_phy_write(base, REG_PHY_ANA04, 0x538E);
 	} else {
 		dev_info(dev, "enabling spread-spectrum\n");
-		writel_delay(0x738E0411, base + 0xF60);
-		writel_delay(0x738E4411, base + 0xF60);
-		writel_delay(0x738E8411, base + 0xF60);
-
-		writel_delay(0x35910811, base + 0xF60);
-		writel_delay(0x35914811, base + 0xF60);
-		writel_delay(0x35918811 , base + 0xF60);
-
-		writel_delay(0x02342711, base + 0xF60);
-		writel_delay(0x02346711, base + 0xF60);
-		writel_delay(0x0234a711, base + 0xF60);
+		rtd1295_ahci_mdio_sata_phy_write(base, REG_PHY_ANA04, 0x738E);
+		rtd1295_ahci_mdio_sata_phy_write(base, REG_PHY_ANA08, 0x3591);
+		rtd1295_ahci_mdio_sata_phy_write(base, REG_PHY_ANA27, 0x0234);
 	}
-	writel_delay(0x336a0511, base + 0xF60);
-	writel_delay(0x336a4511, base + 0xF60);
-	writel_delay(0x336a8511, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x05, 0x336a);
 
-	writel_delay(0xE0700111, base + 0xF60);
-	writel_delay(0xE05C4111, base + 0xF60);
-	writel_delay(0xE04A8111, base + 0xF60);
+	rtd1295_ahci_mdio_sata1_phy_write(base, 0x01, 0xE070);
+	rtd1295_ahci_mdio_sata2_phy_write(base, 0x01, 0xE05C);
+	rtd1295_ahci_mdio_sata3_phy_write(base, 0x01, 0xE04A);
 
-	writel_delay(0x00150611, base + 0xF60);
-	writel_delay(0x00154611, base + 0xF60);
-	writel_delay(0x00158611, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x06, 0x0015);
 
-	writel_delay(0xC6000A11, base + 0xF60);
-	writel_delay(0xC6004A11, base + 0xF60);
-	writel_delay(0xC6008A11, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x0a, 0xC600);
 
-	writel_delay(0x70000211, base + 0xF60);
-	writel_delay(0x70004211, base + 0xF60);
-	writel_delay(0x70008211, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x02, 0x7000);
 
-	writel_delay(0xC6600A11, base + 0xF60);
-	writel_delay(0xC6604A11, base + 0xF60);
-	writel_delay(0xC6608A11, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x0a, 0xC660);
 
-	writel_delay(0x20041911, base + 0xF60);
-	writel_delay(0x20045911, base + 0xF60);
-	writel_delay(0x20049911, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x19, 0x2004);
 
-	writel_delay(0x94aa2011, base + 0xF60);
-	writel_delay(0x94aa6011, base + 0xF60);
-	writel_delay(0x94aaa011, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94aa);
 #endif
 
-	writel_delay(0x17171511, base + 0xF60);
-	writel_delay(0x17175511, base + 0xF60);
-	writel_delay(0x17179511, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x15, 0x1717);
 
-	writel_delay(0x07701611, base + 0xF60);
-	writel_delay(0x07705611, base + 0xF60);
-	writel_delay(0x07709611, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x16, 0x0770);
 
 // for rx sensitivity
-	writel_delay(0x72100911, base + 0xF60);
-	writel_delay(0x72104911, base + 0xF60);
-	writel_delay(0x72108911, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x09, 0x7210);
 /*	if(ahci_dev->port[port]->phy_status==0) {
-		writel_delay(0x27640311, base + 0xF60);
-		writel_delay(0x27644311, base + 0xF60);
-		writel_delay(0x27648311, base + 0xF60);
+		rtd1295_ahci_mdio_sata_phy_write(base, 0x03, 0x2764);
 	} else if(ahci_dev->port[port]->phy_status==2) {
-		writel_delay(0x27710311, base + 0xF60);
-		writel_delay(0x27714311, base + 0xF60);
-		writel_delay(0x27718311, base + 0xF60);
+		rtd1295_ahci_mdio_sata_phy_write(base, 0x03, 0x2771);
 	}*/
-	writel_delay(0x27710311, base + 0xF60);
-	writel_delay(0x27684311, base + 0xF60);
-	writel_delay(0x27688311, base + 0xF60);
+	rtd1295_ahci_mdio_sata1_phy_write(base, 0x03, 0x2771);
+	rtd1295_ahci_mdio_sata2_phy_write(base, 0x03, 0x2768);
+	rtd1295_ahci_mdio_sata3_phy_write(base, 0x03, 0x2768);
 
-	writel_delay(0x29001011, base + 0xF60);
-	writel_delay(0x29005011, base + 0xF60);
-	writel_delay(0x29009011, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x10, 0x2900);
 
 	if (false) {
 		printk("[SATA] set tx-driving to L (level 2)\n");
-		writel_delay(0x94a72011, base + 0xF60);
-		writel_delay(0x94a76011, base + 0xF60);
-		writel_delay(0x94a7a011, base + 0xF60);
-		writel_delay(0x587a2111, base + 0xF60);
-		writel_delay(0x587a6111, base + 0xF60);
-		writel_delay(0x587aa111, base + 0xF60);
+		rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94a7);
+		rtd1295_ahci_mdio_sata_phy_write(base, 0x21, 0x587a);
 	} else if (of_machine_is_compatible("synology,ds418j")) { // for DS418j
 		printk("[SATA] set tx-driving to L (level 8)\n");
 		if(port==0) {
-			writel_delay(0x94a82011, base + 0xF60);
-			writel_delay(0x94a86011, base + 0xF60);
-			writel_delay(0x94a8a011, base + 0xF60);
-			writel_delay(0x588a2111, base + 0xF60);
-			writel_delay(0x588a6111, base + 0xF60);
-			writel_delay(0x588aa111, base + 0xF60);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94a8);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x21, 0x588a);
 		} else if(port==1) {
-			writel_delay(0x94a82011, base + 0xF60);
-			writel_delay(0x94a86011, base + 0xF60);
-			writel_delay(0x94a8a011, base + 0xF60);
-			writel_delay(0x58da2111, base + 0xF60);
-			writel_delay(0x58da6111, base + 0xF60);
-			writel_delay(0x58daa111, base + 0xF60);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94a8);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x21, 0x58da);
 		}
 	} else if (of_machine_is_compatible("synology,ds418")) { // for DS418
 		printk("[SATA] set tx-driving to L (level 6)\n");
 		if(port==0) {
-			writel_delay(0x94aa2011, base + 0xF60);
-			writel_delay(0x94aa6011, base + 0xF60);
-			writel_delay(0x94aaa011, base + 0xF60);
-			writel_delay(0xa86a2111, base + 0xF60);
-			writel_delay(0xa86a6111, base + 0xF60);
-			writel_delay(0xa86aa111, base + 0xF60);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94aa);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x21, 0xa86a);
 		} else if(port==1) {
-			writel_delay(0x94a42011, base + 0xF60);
-			writel_delay(0x94a46011, base + 0xF60);
-			writel_delay(0x94a4a011, base + 0xF60);
-			writel_delay(0x68ca2111, base + 0xF60);
-			writel_delay(0x68ca6111, base + 0xF60);
-			writel_delay(0x68caa111, base + 0xF60);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94a4);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x21, 0x68ca);
 		}
 	} else if (false) { // for DS218play
 		printk("[SATA] set tx-driving to L (level 4)\n");
 		if(port==0) {
-			writel_delay(0x94a72011, base + 0xF60);
-			writel_delay(0x94a76011, base + 0xF60);
-			writel_delay(0x94a7a011, base + 0xF60);
-			writel_delay(0x587a2111, base + 0xF60);
-			writel_delay(0x587a6111, base + 0xF60);
-			writel_delay(0x587aa111, base + 0xF60);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94a7);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x21, 0x587a);
 		} else if(port==1) {
-			writel_delay(0x94a72011, base + 0xF60);
-			writel_delay(0x94a76011, base + 0xF60);
-			writel_delay(0x94a7a011, base + 0xF60);
-			writel_delay(0x587a2111, base + 0xF60);
-			writel_delay(0x587a6111, base + 0xF60);
-			writel_delay(0x587aa111, base + 0xF60);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94a7);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x21, 0x587a);
 		}
 	} else if (false) { // for DS118
 		printk("[SATA] set tx-driving to L (level 10)\n");
 		if(port==0) {
-			writel_delay(0x94a72011, base + 0xF60);
-			writel_delay(0x94a76011, base + 0xF60);
-			writel_delay(0x94a7a011, base + 0xF60);
-			writel_delay(0x383a2111, base + 0xF60);
-			writel_delay(0x383a6111, base + 0xF60);
-			writel_delay(0x383aa111, base + 0xF60);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x20, 0x94a7);
+			rtd1295_ahci_mdio_sata_phy_write(base, 0x21, 0x383a);
 		}
 	}
 	// RX power saving off
-	writel_delay(0x40000C11, base + 0xF60);
-	writel_delay(0x40004C11, base + 0xF60);
-	writel_delay(0x40008C11, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x0c, 0x4000);
 
-	writel_delay(0x00271711, base + 0xF60);
-	writel_delay(0x00275711, base + 0xF60);
-	writel_delay(0x00279711, base + 0xF60);
+	rtd1295_ahci_mdio_sata_phy_write(base, 0x17, 0x0027);
 }
 
 static void rtd1295_ahci_mac_init(struct device *dev, void __iomem *base, int port)
 {
 	void __iomem *port_base = base + port * 0x80;
 	u32 val;
+	int ret;
 
-	writel_delay(port, base + 0xF64);
+	ret = rtd1295_ahci_mdio_phy_select(base, port);
+	if (ret)
+		return;
+
 	/* SATA MAC */
 //	writel_delay(0x2, port_base + 0x144);
 	writel_delay(0x6726ff81, base);
@@ -251,16 +314,19 @@ static void rtd1295_ahci_mac_init(struct device *dev, void __iomem *base, int po
 	val = readl(port_base + 0x140);
 	writel_delay(0xf000, port_base + 0x140);
 
-	writel_delay(0x3c300, base + 0xf20);
+	val = SATA_CTR_RX_ERROR_CDR_SEL_MAC_ORIG |
+		SATA_CTR_RX_ERROR_SEL_MAC_ORIG |
+		SATA_CTR_CKBUF_EN1 | SATA_CTR_CKBUF_EN0;
+	writel_delay(val, base + REG_SATA_CTR);
 
 	writel_delay(0x700, base + 0xA4);
 	//Set to Auto mode
 	if (true)
-		writel_delay(0xA, base + 0xF68);
+		writel_delay(0xA, base + REG_SPD);
 	else if (false)
-		writel_delay(0x5, base + 0xF68);
+		writel_delay(0x5, base + REG_SPD);
 	else if (false)
-		writel_delay(0x0, base + 0xF68);
+		writel_delay(0x0, base + REG_SPD);
 }
 
 #define REG_SB2_SATA_PHY_CTRL	0x80
