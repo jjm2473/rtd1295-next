@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+
+/dts-v1/;
+
+#include "sp7021-a.dtsi"
+
+/ {
+	compatible = "bananapi,bpi-f2s", "sunplus,sp7021";
+	model = "Banana Pi BPI-F2S";
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
