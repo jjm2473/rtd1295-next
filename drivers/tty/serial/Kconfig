@@ -1573,7 +1573,7 @@ config SERIAL_MILBEAUT_USIO_CONSOLE
 	  single user mode).
 
 config SERIAL_PLUS1
-	bool "Sunplus Plus1 serial port support"
+	tristate "Sunplus Plus1 serial port support"
 	depends on ARCH_SUNPLUS || COMPILE_TEST
 	select SERIAL_CORE
 	help
@@ -1589,7 +1589,7 @@ config SERIAL_PLUS1_CONSOLE
 	default y
 	help
 	  Say 'Y' here if you wish to use Sunplus SP7021 UART
-	  as the system console. Only earlycon is implemented currently.
+	  as the system console.
 
 endmenu
 
