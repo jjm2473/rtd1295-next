@@ -85,3 +85,8 @@
 		#interrupt-cells = <2>;
 	};
 };
+
+&uart0 {
+	interrupt-parent = <&intc>;
+	interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
+};

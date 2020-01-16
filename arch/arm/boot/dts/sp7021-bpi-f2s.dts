@@ -15,8 +15,15 @@
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};
+
+	uart0_clk: clk {
+		compatible = "fixed-clock";
+		clock-frequency = <27000000>;
+		#clock-cells = <0>;
+	};
 };
 
 &uart0 {
 	status = "okay";
+	clocks = <&uart0_clk>;
 };
