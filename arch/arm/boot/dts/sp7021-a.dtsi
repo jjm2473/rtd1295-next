@@ -41,6 +41,17 @@
 		};
 	};
 
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*iop@100000 {
+			reg = <0x00100000 0x00100000>;
+			no-map;
+		};*/
+	};
+
 	arm-pmu {
 		compatible = "arm,cortex-a7-pmu";
 		interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL_HIGH>,
