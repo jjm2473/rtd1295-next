@@ -72,3 +72,16 @@
 		};
 	};
 };
+
+&rgst {
+	intc: interrupt-controller@780 {
+		compatible = "sunplus,sp7021-intc";
+		reg = <0x780 0x80>, /* G15 */
+		      <0xa80 0x80>; /* G21 */
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+};
