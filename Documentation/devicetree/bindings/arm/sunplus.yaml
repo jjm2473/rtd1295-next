@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/arm/sunplus.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Sunplus platforms device tree bindings
+
+maintainers:
+  - Andreas Färber <afaerber@suse.de>
+
+properties:
+  $nodename:
+    const: '/'
+  compatible:
+    oneOf:
+      # SP7021 SoC based boards
+      - items:
+          - enum:
+              - bananapi,bpi-f2s # Banana Pi BPI-F2S
+          - const: sunplus,sp7021
+...
