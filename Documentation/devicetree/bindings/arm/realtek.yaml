@@ -42,6 +42,12 @@ properties:
               - synology,ds418 # Synology DiskStation DS418
           - const: realtek,rtd1296
 
+      - description: RTD1319 SoC based boards
+        items:
+          - enum:
+              - realtek,pym-particles # Realtek Pym Particles EVB
+          - const: realtek,rtd1319
+
       - description: RTD1395 SoC based boards
         items:
           - enum:
