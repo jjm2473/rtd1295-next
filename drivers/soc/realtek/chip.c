@@ -3,6 +3,7 @@
  * Realtek Digital Home Center System-on-Chip info
  *
  * Copyright (c) 2017-2020 Andreas Färber
+ * Copyright (c) 2019 Realtek Semiconductor Corp.
  */
 
 #include <linux/bitfield.h>
@@ -61,6 +62,9 @@ static const struct dhc_soc_revision rtd1619_revisions[] = {
 
 static const struct dhc_soc_revision rtd1319_revisions[] = {
 	{ "A00", 0x0000 },
+	{ "B00", 0x0001 },
+	{ "B01", 0x0002 },
+	{ "B02", 0x0003 },
 	{ }
 };
 
