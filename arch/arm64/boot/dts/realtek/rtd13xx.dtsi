@@ -139,6 +139,14 @@
 				ranges = <0x0 0x7000 0x1000>;
 			};
 
+			efuse: efuse@17000 {
+				compatible = "realtek,rtd1195-efuse";
+				reg = <0x17000 0x1000>;
+				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
 			sb2: syscon@1a000 {
 				compatible = "syscon", "simple-mfd";
 				reg = <0x1a000 0x1000>;
