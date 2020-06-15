@@ -107,10 +107,33 @@ static const char *rtd1295_name(struct device *dev, const struct dhc_soc *s)
 	return "RTD1295";
 }
 
+static const char *rtd1395_name(struct device *dev, const struct dhc_soc *s)
+{
+	struct regmap *regmap;
+	unsigned int val;
+	int ret;
+
+	regmap = syscon_regmap_lookup_by_phandle(dev->of_node, "iso-syscon");
+	if (IS_ERR(regmap)) {
+		ret = PTR_ERR(regmap);
+		if (ret == -EPROBE_DEFER)
+			return ERR_PTR(ret);
+		dev_warn(dev, "Could not check iso (%d)\n", ret);
+	} else {
+		ret = regmap_read(regmap, REG_ISO_CHIP_INFO1, &val);
+		if (ret)
+			dev_warn(dev, "Could not read chip_info1 (%d)\n", ret);
+		else if (val & BIT(12))
+			return "RTD1392";
+	}
+
+	return "RTD1395";
+}
+
 static const struct dhc_soc dhc_soc_families[] = {
 	{ 0x6329, "RTD1195", default_name, rtd1195_revisions, "Phoenix" },
 	{ 0x6421, "RTD1295", rtd1295_name, rtd1295_revisions, "Kylin" },
-	{ 0x6481, "RTD1395", default_name, rtd1395_revisions, "Hercules" },
+	{ 0x6481, "RTD1395", rtd1395_name, rtd1395_revisions, "Hercules" },
 	{ 0x6525, "RTD1619", default_name, rtd1619_revisions, "Thor" },
 	{ 0x6570, "RTD1319", default_name, rtd1319_revisions, "Hank" },
 };
