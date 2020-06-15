@@ -2,7 +2,7 @@
 /*
  * Realtek RTD1395 SoC family
  *
- * Copyright (c) 2019 Andreas Färber
+ * Copyright (c) 2019-2020 Andreas Färber
  */
 
 /memreserve/	0x0000000000000000 0x000000000002f000;
@@ -77,6 +77,14 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				ranges = <0x0 0x7000 0x1000>;
+			};
+
+			efuse: efuse@17000 {
+				compatible = "realtek,rtd1195-efuse";
+				reg = <0x17000 0x400>;
+				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
 			sb2: syscon@1a000 {
