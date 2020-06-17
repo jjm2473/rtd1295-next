@@ -2372,6 +2372,7 @@ F:	Documentation/devicetree/bindings/soc/realtek/
 F:	arch/arm/boot/dts/rtd*
 F:	arch/arm/mach-realtek/
 F:	arch/arm64/boot/dts/realtek/
+F:	drivers/nvmem/rtk-dhc-efuse.c
 F:	drivers/soc/realtek/
 
 ARM/RENESAS ARM64 ARCHITECTURE

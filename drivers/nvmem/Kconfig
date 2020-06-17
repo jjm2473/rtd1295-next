@@ -126,6 +126,15 @@ config NVMEM_SPMI_SDAM
 	  Qualcomm Technologies, Inc. PMICs. It provides the clients
 	  an interface to read/write to the SDAM module's shared memory.
 
+config REALTEK_DHC_EFUSE
+	tristate "Realtek DHC eFuse Support"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	depends on HAS_IOMEM
+	help
+	  Say y here to enable read-only access to the Realtek Digital Home
+	  This driver can also be built as a module. If so, the module
+	  will be called nvmem-rtk-dhc-efuse.
+
 config ROCKCHIP_EFUSE
 	tristate "Rockchip eFuse Support"
 	depends on ARCH_ROCKCHIP || COMPILE_TEST
