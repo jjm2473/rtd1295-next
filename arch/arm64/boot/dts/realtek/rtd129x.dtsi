@@ -156,6 +156,13 @@
 	};
 };
 
+&efuse {
+	efuse_package_id: package-id@1d8 {
+		reg = <0x1d8 0x1>;
+		bits = <0 2>;
+	};
+};
+
 &iso {
 	iso_reset: reset-controller@88 {
 		compatible = "snps,dw-low-reset";
@@ -202,13 +209,6 @@
 	};
 };
 
-&otp {
-	otp_package_id: package-id@1d8 {
-		reg = <0x1d8 0x1>;
-		bits = <0 2>;
-	};
-};
-
 &sb2 {
 	sb2_hd_sem: hwspinlock@0 {
 		compatible = "realtek,rtd1195-sb2-sem";
@@ -220,6 +220,8 @@
 		compatible = "realtek,rtd1195-chip";
 		reg = <0x200 0x8>;
 		iso-syscon = <&iso>;
+		nvmem-cells = <&efuse_package_id>;
+		nvmem-cell-names = "efuse_package_id";
 	};
 
 	sb2_hd_sem_new: hwspinlock@620 {
