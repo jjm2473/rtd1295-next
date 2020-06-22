@@ -79,33 +79,6 @@ struct dhc_soc {
 	const char *codename;
 };
 
-static int dhc_efuse_read_u8(struct device *dev, const char *cell_id, u8 *val)
-{
-	struct nvmem_cell *cell;
-	void *buf;
-	size_t len;
-
-	cell = nvmem_cell_get(dev, cell_id);
-	if (IS_ERR(cell))
-		return PTR_ERR(cell);
-
-	buf = nvmem_cell_read(cell, &len);
-	if (IS_ERR(buf)) {
-		nvmem_cell_put(cell);
-		return PTR_ERR(buf);
-	}
-	if (len != sizeof(*val)) {
-		kfree(buf);
-		nvmem_cell_put(cell);
-		return -EINVAL;
-	}
-	memcpy(val, buf, 1);
-	kfree(buf);
-	nvmem_cell_put(cell);
-
-	return 0;
-}
-
 static const char *default_name(struct device *dev, const struct dhc_soc *s)
 {
 	return s->family;
@@ -118,7 +91,7 @@ static const char *rtd1295_name(struct device *dev, const struct dhc_soc *s)
 	int ret;
 	u8 b;
 
-	ret = dhc_efuse_read_u8(dev, "efuse_package_id", &b);
+	ret = nvmem_cell_read_u8(dev, "efuse_package_id", &b);
 	if (ret == -EPROBE_DEFER)
 		return ERR_PTR(ret);
 	else if (ret)
