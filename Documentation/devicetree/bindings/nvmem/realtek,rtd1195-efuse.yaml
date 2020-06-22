@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: "http://devicetree.org/schemas/nvmem/realtek,rtd1195-efuse.yaml#"
+$schema: "http://devicetree.org/meta-schemas/core.yaml#"
+
+title: Realtek Digital Home Center eFuse
+
+maintainers:
+  - Andreas Färber <afaerber@suse.de>
+
+description: |
+  The Realtek DHC SoCs have an eFuse block with non-volatile OTP memory.
+
+allOf:
+  - $ref: "nvmem.yaml#"
+
+properties:
+  compatible:
+    const: realtek,rtd1195-efuse
+
+  reg:
+    maxItems: 1
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+required:
+  - compatible
+  - reg
+
+examples:
+  - |
+    efuse@18017000 {
+        compatible = "realtek,rtd1195-efuse";
+        reg = <0x18017000 0x400>;
+    };
+  - |
+    efuse@98017000 {
+        compatible = "realtek,rtd1195-efuse";
+        reg = <0x98017000 0x400>;
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        efuse_package_id: package-id@1d8 {
+            reg = <0x1d8 0x1>;
+            bits = <0 2>;
+        };
+    };
+...
