@@ -13,7 +13,7 @@
 
 	memory@2e000 {
 		device_type = "memory";
-		reg = <0x2e000 0x3ffd2000>; /* boot ROM to 1 GiB or 2 GiB */
+		reg = <0x2e000 0x7ffd2000>; /* boot ROM to 1 GiB or 2 GiB */
 	};
 
 	chosen {
