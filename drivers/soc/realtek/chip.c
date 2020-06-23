@@ -183,6 +183,7 @@ static int dhc_soc_probe(struct platform_device *pdev)
 	struct soc_device_attribute *soc_dev_attr;
 	struct soc_device *soc_dev;
 	struct device_node *node;
+	struct resource *res;
 	struct regmap *regmap;
 	u16 chip_id, chip_rev;
 	unsigned int val;
@@ -191,6 +192,10 @@ static int dhc_soc_probe(struct platform_device *pdev)
 	regmap = syscon_node_to_regmap(pdev->dev.of_node->parent);
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!devm_request_mem_region(&pdev->dev, res->start, resource_size(res), dev_name(&pdev->dev)))
+		return -EBUSY;
 
 	ret = regmap_read(regmap, REG_SB2_CHIP_ID, &val);
 	if (ret)
