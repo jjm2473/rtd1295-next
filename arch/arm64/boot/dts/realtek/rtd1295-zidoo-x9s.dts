@@ -35,6 +35,13 @@
 		};
 	};*/
 
+	sdio_pwrseq: sdio-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		reset-gpios = <&iso_gpio 23 GPIO_ACTIVE_LOW>;
+		power-off-delay-us = <50000>;
+		post-power-on-delay-ms = <10>;
+	};
+
 	sata0_reg: sata0-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "SATA0";
@@ -145,6 +152,13 @@
 
 &sata0 {
 	target-supply = <&sata0_reg>;
+};
+
+&sdio {
+	status = "okay";
+	bus-width = <4>;
+	non-removable;
+	mmc-pwrseq = <&sdio_pwrseq>;
 };
 
 &uart0 {
