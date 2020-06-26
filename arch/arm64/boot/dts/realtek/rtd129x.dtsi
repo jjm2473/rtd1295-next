@@ -106,8 +106,25 @@
 
 			sdio: sdio@10c00 {
 				compatible = "realtek,rtd1295-sdio";
-				reg = <0x10c00 0x200>;
+				reg = <0x10c00 0x100>,
+				      <0x10a00 0x100>; /* wrapper */
+				crt-syscon = <&crt>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&sdio_pins>;
 				interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
+				resets = <&reset2 RTD1295_RSTN_SDIO>;
+				clocks = <&clkc RTD1295_CLK_EN_SDIO>, <&clkc RTD1295_CLK_EN_SDIO_IP>;
+				clock-names = "clk_en_sdio", "clk_en_sdio_ip";
+				cap-mmc-highspeed;
+				cap-sd-highspeed;
+				cap-sdio-irq;
+				no-mmc;
+				no-sd;
+				sd-uhs-sdr12;
+				sd-uhs-sdr25;
+				sd-uhs-sdr50;
+				sd-uhs-sdr104;
+				status = "disabled";
 			};
 
 			emmc: mmc@12000 {
@@ -270,6 +287,11 @@
 	pcie2_clk_pins: pcie2-clk-pins {
 		function = "pcie";
 		pins = "pcie_clkreq_1";
+	};
+
+	sdio_pins: sdio-pins {
+		function = "sdio";
+		groups = "sdio_cmd", "sdio_clk", "sdio_data_0", "sdio_data_1", "sdio_data_2", "sdio_data_3";
 	};
 };
 
