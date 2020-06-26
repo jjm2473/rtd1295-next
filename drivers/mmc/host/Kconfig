@@ -299,6 +299,16 @@ config MMC_SDHCI_TEGRA
 
 	  If unsure, say N.
 
+config MMC_REALTEK_DHC_SDIO
+	tristate "SDHCI platform support for the Realtek DHC SDIO Controller"
+	depends on ARCH_REALTEK
+	depends on MMC_SDHCI_PLTFM
+	select MMC_SDHCI_IO_ACCESSORS
+	help
+	  This selects the Realtek Digital Home Center SDIO controller.
+
+	  If unsure, say N.
+
 config MMC_SDHCI_S3C
 	tristate "SDHCI support on Samsung S3C SoC"
 	depends on MMC_SDHCI
