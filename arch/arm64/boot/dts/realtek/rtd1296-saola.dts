@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+/*
+ * Copyright (c) 2020 Andreas Färber
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+#include "rtd1296.dtsi"
+
+/ {
+	compatible = "realtek,saola", "realtek,rtd1296";
+	model = "Realtek Saola EVB";
+
+	memory@1f000 {
+		device_type = "memory";
+		reg = <0x1f000 0x3ffe1000>; /* boot ROM to 1 GiB */
+	};
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+/* serial console (J1) */
+&uart0 {
+	status = "okay";
+};

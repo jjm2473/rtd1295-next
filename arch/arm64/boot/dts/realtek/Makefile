@@ -8,6 +8,7 @@ dtb-$(CONFIG_ARCH_REALTEK) += rtd1295-xnano-x5.dtb
 dtb-$(CONFIG_ARCH_REALTEK) += rtd1295-zidoo-x9s.dtb
 
 dtb-$(CONFIG_ARCH_REALTEK) += rtd1296-ds418.dtb
+dtb-$(CONFIG_ARCH_REALTEK) += rtd1296-saola.dtb
 
 dtb-$(CONFIG_ARCH_REALTEK) += rtd1319-pymparticles.dtb
 
