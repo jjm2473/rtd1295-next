@@ -69,7 +69,7 @@
 				 <0x10030000 0x00030000 0x00020000>; /* PCIe */
 
 			crt: syscon@0 {
-				compatible = "syscon", "simple-mfd";
+				compatible = "realtek,rtd1295-crt", "syscon", "simple-mfd";
 				reg = <0x0 0x1800>;
 				reg-io-width = <4>;
 				#address-cells = <1>;
