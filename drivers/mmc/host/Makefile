@@ -80,6 +80,7 @@ obj-$(CONFIG_MMC_OWL)		+= owl-mmc.o
 
 obj-$(CONFIG_MMC_REALTEK_PCI)	+= rtsx_pci_sdmmc.o
 obj-$(CONFIG_MMC_REALTEK_USB)	+= rtsx_usb_sdmmc.o
+obj-$(CONFIG_MMC_REALTEK_DHC_SD)	+= rtd1195-sdmmc.o
 obj-$(CONFIG_MMC_REALTEK_DHC_SDIO)	+= sdhci-rtk-dhc-sdio.o
 
 obj-$(CONFIG_MMC_SDHCI_PLTFM)		+= sdhci-pltfm.o
