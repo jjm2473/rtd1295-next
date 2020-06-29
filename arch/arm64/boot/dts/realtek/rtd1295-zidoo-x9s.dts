@@ -161,6 +161,12 @@
 	mmc-pwrseq = <&sdio_pwrseq>;
 };
 
+&sdmmc {
+	status = "okay";
+	gpios = <&misc_gpio 99 GPIO_ACTIVE_HIGH>;
+	bus-width = <4>;
+};
+
 &uart0 {
 	status = "okay";
 };
