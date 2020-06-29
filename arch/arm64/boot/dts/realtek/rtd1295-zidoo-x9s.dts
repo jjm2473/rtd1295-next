@@ -162,7 +162,7 @@
 };
 
 &sdmmc {
-	status = "okay";
+	status = "disabled";
 	gpios = <&misc_gpio 99 GPIO_ACTIVE_HIGH>;
 	bus-width = <4>;
 };
