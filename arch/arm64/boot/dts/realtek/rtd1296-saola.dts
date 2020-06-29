@@ -98,6 +98,13 @@
 	mmc-pwrseq = <&sdio_pwrseq>;
 };
 
+/* SD slot (J6) */
+&sdmmc {
+	status = "okay";
+	gpios = <&misc_gpio 99 GPIO_ACTIVE_HIGH>;
+	bus-width = <4>;
+};
+
 /* serial console (J1) */
 &uart0 {
 	status = "okay";
