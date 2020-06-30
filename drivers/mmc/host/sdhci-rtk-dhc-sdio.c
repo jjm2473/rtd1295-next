@@ -45,11 +45,21 @@
 #define SDIO_ISREN_INT3EN		BIT(3)
 #define SDIO_ISREN_INT4EN		BIT(4)
 
+struct dhc_sdio_priv;
+
+#define RTD129X_NON_A00_PROLOG_EPILOG_QUIRK	0
+
+struct dhc_sdio_info {
+	int (*pre_init)(struct dhc_sdio_priv *priv);
+};
+
 struct dhc_sdio_priv {
+	const struct dhc_sdio_info *info;
 	struct clk *clk, *clk_ip;
 	struct reset_control *rstc;
 	void __iomem *base;
 	struct regmap *crt;
+	unsigned int quirks;
 };
 
 /*static void dhc_sdio_reset(struct sdhci_host *host, u8 mask)
@@ -71,6 +81,21 @@ static const struct sdhci_ops dhc_sdio_ops = {
 	.set_bus_width = sdhci_set_bus_width,
 	.reset = /*dhc_sdio_reset*/sdhci_reset,
 	.set_uhs_signaling = sdhci_set_uhs_signaling,
+};
+
+static const struct dhc_sdio_info rtd119x_sdio_info = {
+};
+
+static int rtd129x_sdio_pre_init(struct dhc_sdio_priv *priv)
+{
+	// XXX non-A00 only
+	priv->quirks |= RTD129X_NON_A00_PROLOG_EPILOG_QUIRK;
+
+	return 0;
+}
+
+static const struct dhc_sdio_info rtd129x_sdio_info = {
+	.pre_init = rtd129x_sdio_pre_init,
 };
 
 static int dhc_sdio_probe(struct platform_device *pdev)
@@ -95,6 +120,12 @@ static int dhc_sdio_probe(struct platform_device *pdev)
 
 	phost = sdhci_priv(host);
 	priv = sdhci_pltfm_priv(phost);
+
+	priv->info = device_get_match_data(&pdev->dev);
+	if (!priv->info) {
+		ret = -EINVAL;
+		goto err_match;
+	}
 
 	priv->rstc = devm_reset_control_get_exclusive(&pdev->dev, NULL);
 	if (IS_ERR(priv->rstc)) {
@@ -160,8 +191,15 @@ static int dhc_sdio_probe(struct platform_device *pdev)
 		goto err_enable_ip;
 	}
 
-	// XXX RTD129x chip_rev!=0 only
-	writel(0x40000000, priv->base + 0x58);
+	priv->quirks = 0;
+	if (priv->info->pre_init) {
+		ret = priv->info->pre_init(priv);
+		if (ret)
+			goto err_init_pre;
+	}
+
+	if (priv->quirks & RTD129X_NON_A00_PROLOG_EPILOG_QUIRK)
+		writel(0x40000000, priv->base + 0x58);
 
 	regmap_write(priv->crt, REG_SYS_PLL_SDIO4, SYS_PLL_SDIO4_SSC_PLL_POW | SYS_PLL_SDIO4_SSC_PLL_RSTB);
 	regmap_write(priv->crt, REG_SYS_PLL_SDIO2, 0x04517893);
@@ -173,8 +211,8 @@ static int dhc_sdio_probe(struct platform_device *pdev)
 	regmap_write(priv->crt, REG_SYS_PLL_SDIO4, val);
 	udelay(200);
 
-	// XXX RTD129x chip_rev!=0 only
-	writel(0x00000000, priv->base + 0x58);
+	if (priv->quirks & RTD129X_NON_A00_PROLOG_EPILOG_QUIRK)
+		writel(0x00000000, priv->base + 0x58);
 
 	writel(SDIO_ISREN_INT4EN |
 	       SDIO_ISREN_WRITE_DATA_SET, priv->base + REG_SDIO_ISREN);
@@ -198,6 +236,7 @@ static int dhc_sdio_probe(struct platform_device *pdev)
 	return 0;
 
 err_add:
+err_init_pre:
 	clk_disable_unprepare(priv->clk_ip);
 err_enable_ip:
 	clk_disable_unprepare(priv->clk);
@@ -210,13 +249,14 @@ err_ioremap:
 err_clk_ip:
 err_clk:
 err_rst:
+err_match:
 	sdhci_pltfm_free(pdev);
 	return ret;
 }
 
 static const struct of_device_id dhc_sdio_dt_ids[] = {
-	 { .compatible = "realtek,rtd1195-sdio" },
-	 { .compatible = "realtek,rtd1295-sdio" },
+	 { .compatible = "realtek,rtd1195-sdio", .data = &rtd119x_sdio_info },
+	 { .compatible = "realtek,rtd1295-sdio", .data = &rtd129x_sdio_info },
 	 { }
 };
 
