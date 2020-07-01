@@ -103,8 +103,9 @@
 				reg = <0x10400 0x200>;
 				crt-syscon = <&crt>;
 				sb2-syscon = <&sb2>;
-				pinctrl-names = "default";
-				pinctrl-0 = <&sdmmc_pins>, <&sdmmc_cd_pin>, <&sdmmc_wp_pin>;
+				pinctrl-names = "default", "card";
+				pinctrl-0 = <&sdmmc_pins>, <&sdmmc_down_pins>, <&sdmmc_clk_pin>, <&sdmmc_cd_pin>, <&sdmmc_wp_pin>;
+				pinctrl-1 = <&sdmmc_pins>, <&sdmmc_up_pins>, <&sdmmc_clk_pin>, <&sdmmc_cd_pin>, <&sdmmc_wp_pin>;
 				interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
 				resets = <&reset2 RTD1295_RSTN_CR>;
 				clocks = <&clkc RTD1295_CLK_EN_CR>, <&clkc RTD1295_CLK_EN_SD_IP>;
@@ -307,17 +308,37 @@
 
 	sdmmc_pins: sdmmc-pins {
 		function = "sd_card";
-		groups = "mmc_cmd", "mmc_clk", "mmc_data_0", "mmc_data_1", "mmc_data_2", "mmc_data_3";
+		groups = "mmc_cmd", "mmc_data_0", "mmc_data_1", "mmc_data_2", "mmc_data_3";
+	};
+
+	sdmmc_down_pins: sdmmc-down-pins {
+		pins = "mmc_cmd", "mmc_data_0", "mmc_data_1", "mmc_data_2", "mmc_data_3";
+		bias-pull-down;
+	};
+
+	sdmmc_up_pins: sdmmc-up-pins {
+		pins = "mmc_cmd", "mmc_data_0", "mmc_data_1", "mmc_data_2", "mmc_data_3";
+		bias-pull-up;
+	};
+
+	sdmmc_clk_pin: sdmmc-clk-pin {
+		pins = "mmc_clk";
+		function = "sd_card";
+		bias-pull-down;
 	};
 
 	sdmmc_cd_pin: sdmmc-cd-pin {
 		function = "sd_card";
 		groups = "mmc_cd";
+		bias-pull-up;
+		drive-strength = <4>;
 	};
 
 	sdmmc_wp_pin: sdmmc-wp-pin {
 		function = "sd_card";
 		groups = "mmc_wp";
+		bias-pull-up;
+		drive-strength = <4>;
 	};
 
 	sdio_pins: sdio-pins {
