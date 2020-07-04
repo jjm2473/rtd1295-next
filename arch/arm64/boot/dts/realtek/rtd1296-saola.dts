@@ -26,6 +26,76 @@
 		stdout-path = "serial0:115200n8";
 		bootargs = "console=ttyS0,115200n8 initrd=0x02200000,0x00c00000";
 	};
+
+	sdio_pwrseq: sdio-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		reset-gpios = <&iso_gpio 23 GPIO_ACTIVE_LOW>;
+		power-off-delay-us = <50000>;
+		post-power-on-delay-ms = <10>;
+	};
+
+	sata0_reg: sata0-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "SATA0";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&misc_gpio 56 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	sata1_reg: sata1-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "SATA1";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&iso_gpio 15 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		hdd1 {
+			label = "ds418:hdd3:activity";
+			gpios = <&misc_gpio 18 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			linux,default-trigger = "heartbeat";
+		};
+
+		hdd2 {
+			label = "ds418:hdd4:activity";
+			gpios = <&misc_gpio 19 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			linux,default-trigger = "heartbeat";
+		};
+	};
+};
+
+&i2c_0 {
+	status = "okay";
+	clock-frequency = <400000>;
+
+#include "rtd129x-g2227.dtsi"
+};
+
+&sata {
+	status = "okay";
+};
+
+&sata0 {
+	target-supply = <&sata0_reg>;
+};
+
+&sata1 {
+	status = "okay";
+	target-supply = <&sata1_reg>;
+};
+
+&sdio {
+	status = "okay";
+	bus-width = <4>;
+	non-removable;
+	mmc-pwrseq = <&sdio_pwrseq>;
 };
 
 /* serial console (J1) */
