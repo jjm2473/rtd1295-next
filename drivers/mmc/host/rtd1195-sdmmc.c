@@ -217,25 +217,6 @@ static inline void rtd129x_epilog(struct dhc_sdmmc_priv *priv)
 		writel(0x00000000, priv->base + RTD129X_REG_SD_DUMMY_SYS);
 }
 
-static u8 dhc_sdmmc_resp_type_to_configure2(struct mmc_command *cmd)
-{
-	unsigned int resp_type = mmc_resp_type(cmd);
-	u8 val = 0;
-
-	if (resp_type & MMC_RSP_136)
-		return SD_CONFIGURE2_RESP_TYPE_17B;
-
-	if (!(resp_type & MMC_RSP_CRC))
-		val |= SD_CONFIGURE2_CRC7_CHK_DIS;
-
-	if (resp_type & MMC_RSP_PRESENT)
-		val |= SD_CONFIGURE2_RESP_TYPE_6B;
-	else
-		val |= SD_CONFIGURE2_RESP_TYPE_NONE;
-
-	return val;
-}
-
 static void dhc_sdmmc_set_bus_width(struct dhc_sdmmc_priv *priv, unsigned int bits)
 {
 	u8 val;
@@ -513,6 +494,25 @@ static int dhc_sdmmc_set_speed(struct dhc_sdmmc_priv *priv, unsigned int speed)
 	writel(val, priv->base + REG_SD_CKGEN_CTL);
 
 	return dhc_sdmmc_sync(priv);
+}
+
+static u8 dhc_sdmmc_resp_type_to_configure2(struct mmc_command *cmd)
+{
+	unsigned int resp_type = mmc_resp_type(cmd);
+	u8 val = 0;
+
+	if (resp_type & MMC_RSP_136)
+		return SD_CONFIGURE2_RESP_TYPE_17B;
+
+	if (!(resp_type & MMC_RSP_CRC))
+		val |= SD_CONFIGURE2_CRC7_CHK_DIS;
+
+	if (resp_type & MMC_RSP_PRESENT)
+		val |= SD_CONFIGURE2_RESP_TYPE_6B;
+	else
+		val |= SD_CONFIGURE2_RESP_TYPE_NONE;
+
+	return val;
 }
 
 static int dhc_sdmmc_stream_one(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd)
