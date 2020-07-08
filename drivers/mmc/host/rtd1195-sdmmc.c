@@ -9,11 +9,14 @@
 #include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
+#include <linux/dma-mapping.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/mfd/syscon.h>
+#include <linux/mmc/core.h>
 #include <linux/mmc/host.h>
 #include <linux/mmc/mmc.h>
+#include <linux/mmc/sd.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/pinctrl/consumer.h>
@@ -21,6 +24,7 @@
 #include <linux/property.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
+#include <linux/scatterlist.h>
 #include <linux/slab.h>
 #include <linux/timer.h>
 
@@ -31,10 +35,13 @@
 
 #define SYS_PLL_SD1_BIAS_EN			BIT(0)
 #define SYS_PLL_SD1_PHRT0			BIT(1)
+#define SYS_PLL_SD1_PHRSTB_DLY_SEL		BIT(2)
+#define SYS_PLL_SD1_PHSEL0			GENMASK(7, 3)
+#define SYS_PLL_SD1_PHSEL1			GENMASK(12, 8)
 #define RTD119X_SYS_PLL_SD1_REGPD_D3318		BIT(16)
 #define RTD119X_SYS_PLL_SD1_REG_D3318POW	GENMASK(18, 17)
 #define RTD119X_SYS_PLL_SD1_REG_TUNED3318	GENMASK(21, 19)
-#define RTD129X_SYS_PLL_SD1_REG_SEL3318		BIT(13)
+#define RTD129X_SYS_PLL_SD1_REG_SEL3318		GENMASK(14, 13)
 
 #define SYS_PLL_SD2_SSCLDO_EN			BIT(0)
 #define SYS_PLL_SD2_REG_TUNE11			GENMASK(2, 1)
@@ -71,9 +78,18 @@
 #define REG_SD_CARD_EXIST		0x11f
 #define REG_SD_CARD_CLOCK_EN_CTL	0x129
 #define REG_SD_CONFIGURE1		0x180
+#define REG_SD_CONFIGURE2		0x181
+#define REG_SD_CONFIGURE3		0x182
 #define REG_SD_STATUS2			0x184
+#define REG_SD_BUS_STATUS		0x185
 #define REG_SD_SAMPLE_POINT_CTL		0x187
 #define REG_SD_PUSH_POINT_CTL		0x188
+#define REG_SD_CMD0			0x189
+#define REG_SD_CMD1			0x18a
+#define REG_SD_CMD2			0x18b
+#define REG_SD_CMD3			0x18c
+#define REG_SD_CMD4			0x18d
+#define REG_SD_CMD5			0x18e
 #define REG_SD_BUS_TA_STATE		0x197
 
 #define SD_DMA_RST_DMA_RSTN			BIT(0)
@@ -129,17 +145,34 @@
 #define SD_CONFIGURE1_SDCLK_DIV_256		BIT(6)
 #define SD_CONFIGURE1_SDCLK_DIV			BIT(7)
 
+#define SD_CONFIGURE2_RESP_TYPE			GENMASK(1, 0)
+#define SD_CONFIGURE2_RESP_TYPE_NONE		FIELD_PREP(SD_CONFIGURE2_RESP_TYPE, 0)
+#define SD_CONFIGURE2_RESP_TYPE_6B		FIELD_PREP(SD_CONFIGURE2_RESP_TYPE, 1)
+#define SD_CONFIGURE2_RESP_TYPE_17B		FIELD_PREP(SD_CONFIGURE2_RESP_TYPE, 2)
+#define SD_CONFIGURE2_CRC7_CHK_DIS		BIT(2)
+#define SD_CONFIGURE2_WAIT_BUSY_EN		BIT(3)
+#define SD_CONFIGURE2_CRC16_CAL_DIS		BIT(6)
+#define SD_CONFIGURE2_CRC7_CAL_DIS		BIT(7)
+
+#define SD_BUS_STATUS_CMD_LEVEL			BIT(0)
+#define SD_BUS_STATUS_DAT3_0_LEVEL		GENMASK(4, 1)
+#define SD_BUS_STATUS_CLK_TOG_STOP		BIT(6)
+#define SD_BUS_STATUS_CLK_TOG_EN		BIT(7)
+
 #define DHC_MMC_ERR_RMOVE	3
 #define DHC_MMC_ERR_FAILED	4
 
 #define RTD129X_A00_PLL_QUIRK			BIT(0)
 #define RTD129X_NON_A00_PROLOG_EPILOG_QUIRK	BIT(1)
 
+#define SD_ALLOC_LEN	2048
+
 struct dhc_sdmmc_priv;
 
 struct dhc_sdmmc_info {
 	int (*pre_init)(struct dhc_sdmmc_priv *priv);
 	int (*post_add)(struct dhc_sdmmc_priv *priv);
+	int (*pre_remove)(struct dhc_sdmmc_priv *priv);
 };
 
 struct dhc_sdmmc_priv {
@@ -156,6 +189,9 @@ struct dhc_sdmmc_priv {
 	bool powered;
 	bool card_detected;
 	bool card_selected;
+
+	void *dma_mem;
+	dma_addr_t dma_handle;
 
 	struct tasklet_struct req_end_tasklet;
 	struct mmc_request *req;
@@ -179,6 +215,25 @@ static inline void rtd129x_epilog(struct dhc_sdmmc_priv *priv)
 {
 	if (priv->quirks & RTD129X_NON_A00_PROLOG_EPILOG_QUIRK)
 		writel(0x00000000, priv->base + RTD129X_REG_SD_DUMMY_SYS);
+}
+
+static u8 dhc_sdmmc_resp_type_to_configure2(struct mmc_command *cmd)
+{
+	unsigned int resp_type = mmc_resp_type(cmd);
+	u8 val = 0;
+
+	if (resp_type & MMC_RSP_136)
+		return SD_CONFIGURE2_RESP_TYPE_17B;
+
+	if (!(resp_type & MMC_RSP_CRC))
+		val |= SD_CONFIGURE2_CRC7_CHK_DIS;
+
+	if (resp_type & MMC_RSP_PRESENT)
+		val |= SD_CONFIGURE2_RESP_TYPE_6B;
+	else
+		val |= SD_CONFIGURE2_RESP_TYPE_NONE;
+
+	return val;
 }
 
 static void dhc_sdmmc_set_bus_width(struct dhc_sdmmc_priv *priv, unsigned int bits)
@@ -460,19 +515,96 @@ static int dhc_sdmmc_set_speed(struct dhc_sdmmc_priv *priv, unsigned int speed)
 	return dhc_sdmmc_sync(priv);
 }
 
+static int dhc_sdmmc_stream_one(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd)
+{
+	u8 val;
+
+	dev_info(priv->dev, "%s\n", __func__);
+
+	writeb_relaxed(BIT(6) | cmd->opcode, priv->base + REG_SD_CMD0);
+	writeb_relaxed(cmd->arg >> 24, priv->base + REG_SD_CMD1);
+	writeb_relaxed(cmd->arg >> 16, priv->base + REG_SD_CMD2);
+	writeb_relaxed(cmd->arg >> 8, priv->base + REG_SD_CMD3);
+	writeb_relaxed(cmd->arg, priv->base + REG_SD_CMD4);
+	writeb_relaxed(0x0, priv->base + REG_SD_CMD5);
+
+	val = dhc_sdmmc_resp_type_to_configure2(cmd);
+	writeb_relaxed(val, priv->base + REG_SD_CONFIGURE2);
+
+	return 0;
+}
+
+static void dhc_sdmmc_stream(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd, struct mmc_data *data)
+{
+	enum dma_data_direction dma_dir;
+	unsigned int dma_addr, dma_len;
+	struct scatterlist *sg;
+	int i, ret, nents;
+
+	dma_dir = (data->flags & MMC_DATA_READ) ? DMA_FROM_DEVICE : DMA_TO_DEVICE;
+	nents = dma_map_sg(priv->dev, data->sg, data->sg_len, dma_dir);
+
+	for (i = 0; i < nents; i++) {
+		sg = &data->sg[i];
+		dma_addr = sg_dma_address(sg);
+		dma_len = sg_dma_len(sg);
+
+		ret = dhc_sdmmc_stream_one(priv, cmd);
+	}
+
+	dma_unmap_sg(priv->dev, data->sg, data->sg_len, dma_dir);
+}
+
+static void dhc_sdmmc_send_command(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd)
+{
+	dev_info(priv->dev, "%s, opcode=%u\n", __func__, (u32)cmd->opcode);
+
+	if (cmd->opcode == SD_SWITCH_VOLTAGE) {
+		/* force clock disable after cmd11 */
+		writeb(0x40, priv->base + REG_SD_BUS_STATUS);
+	}
+
+	if (cmd->data) {
+		if (true)
+			dhc_sdmmc_stream(priv, cmd, cmd->data);
+	} else {
+	}
+
+	if (cmd->opcode == MMC_SELECT_CARD) {
+		priv->card_selected = true;
+		dhc_sdmmc_set_speed(priv, 6200000);
+	}
+
+	cmd->error = -DHC_MMC_ERR_FAILED;
+}
+
 static void dhc_sdmmc_request(struct mmc_host *host, struct mmc_request *req)
 {
 	struct dhc_sdmmc_priv *priv = mmc_priv(host);
+	struct mmc_command *cmd = req->cmd;
+	u8 card_cmd;
 
 	WARN_ON(priv->req);
 	priv->req = req;
 
+	if (cmd->opcode == 48 || cmd->opcode == 49 ||
+	    cmd->opcode == 58 || cmd->opcode == 59) {
+		card_cmd = host->card->raw_scr[0] & 0xf;
+		if (((cmd->opcode == 58 || cmd->opcode == 59) && !(card_cmd & BIT(3))) ||
+		    ((cmd->opcode == 48 || cmd->opcode == 49) && !(card_cmd & BIT(3)) && !(card_cmd & BIT(2)))) {
+			cmd->error = -110;
+			goto out;
+		}
+	}
 	if (!priv->card_detected) {
-		req->cmd->error = -DHC_MMC_ERR_RMOVE;
-		req->cmd->retries = 0;
-	} else
-		req->cmd->error = -DHC_MMC_ERR_FAILED;
+		cmd->error = -DHC_MMC_ERR_RMOVE;
+		cmd->retries = 0;
+		goto out;
+	}
 
+	dhc_sdmmc_send_command(priv, cmd);
+
+out:
 	tasklet_schedule(&priv->req_end_tasklet);
 }
 
@@ -549,6 +681,69 @@ static void dhc_sdmmc_set_ios(struct mmc_host *host, struct mmc_ios *ios)
 		dev_info(mmc_dev(host), "Powering down\n");
 		dhc_sdmmc_set_power(priv, false);
 	}
+}
+
+static int dhc_sdmmc_wait_signal_voltage(struct dhc_sdmmc_priv *priv, bool level)
+{
+	u8 val, mask = SD_BUS_STATUS_DAT3_0_LEVEL | SD_BUS_STATUS_CMD_LEVEL;
+	u8 expected = level ? mask : 0;
+	int i = 0;
+
+	do {
+		val = readb(priv->base + REG_SD_BUS_STATUS);
+		if ((val & mask) == expected)
+			return 0;
+		msleep(3);
+	} while (i++ < 300);
+	return -ETIMEDOUT;
+}
+
+static int dhc_sdmmc_start_signal_voltage_switch(struct mmc_host *host, struct mmc_ios *ios)
+{
+	struct dhc_sdmmc_priv *priv = mmc_priv(host);
+	u32 val;
+	int ret;
+
+	dev_info(priv->dev, "%s\n", __func__);
+
+	if (ios->signal_voltage != MMC_SIGNAL_VOLTAGE_330) {
+		ret = dhc_sdmmc_wait_signal_voltage(priv, false);
+		if (ret)
+			return ret;
+
+		writeb(0x3b, priv->base + REG_SD_CARD_CLOCK_EN_CTL);
+		mdelay(10);
+
+		// XXX
+		writel(0, priv->base + REG_SD_PAD_CTL);
+
+		ret = dhc_sdmmc_sync(priv);
+
+		val = SYS_PLL_SD1_PHRT0 | SYS_PLL_SD1_BIAS_EN;
+		if (false)
+			val |= FIELD_PREP(RTD119X_SYS_PLL_SD1_REG_D3318POW, 0x3) |
+			       FIELD_PREP(RTD119X_SYS_PLL_SD1_REG_TUNED3318, 0x1);
+		ret = regmap_write(priv->crt, REG_SYS_PLL_SD1, val);
+		if (true) {
+			msleep(500);
+			val |= FIELD_PREP(RTD129X_SYS_PLL_SD1_REG_SEL3318, 0x2);
+			ret = regmap_write(priv->crt, REG_SYS_PLL_SD1, val);
+		}
+		msleep(10);
+
+		writeb(0x3b | BIT(2), priv->base + REG_SD_CARD_CLOCK_EN_CTL);
+		writeb(SD_BUS_STATUS_CLK_TOG_EN, priv->base + REG_SD_BUS_STATUS);
+
+		ret = dhc_sdmmc_sync(priv);
+
+		ret = dhc_sdmmc_wait_signal_voltage(priv, true);
+		if (ret)
+			return ret;
+	}
+
+	writeb(0, priv->base + REG_SD_BUS_STATUS);
+
+	return 0;
 }
 
 static int dhc_sdmmc_init(struct dhc_sdmmc_priv *priv)
@@ -757,17 +952,18 @@ static void dhc_sdmmc_hw_reset(struct mmc_host *host)
 }
 
 static const struct mmc_host_ops dhc_sdmmc_ops = {
-	.request = dhc_sdmmc_request,
-	.get_cd = dhc_sdmmc_get_cd,
-	.get_ro = dhc_sdmmc_get_ro,
-	.set_ios = dhc_sdmmc_set_ios,
-	.hw_reset = dhc_sdmmc_hw_reset,
+	.request			= dhc_sdmmc_request,
+	.get_cd				= dhc_sdmmc_get_cd,
+	.get_ro				= dhc_sdmmc_get_ro,
+	.set_ios			= dhc_sdmmc_set_ios,
+	.hw_reset			= dhc_sdmmc_hw_reset,
+	.start_signal_voltage_switch	= dhc_sdmmc_start_signal_voltage_switch,
 };
 
 static void rtd119x_sdmmc_plug(struct timer_list *timer)
 {
 	struct dhc_sdmmc_priv *priv = from_timer(priv, timer, plug_timer);
-	u8 val, last = priv->last_card_exist;
+	u8 val, tmp, last = priv->last_card_exist;
 
 	val = readb(priv->base + REG_SD_CARD_EXIST);
 	if ((val & SD_CARD_EXIST_EXISTENCE) ^ (last & SD_CARD_EXIST_EXISTENCE)) {
@@ -781,8 +977,8 @@ static void rtd119x_sdmmc_plug(struct timer_list *timer)
 			writeb(0x02, priv->base + REG_SD_CARD_SELECT);
 			writeb(BIT(2), priv->base + REG_SD_CR_CARD_OE);
 			writeb(BIT(2), priv->base + REG_SD_CARD_CLOCK_EN_CTL);
-			val = SD_CONFIGURE1_SDCLK_DIV | SD_CONFIGURE1_SDCLK_DIV_256 | SD_CONFIGURE1_RST_RDWR_FIFO;
-			writeb(val, priv->base + REG_SD_CONFIGURE1);
+			tmp = SD_CONFIGURE1_SDCLK_DIV | SD_CONFIGURE1_SDCLK_DIV_256 | SD_CONFIGURE1_RST_RDWR_FIFO;
+			writeb(tmp, priv->base + REG_SD_CONFIGURE1);
 			dhc_sdmmc_set_speed(priv, 400000);
 			writeb(0x00, priv->base + REG_SD_STATUS2);
 		} else {
@@ -820,9 +1016,17 @@ static int rtd119x_sdmmc_post_add(struct dhc_sdmmc_priv *priv)
 	return 0;
 }
 
+static int rtd119x_sdmmc_pre_remove(struct dhc_sdmmc_priv *priv)
+{
+	del_timer_sync(&priv->plug_timer);
+
+	return 0;
+}
+
 static const struct dhc_sdmmc_info rtd119x_sdmmc_info = {
 	.pre_init = rtd119x_sdmmc_pre_init,
 	.post_add = rtd119x_sdmmc_post_add,
+	.pre_remove = rtd119x_sdmmc_pre_remove,
 };
 
 static int rtd129x_sdmmc_pre_init(struct dhc_sdmmc_priv *priv)
@@ -850,9 +1054,15 @@ static int rtd129x_sdmmc_post_add(struct dhc_sdmmc_priv *priv)
 	return rtd119x_sdmmc_post_add(priv);
 }
 
+static int rtd129x_sdmmc_pre_remove(struct dhc_sdmmc_priv *priv)
+{
+	return rtd119x_sdmmc_pre_remove(priv);
+}
+
 static const struct dhc_sdmmc_info rtd129x_sdmmc_info = {
-	.pre_init = rtd129x_sdmmc_pre_init,
-	.post_add = rtd129x_sdmmc_post_add,
+	.pre_init	= rtd129x_sdmmc_pre_init,
+	.post_add	= rtd129x_sdmmc_post_add,
+	.pre_remove	= rtd129x_sdmmc_pre_remove,
 };
 
 static int dhc_sdmmc_probe(struct platform_device *pdev)
@@ -1011,6 +1221,12 @@ static int dhc_sdmmc_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_add;
 
+	priv->dma_mem = dma_alloc_coherent(&pdev->dev, SD_ALLOC_LEN, &priv->dma_handle, GFP_KERNEL);
+	if (!priv->dma_mem) {
+		ret = -ENOMEM;
+		goto err_dma;
+	}
+
 	if (priv->info->post_add) {
 		ret = priv->info->post_add(priv);
 		if (ret)
@@ -1022,6 +1238,8 @@ static int dhc_sdmmc_probe(struct platform_device *pdev)
 	return 0;
 
 err_add_post:
+	dma_free_coherent(&pdev->dev, SD_ALLOC_LEN, priv->dma_mem, priv->dma_handle);
+err_dma:
 	mmc_remove_host(mmc);
 err_add:
 err_sync:
@@ -1053,7 +1271,12 @@ static int dhc_sdmmc_remove(struct platform_device *pdev)
 	struct mmc_host *mmc = platform_get_drvdata(pdev);
 	struct dhc_sdmmc_priv *priv = mmc_priv(mmc);
 
+	if (priv->info->pre_remove)
+		priv->info->pre_remove(priv);
+
 	mmc_remove_host(mmc);
+
+	dma_free_coherent(&pdev->dev, SD_ALLOC_LEN, priv->dma_mem, priv->dma_handle);
 
 	clk_disable_unprepare(priv->clk_ip);
 	clk_disable_unprepare(priv->clk);
