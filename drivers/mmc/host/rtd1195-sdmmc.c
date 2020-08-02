@@ -8,6 +8,7 @@
 
 #include <linux/bitfield.h>
 #include <linux/clk.h>
+#include <linux/completion.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
 #include <linux/interrupt.h>
@@ -64,6 +65,8 @@
 
 #define REG_SB2_SYNC		0x020
 
+#define REG_SD_DMA_CTL1			0x04
+#define REG_SD_DMA_CTL2			0x08
 #define REG_SD_DMA_CTL3			0x0c
 #define REG_SD_DMA_RST			0x20
 #define REG_SD_ISR			0x24
@@ -90,7 +93,21 @@
 #define REG_SD_CMD3			0x18c
 #define REG_SD_CMD4			0x18d
 #define REG_SD_CMD5			0x18e
+#define REG_SD_BYTE_CNT_L		0x18f
+#define REG_SD_BYTE_CNT_H		0x190
+#define REG_SD_BLK_CNT_L		0x191
+#define REG_SD_BLK_CNT_H		0x192
+#define REG_SD_TRANSFER			0x193
 #define REG_SD_BUS_TA_STATE		0x197
+
+#define SD_DMA_CTL1_DRAM_SA		GENMASK(29, 0)
+
+#define SD_DMA_CTL2_DMA_LEN		GENMASK(15, 0)
+
+#define SD_DMA_CTL3_DMA_XFER		BIT(0)
+#define SD_DMA_CTL3_DDR_WR		BIT(1)
+#define SD_DMA_CTL3_RSP17_SEL		BIT(4)
+#define SD_DMA_CTL3_DAT64_SEL		BIT(5)
 
 #define SD_DMA_RST_DMA_RSTN			BIT(0)
 #define SD_DMA_RST_L4_GATED_DISABLE		BIT(1)
@@ -159,6 +176,24 @@
 #define SD_BUS_STATUS_CLK_TOG_STOP		BIT(6)
 #define SD_BUS_STATUS_CLK_TOG_EN		BIT(7)
 
+#define SD_TRANSFER_CMD_CODE			GENMASK(3, 0)
+#define SD_TRANSFER_CMD_CODE_NORMALWRITE	FIELD_PREP(SD_TRANSFER_CMD_CODE, 0x0)
+#define SD_TRANSFER_CMD_CODE_AUTOWRITE3		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0x1)
+#define SD_TRANSFER_CMD_CODE_AUTOWRITE4		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0x2)
+#define SD_TRANSFER_CMD_CODE_AUTOREAD3		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0x5)
+#define SD_TRANSFER_CMD_CODE_AUTOREAD4		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0x6)
+#define SD_TRANSFER_CMD_CODE_SENDCMDGETRSP	FIELD_PREP(SD_TRANSFER_CMD_CODE, 0x8)
+#define SD_TRANSFER_CMD_CODE_AUTOWRITE1		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0x9)
+#define SD_TRANSFER_CMD_CODE_AUTOWRITE2		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0xa)
+#define SD_TRANSFER_CMD_CODE_NORMALREAD		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0xc)
+#define SD_TRANSFER_CMD_CODE_AUTOREAD1		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0xd)
+#define SD_TRANSFER_CMD_CODE_AUTOREAD2		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0xe)
+#define SD_TRANSFER_CMD_CODE_UNKNOWN		FIELD_PREP(SD_TRANSFER_CMD_CODE, 0xf)
+#define SD_TRANSFER_ERR_STATUS			BIT(4)
+#define SD_TRANSFER_IDLE_STATE			BIT(5)
+#define SD_TRANSFER_END_STATE			BIT(6)
+#define SD_TRANSFER_START_EN			BIT(7)
+
 #define DHC_MMC_ERR_RMOVE	3
 #define DHC_MMC_ERR_FAILED	4
 
@@ -189,10 +224,12 @@ struct dhc_sdmmc_priv {
 	bool powered;
 	bool card_detected;
 	bool card_selected;
+	bool mmc_detected;
 
 	void *dma_mem;
 	dma_addr_t dma_handle;
 
+	struct completion sent;
 	struct tasklet_struct req_end_tasklet;
 	struct mmc_request *req;
 
@@ -496,6 +533,65 @@ static int dhc_sdmmc_set_speed(struct dhc_sdmmc_priv *priv, unsigned int speed)
 	return dhc_sdmmc_sync(priv);
 }
 
+static void dhc_sdmmc_reset(struct dhc_sdmmc_priv *priv)
+{
+	writel(0, priv->base + REG_SD_DMA_CTL3);
+	writel(0x16, priv->base + REG_SD_ISREN);
+	writel(0x7, priv->base + REG_SD_ISREN);
+
+	writeb(0, priv->base + REG_SD_TRANSFER);
+	writeb(0xff, priv->base + REG_SD_CR_CARD_STOP);
+	writeb(0x00, priv->base + REG_SD_CR_CARD_STOP);
+}
+
+static u8 dhc_sdmmc_command_code(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd)
+{
+	if (cmd->opcode == 8 && priv->mmc_detected)
+		return SD_TRANSFER_CMD_CODE_NORMALREAD;
+
+	if (cmd->data->flags & MMC_DATA_WRITE) {
+		switch (cmd->opcode) {
+		case 42:
+			return SD_TRANSFER_CMD_CODE_NORMALWRITE;
+		case 56:
+			return SD_TRANSFER_CMD_CODE_AUTOWRITE2;
+		default:
+			break;
+		}
+	}
+
+	switch (cmd->opcode) {
+	case 6:
+	case 13:
+	case 22:
+	case 30:
+	case 31:
+	case 42:
+	case 51:
+		return SD_TRANSFER_CMD_CODE_NORMALREAD;
+	case 18:
+		return SD_TRANSFER_CMD_CODE_AUTOREAD1;
+	case 17:
+	case 48:
+	case 56:
+	case 58:
+		return SD_TRANSFER_CMD_CODE_AUTOREAD2;
+	case 26:
+	case 27:
+		return SD_TRANSFER_CMD_CODE_NORMALWRITE;
+	case 20:
+	case 25: //XXX
+		return SD_TRANSFER_CMD_CODE_AUTOWRITE1;
+	case 24:
+	//case 25:
+	case 49:
+	case 59:
+		return SD_TRANSFER_CMD_CODE_AUTOWRITE2;
+	default:
+		return SD_TRANSFER_CMD_CODE_UNKNOWN;
+	}
+}
+
 static u8 dhc_sdmmc_resp_type_to_configure2(struct mmc_command *cmd)
 {
 	unsigned int resp_type = mmc_resp_type(cmd);
@@ -515,9 +611,11 @@ static u8 dhc_sdmmc_resp_type_to_configure2(struct mmc_command *cmd)
 	return val;
 }
 
-static int dhc_sdmmc_stream_one(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd)
+static int dhc_sdmmc_transfer(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd,
+	u32 dma_buffer, u8 cmdcode, u16 byte_count, u16 block_count)
 {
-	u8 val;
+	u32 val;
+	u8 b;
 
 	dev_info(priv->dev, "%s\n", __func__);
 
@@ -528,36 +626,119 @@ static int dhc_sdmmc_stream_one(struct dhc_sdmmc_priv *priv, struct mmc_command 
 	writeb_relaxed(cmd->arg, priv->base + REG_SD_CMD4);
 	writeb_relaxed(0x0, priv->base + REG_SD_CMD5);
 
-	val = dhc_sdmmc_resp_type_to_configure2(cmd);
-	writeb_relaxed(val, priv->base + REG_SD_CONFIGURE2);
+	b = dhc_sdmmc_resp_type_to_configure2(cmd);
+	writeb_relaxed(b, priv->base + REG_SD_CONFIGURE2);
+
+	writeb_relaxed(byte_count,      priv->base + REG_SD_BYTE_CNT_L);
+	writeb_relaxed(byte_count >> 8, priv->base + REG_SD_BYTE_CNT_H);
+	writeb_relaxed(block_count,      priv->base + REG_SD_BLK_CNT_L);
+	writeb_relaxed(block_count >> 8, priv->base + REG_SD_BLK_CNT_H);
+
+	val = FIELD_PREP(SD_DMA_CTL1_DRAM_SA, dma_buffer >> 3);
+	writel_relaxed(val, priv->base + REG_SD_DMA_CTL1);
+	val = FIELD_PREP(SD_DMA_CTL2_DMA_LEN, block_count);
+	writel_relaxed(val, priv->base + REG_SD_DMA_CTL2);
+	val = 0;
+	if ((byte_count == 17) || ((b & SD_CONFIGURE2_RESP_TYPE) == SD_CONFIGURE2_RESP_TYPE_17B))
+		val |= SD_DMA_CTL3_RSP17_SEL;
+	else if (byte_count == 64)
+		val |= SD_DMA_CTL3_DAT64_SEL;
+	if ((cmd->data && (cmd->data->flags & MMC_DATA_READ)) ||
+	    (cmdcode == SD_TRANSFER_CMD_CODE_SENDCMDGETRSP))
+		val |= SD_DMA_CTL3_DDR_WR;
+	if ((cmd->data && (cmd->data->flags & (MMC_DATA_READ | MMC_DATA_WRITE))) ||
+	    (cmdcode == SD_TRANSFER_CMD_CODE_SENDCMDGETRSP))
+		val |= SD_DMA_CTL3_DMA_XFER;
+	writel_relaxed(val, priv->base + REG_SD_DMA_CTL3);
+
+	writel(0x16, priv->base + REG_SD_ISREN);
+	reinit_completion(&priv->sent);
+	writel(0x6 | 1, priv->base + REG_SD_ISREN);
+
+	dhc_sdmmc_sync(priv);
+
+	b = SD_TRANSFER_START_EN | (cmdcode & SD_TRANSFER_CMD_CODE);
+	writeb(b, priv->base + REG_SD_TRANSFER);
+
+	wait_for_completion_timeout(&priv->sent, msecs_to_jiffies(3000));
+
+	b = readb(priv->base + REG_SD_TRANSFER);
+	if (!((b & SD_TRANSFER_END_STATE) && (b & SD_TRANSFER_IDLE_STATE))) {
+		dev_warn(priv->dev, "timeout!\n");
+		return -ETIMEDOUT;
+	}
 
 	return 0;
 }
 
-static void dhc_sdmmc_stream(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd, struct mmc_data *data)
+static int dhc_sdmmc_stream(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd, struct mmc_data *data)
 {
 	enum dma_data_direction dma_dir;
 	unsigned int dma_addr, dma_len;
 	struct scatterlist *sg;
-	int i, ret, nents;
+	unsigned int arg;
+	int i, ret = 0, nents;
+	u16 byte_count, block_count;
+	u8 cmdcode;
+
+	dev_info(priv->dev, "%s\n", __func__);
+
+	arg = cmd->arg;
+	cmdcode = dhc_sdmmc_command_code(priv, cmd);
 
 	dma_dir = (data->flags & MMC_DATA_READ) ? DMA_FROM_DEVICE : DMA_TO_DEVICE;
 	nents = dma_map_sg(priv->dev, data->sg, data->sg_len, dma_dir);
+	data->bytes_xfered = 0;
 
 	for (i = 0; i < nents; i++) {
 		sg = &data->sg[i];
 		dma_addr = sg_dma_address(sg);
 		dma_len = sg_dma_len(sg);
 
-		ret = dhc_sdmmc_stream_one(priv, cmd);
+		if ((cmd->opcode == SD_SWITCH && (cmd->flags & MMC_CMD_ADTC)) ||
+		    (cmd->opcode == SD_APP_SD_STATUS && (cmd->flags & MMC_CMD_MASK) == MMC_CMD_ADTC)) {
+			byte_count = 64;
+			block_count = dma_len / 64;
+		} else if (cmd->opcode == MMC_SEND_TUNING_BLOCK ||
+			   cmd->opcode == SD_APP_SEND_SCR ||
+			   cmd->opcode == SD_APP_SEND_NUM_WR_BLKS) {
+			byte_count = 64;
+			block_count = 1;
+		} else if (cmd->opcode == MMC_ALL_SEND_CID ||
+			   cmd->opcode == MMC_SEND_CSD ||
+			   cmd->opcode == MMC_SEND_CID) {
+			byte_count = 17;
+			block_count = dma_len / 17;
+		} else {
+			byte_count = 512;
+			block_count = dma_len / 512;
+		}
+		if (block_count == 0 && dma_len)
+			block_count = 1;
+
+		ret = dhc_sdmmc_transfer(priv, cmd, dma_addr, cmdcode, byte_count, block_count);
+		if (ret) {
+			cmd->arg = arg;
+		} else {
+			cmd->arg += dma_len;
+			data->bytes_xfered += dma_len;
+		}
 	}
 
 	dma_unmap_sg(priv->dev, data->sg, data->sg_len, dma_dir);
+
+	return ret;
 }
 
 static void dhc_sdmmc_send_command(struct dhc_sdmmc_priv *priv, struct mmc_command *cmd)
 {
+	u32 dma_buffer;
+	int ret;
+
 	dev_info(priv->dev, "%s, opcode=%u\n", __func__, (u32)cmd->opcode);
+
+	if (cmd->opcode == MMC_SEND_OP_COND)
+		priv->mmc_detected = true;
 
 	if (cmd->opcode == SD_SWITCH_VOLTAGE) {
 		/* force clock disable after cmd11 */
@@ -566,8 +747,14 @@ static void dhc_sdmmc_send_command(struct dhc_sdmmc_priv *priv, struct mmc_comma
 
 	if (cmd->data) {
 		if (true)
-			dhc_sdmmc_stream(priv, cmd, cmd->data);
+			ret = dhc_sdmmc_stream(priv, cmd, cmd->data);
 	} else {
+		if (false) // XXX RTD119x
+			dma_buffer = ((unsigned long)priv->dma_mem) & ~0xff;
+		else
+			dma_buffer = priv->dma_handle;
+
+		ret = dhc_sdmmc_transfer(priv, cmd, dma_buffer, SD_TRANSFER_CMD_CODE_SENDCMDGETRSP, 512, 1);
 	}
 
 	if (cmd->opcode == MMC_SELECT_CARD) {
@@ -575,7 +762,14 @@ static void dhc_sdmmc_send_command(struct dhc_sdmmc_priv *priv, struct mmc_comma
 		dhc_sdmmc_set_speed(priv, 6200000);
 	}
 
-	cmd->error = -DHC_MMC_ERR_FAILED;
+	if (ret) {
+		if (cmd->opcode == 49 || cmd->opcode == 59 || cmd->opcode == 48 || cmd->opcode == 58) {
+			dhc_sdmmc_reset(priv);
+			cmd->error = -110;
+		} else
+			cmd->error = -DHC_MMC_ERR_FAILED;
+	} else
+		cmd->error = -DHC_MMC_ERR_FAILED;
 }
 
 static void dhc_sdmmc_request(struct mmc_host *host, struct mmc_request *req)
@@ -948,6 +1142,8 @@ static void dhc_sdmmc_hw_reset(struct mmc_host *host)
 	dhc_sdmmc_set_power(priv, false);
 	dhc_sdmmc_set_power(priv, true);
 
+	priv->mmc_detected = false;
+
 	ret = dhc_sdmmc_sync(priv);
 }
 
@@ -959,6 +1155,19 @@ static const struct mmc_host_ops dhc_sdmmc_ops = {
 	.hw_reset			= dhc_sdmmc_hw_reset,
 	.start_signal_voltage_switch	= dhc_sdmmc_start_signal_voltage_switch,
 };
+
+static irqreturn_t dhc_sdmmc_irq(int irq, void *dev_id)
+{
+	struct dhc_sdmmc_priv *priv = dev_id;
+	u32 val;
+
+	dhc_sdmmc_sync(priv);
+	val = readl(priv->base + REG_SD_ISR);
+	dev_info(priv->dev, "%s ISR=%08x\n", __func__, val);
+	complete(&priv->sent);
+	writel(val, priv->base + REG_SD_ISR);
+	return IRQ_HANDLED;
+}
 
 static void rtd119x_sdmmc_plug(struct timer_list *timer)
 {
@@ -1171,8 +1380,17 @@ static int dhc_sdmmc_probe(struct platform_device *pdev)
 		goto err_enable_ip;
 	}
 
+	ret = platform_get_irq(pdev, 0);
+	if (ret < 0)
+		goto err_irq_get;
+	ret = devm_request_irq(&pdev->dev, ret, dhc_sdmmc_irq, 0, dev_name(&pdev->dev), priv);
+	if (ret < 0)
+		goto err_irq_req;
+
+	init_completion(&priv->sent);
 	priv->card_detected = false;
 	priv->card_selected = false;
+	priv->mmc_detected = false;
 	priv->quirks = 0;
 
 	if (priv->info->pre_init) {
@@ -1180,6 +1398,8 @@ static int dhc_sdmmc_probe(struct platform_device *pdev)
 		if (ret)
 			goto err_init_pre;
 	}
+	if (priv->quirks & RTD129X_A00_PLL_QUIRK)
+		dev_info(&pdev->dev, "RTD129x A00 detected\n");
 	if (priv->quirks & RTD129X_NON_A00_PROLOG_EPILOG_QUIRK)
 		dev_info(&pdev->dev, "RTD129x non-A00 detected\n");
 
@@ -1243,9 +1463,11 @@ err_dma:
 	mmc_remove_host(mmc);
 err_add:
 err_sync:
-err_init_pre:
 err_init:
 	platform_set_drvdata(pdev, NULL);
+err_init_pre:
+err_irq_req:
+err_irq_get:
 	clk_disable_unprepare(priv->clk_ip);
 err_enable_ip:
 	clk_disable_unprepare(priv->clk);
