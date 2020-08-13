@@ -525,7 +525,17 @@ static const struct rtd_pin_config_desc rtd1295_iso_configs[] = {
 	RTK_PIN_CONFIG(iso_gpio_34, 0x20, 4, 1, 0, 2, 3, 2),
 };
 
-
+static struct rtd_pin_reg_list rtd1295_iso_reg_lists[] = {
+	{.reg_offset = 0x0},
+	{.reg_offset = 0x4},
+	{.reg_offset = 0x8},
+	{.reg_offset = 0xc},
+	{.reg_offset = 0x10},
+	{.reg_offset = 0x14},
+	{.reg_offset = 0x18},
+	{.reg_offset = 0x1c},
+	{.reg_offset = 0x20},
+};
 
 static const struct rtd_pinctrl_desc rtd1295_iso_pinctrl_desc = {
 	.pins = rtd1295_iso_pins,
@@ -538,6 +548,8 @@ static const struct rtd_pinctrl_desc rtd1295_iso_pinctrl_desc = {
 	.num_muxes = ARRAY_SIZE(rtd1295_iso_muxes),
 	.configs = rtd1295_iso_configs,
 	.num_configs = ARRAY_SIZE(rtd1295_iso_configs),
+	.lists = rtd1295_iso_reg_lists,
+	.num_regs = ARRAY_SIZE(rtd1295_iso_reg_lists),
 };
 
 /* SB2 */
@@ -1225,6 +1237,28 @@ static const struct rtd_pin_config_desc rtd1295_sb2_configs[] = {
 	RTK_PIN_CONFIG(rgmii1_rxd_3, 0x78, 12, 1, 0, 2, 3, PADDRI_4_8),
 };
 
+static struct rtd_pin_reg_list rtd1295_sb2_reg_lists[] = {
+	{.reg_offset = 0x8},
+	{.reg_offset = 0xc},
+	{.reg_offset = 0x10},
+	{.reg_offset = 0x14},
+	{.reg_offset = 0x28},
+	{.reg_offset = 0x14},
+	{.reg_offset = 0x2c},
+	{.reg_offset = 0x30},
+	{.reg_offset = 0x34},
+	{.reg_offset = 0x38},
+	{.reg_offset = 0x3c},
+	{.reg_offset = 0x60},
+	{.reg_offset = 0x64},
+	{.reg_offset = 0x68},
+	{.reg_offset = 0x6c},
+	{.reg_offset = 0x70},
+	{.reg_offset = 0x74},
+	{.reg_offset = 0x78},
+	{.reg_offset = 0x7c},
+};
+
 
 static const struct rtd_pinctrl_desc rtd1295_sb2_pinctrl_desc = {
 	.pins = rtd1295_sb2_pins,
@@ -1237,6 +1271,8 @@ static const struct rtd_pinctrl_desc rtd1295_sb2_pinctrl_desc = {
 	.num_muxes = ARRAY_SIZE(rtd1295_sb2_muxes),
 	.configs = rtd1295_sb2_configs,
 	.num_configs = ARRAY_SIZE(rtd1295_sb2_configs),
+	.lists = rtd1295_sb2_reg_lists,
+	.num_regs = ARRAY_SIZE(rtd1295_sb2_reg_lists),
 };
 
 /* Disp */
@@ -1373,6 +1409,12 @@ static const struct rtd_pin_config_desc rtd1295_disp_configs[] = {
 	RTK_PIN_CONFIG(ao_sd_3, 0x4, 24, 1, 0, 2, 3, PADDRI_2_4),
 };
 
+static struct rtd_pin_reg_list rtd1295_disp_reg_lists[] = {
+	{.reg_offset = 0x0},
+	{.reg_offset = 0x4},
+	{.reg_offset = 0x8},
+};
+
 
 static const struct rtd_pinctrl_desc rtd1295_disp_pinctrl_desc = {
 	.pins = rtd1295_disp_pins,
@@ -1385,6 +1427,8 @@ static const struct rtd_pinctrl_desc rtd1295_disp_pinctrl_desc = {
 	.num_muxes = ARRAY_SIZE(rtd1295_disp_muxes),
 	.configs = rtd1295_disp_configs,
 	.num_configs = ARRAY_SIZE(rtd1295_disp_configs),
+	.lists = rtd1295_disp_reg_lists,
+	.num_regs = ARRAY_SIZE(rtd1295_disp_reg_lists),
 };
 
 /* CR */
@@ -1857,6 +1901,25 @@ static const struct rtd_pin_sconfig_desc rtd1295_cr_sconfigs[] = {
 	RTK_PIN_SCONFIG(sdio_data_3, 0x40, 24, 4, 28, 4),
 };
 
+static struct rtd_pin_reg_list rtd1295_cr_reg_lists[] = {
+	{.reg_offset = 0x0},
+	{.reg_offset = 0x4},
+	{.reg_offset = 0x8},
+	{.reg_offset = 0xc},
+	{.reg_offset = 0x10},
+	{.reg_offset = 0x14},
+	{.reg_offset = 0x18},
+	{.reg_offset = 0x1c},
+	{.reg_offset = 0x20},
+	{.reg_offset = 0x24},
+	{.reg_offset = 0x28},
+	{.reg_offset = 0x2c},
+	{.reg_offset = 0x30},
+	{.reg_offset = 0x34},
+	{.reg_offset = 0x38},
+	{.reg_offset = 0x3c},
+	{.reg_offset = 0x40},
+};
 
 
 static const struct rtd_pinctrl_desc rtd1295_cr_pinctrl_desc = {
@@ -1872,6 +1935,8 @@ static const struct rtd_pinctrl_desc rtd1295_cr_pinctrl_desc = {
 	.num_configs = ARRAY_SIZE(rtd1295_cr_configs),
 	.sconfigs = rtd1295_cr_sconfigs,
 	.num_sconfigs = ARRAY_SIZE(rtd1295_cr_sconfigs),
+	.lists = rtd1295_cr_reg_lists,
+	.num_regs = ARRAY_SIZE(rtd1295_cr_reg_lists),
 };
 
 #endif

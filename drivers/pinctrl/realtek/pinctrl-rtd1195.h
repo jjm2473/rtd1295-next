@@ -358,6 +358,16 @@ static const struct rtd_pin_config_desc rtd1195_iso_configs[] = {
 };
 
 
+static struct rtd_pin_reg_list rtd1195_iso_reg_lists[] = {
+	{.reg_offset = 0x0},
+	{.reg_offset = 0x4},
+	{.reg_offset = 0x8},
+	{.reg_offset = 0xc},
+	{.reg_offset = 0x10},
+	{.reg_offset = 0x14},
+};
+
+
 static const struct rtd_pinctrl_desc rtd1195_iso_pinctrl_desc = {
 	.pins = rtd1195_iso_pins,
 	.num_pins = ARRAY_SIZE(rtd1195_iso_pins),
@@ -369,6 +379,8 @@ static const struct rtd_pinctrl_desc rtd1195_iso_pinctrl_desc = {
 	.num_muxes = ARRAY_SIZE(rtd1195_iso_muxes),
 	.configs = rtd1195_iso_configs,
 	.num_configs = ARRAY_SIZE(rtd1195_iso_configs),
+	.lists = rtd1195_iso_reg_lists,
+	.num_regs = ARRAY_SIZE(rtd1195_iso_reg_lists),
 };
 
 /* CRT */
@@ -1110,6 +1122,25 @@ static const struct rtd_pin_config_desc rtd1195_crt_configs[] = {
 	RTK_PIN_CONFIG(sensor_cko_1, 0x9c, 28, 1, 0, 2, 3, PADDRI_2_4),
 };
 
+static struct rtd_pin_reg_list rtd1195_crt_reg_lists[] = {
+	{.reg_offset = 0x60},
+	{.reg_offset = 0x64},
+	{.reg_offset = 0x68},
+	{.reg_offset = 0x6c},
+	{.reg_offset = 0x70},
+	{.reg_offset = 0x74},
+	{.reg_offset = 0x78},
+	{.reg_offset = 0x7c},
+	{.reg_offset = 0x80},
+	{.reg_offset = 0x84},
+	{.reg_offset = 0x88},
+	{.reg_offset = 0x8c},
+	{.reg_offset = 0x90},
+	{.reg_offset = 0x94},
+	{.reg_offset = 0x98},
+	{.reg_offset = 0x9c},
+};
+
 
 static const struct rtd_pinctrl_desc rtd1195_crt_pinctrl_desc = {
 	.pins = rtd1195_crt_pins,
@@ -1122,6 +1153,8 @@ static const struct rtd_pinctrl_desc rtd1195_crt_pinctrl_desc = {
 	.num_muxes = ARRAY_SIZE(rtd1195_crt_muxes),
 	.configs = rtd1195_crt_configs,
 	.num_configs = ARRAY_SIZE(rtd1195_crt_configs),
+	.lists = rtd1195_crt_reg_lists,
+	.num_regs = ARRAY_SIZE(rtd1195_crt_reg_lists),
 };
 
 #endif

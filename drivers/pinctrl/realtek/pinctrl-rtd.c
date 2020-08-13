@@ -77,6 +77,12 @@ struct rtd_pin_desc {
 		}
 
 
+struct rtd_pin_reg_list {
+	unsigned int reg_offset;
+	unsigned int val;
+};
+
+
 #define RTK_PIN_CONFIG(_name, _reg_off, _base_bit, _pud_en_off, \
 		_pud_sel_off, _curr_off, _smt_off, _curr_type) \
 	{ \
@@ -120,6 +126,8 @@ struct rtd_pinctrl_desc {
 	unsigned int num_configs;
 	const struct rtd_pin_sconfig_desc *sconfigs;
 	unsigned int num_sconfigs;
+	struct rtd_pin_reg_list *lists;
+	unsigned int num_regs;
 };
 
 #define PCONF_UNSUPP 0xffffffff
@@ -643,8 +651,39 @@ static int rtd_pinctrl_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static int rtd_pinctrl_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	struct rtd_pinctrl *data = platform_get_drvdata(pdev);
+	struct rtd_pin_reg_list *list;
+	int i;
+
+	for (i = 0; i < data->info->num_regs; i++) {
+		list = &data->info->lists[i];
+		list->val = readl(data->base + list->reg_offset);
+	}
+
+	return 0;
+}
+
+static int rtd_pinctrl_resume(struct platform_device *pdev)
+{
+	struct rtd_pinctrl *data = platform_get_drvdata(pdev);
+	const struct rtd_pin_reg_list *list;
+	int i;
+
+	for (i = 0; i < data->info->num_regs; i++) {
+		list = &data->info->lists[i];
+		writel(list->val, data->base + list->reg_offset);
+	}
+
+	return 0;
+}
+
+
 static struct platform_driver rtd_pinctrl_driver = {
 	.probe = rtd_pinctrl_probe,
+	.suspend = rtd_pinctrl_suspend,
+	.resume = rtd_pinctrl_resume,
 	.driver = {
 		.name = "rtd-pinctrl",
 		.of_match_table	= rtd_pinctrl_dt_ids,
