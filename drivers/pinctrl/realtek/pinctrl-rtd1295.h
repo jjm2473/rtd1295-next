@@ -171,7 +171,7 @@ static const unsigned int rtd1295_uart2_1_pins[] = {
 		.num_pins = ARRAY_SIZE(rtd1295_ ## _name ## _pins), \
 	}
 
-static const struct rtd119x_pin_group_desc rtd1295_iso_pin_groups[] = {
+static const struct rtd_pin_group_desc rtd1295_iso_pin_groups[] = {
 	RTD1295_GROUP(iso_gpio_0),
 	RTD1295_GROUP(iso_gpio_1),
 	RTD1295_GROUP(iso_gpio_2),
@@ -317,7 +317,7 @@ static const char * const rtd1295_iso_acpu_ejtag_loc_nf_groups[] = {
 		.num_groups = ARRAY_SIZE(rtd1295_iso_ ## _name ## _groups), \
 	}
 
-static const struct rtd119x_pin_func_desc rtd1295_iso_pin_functions[] = {
+static const struct rtd_pin_func_desc rtd1295_iso_pin_functions[] = {
 	RTD1295_FUNC(gpio),
 	RTD1295_FUNC(acpu_ejtag_loc_iso),
 	RTD1295_FUNC(edp_hpd),
@@ -350,7 +350,7 @@ static const struct rtd119x_pin_func_desc rtd1295_iso_pin_functions[] = {
 
 #undef RTD1295_FUNC
 
-static const struct rtd119x_pin_desc rtd1295_iso_muxes[] = {
+static const struct rtd_pin_desc rtd1295_iso_muxes[] = {
 	RTK_PIN_MUX(iso_gpio_4, 0x10, GENMASK(1, 0),
 		RTK_PIN_FUNC(0x0 << 0, "gpio"),
 		RTK_PIN_FUNC(0x1 << 0, "uart2_0"),
@@ -489,7 +489,7 @@ static const struct rtd119x_pin_desc rtd1295_iso_muxes[] = {
 		RTK_PIN_FUNC(0x2 << 12, "uart2_1")),
 };
 
-static const struct rtd119x_pin_config_desc rtd1295_iso_configs[] = {
+static const struct rtd_pin_config_desc rtd1295_iso_configs[] = {
 	RTK_PIN_CONFIG(iso_gpio_2, 0x0, 0, 1, 0, 2, 3, PADDRI_2_4),
 	RTK_PIN_CONFIG(iso_gpio_3, 0x0, 4, 1, 0, 2, 3, PADDRI_2_4),
 	RTK_PIN_CONFIG(ir_rx, 0x0, 8, 1, 0, 2, 3, PADDRI_2_4),
@@ -527,7 +527,7 @@ static const struct rtd119x_pin_config_desc rtd1295_iso_configs[] = {
 
 
 
-static const struct rtd119x_pinctrl_desc rtd1295_iso_pinctrl_desc = {
+static const struct rtd_pinctrl_desc rtd1295_iso_pinctrl_desc = {
 	.pins = rtd1295_iso_pins,
 	.num_pins = ARRAY_SIZE(rtd1295_iso_pins),
 	.groups = rtd1295_iso_pin_groups,
@@ -756,7 +756,7 @@ static const unsigned int rtd1295_tp1_loc_pins[] = { RTD1295_TP1_LOC };
 
 
 
-static const struct rtd119x_pin_group_desc rtd1295_sb2_pin_groups[] = {
+static const struct rtd_pin_group_desc rtd1295_sb2_pin_groups[] = {
 	RTD1295_GROUP(gpio_0),
 	RTD1295_GROUP(gpio_1),
 	RTD1295_GROUP(gpio_2),
@@ -921,7 +921,7 @@ static const char * const rtd1295_sb2_hif_loc_nf_groups[] = { "hif_loc" };
 		.num_groups = ARRAY_SIZE(rtd1295_sb2_ ## _name ## _groups), \
 	}
 
-static const struct rtd119x_pin_func_desc rtd1295_sb2_pin_functions[] = {
+static const struct rtd_pin_func_desc rtd1295_sb2_pin_functions[] = {
 	RTD1295_FUNC(gpio),
 	RTD1295_FUNC(ai),
 	RTD1295_FUNC(dc_fan_sensor),
@@ -951,7 +951,7 @@ static const struct rtd119x_pin_func_desc rtd1295_sb2_pin_functions[] = {
 
 #undef RTD1295_FUNC
 
-static const struct rtd119x_pin_desc rtd1295_sb2_muxes[] = {
+static const struct rtd_pin_desc rtd1295_sb2_muxes[] = {
 	RTK_PIN_MUX(tp0_data, 0x08, GENMASK(2, 0),
 		RTK_PIN_FUNC(0x0 << 0, "gpio"),
 		RTK_PIN_FUNC(0x1 << 0, "tp0_loc_tp0"),
@@ -1168,7 +1168,7 @@ static const struct rtd119x_pin_desc rtd1295_sb2_muxes[] = {
 		RTK_PIN_FUNC(0x1 << 22, "rgmii")),
 };
 
-static const struct rtd119x_pin_config_desc rtd1295_sb2_configs[] = {
+static const struct rtd_pin_config_desc rtd1295_sb2_configs[] = {
 	RTK_PIN_CONFIG(tp0_clk, 0x28, 0, 1, 0, 2, 3, PADDRI_4_8),
 	RTK_PIN_CONFIG(tp0_sync, 0x28, 4, 1, 0, 2, 3, PADDRI_4_8),
 	RTK_PIN_CONFIG(tp0_valid, 0x28, 8, 1, 0, 2, 3, PADDRI_4_8),
@@ -1226,7 +1226,7 @@ static const struct rtd119x_pin_config_desc rtd1295_sb2_configs[] = {
 };
 
 
-static const struct rtd119x_pinctrl_desc rtd1295_sb2_pinctrl_desc = {
+static const struct rtd_pinctrl_desc rtd1295_sb2_pinctrl_desc = {
 	.pins = rtd1295_sb2_pins,
 	.num_pins = ARRAY_SIZE(rtd1295_sb2_pins),
 	.groups = rtd1295_sb2_pin_groups,
@@ -1278,7 +1278,7 @@ static const unsigned int rtd1295_ao_sd_1_pins[] = { RTD1295_AO_SD_1 };
 static const unsigned int rtd1295_ao_sd_2_pins[] = { RTD1295_AO_SD_2 };
 static const unsigned int rtd1295_ao_sd_3_pins[] = { RTD1295_AO_SD_3 };
 
-static const struct rtd119x_pin_group_desc rtd1295_disp_pin_groups[] = {
+static const struct rtd_pin_group_desc rtd1295_disp_pin_groups[] = {
 	RTD1295_GROUP(spdif),
 	RTD1295_GROUP(dmic_clk),
 	RTD1295_GROUP(dmic_data),
@@ -1313,7 +1313,7 @@ static const char * const rtd1295_disp_spdif_out_groups[] = { "spdif" };
 		.num_groups = ARRAY_SIZE(rtd1295_disp_ ## _name ## _groups), \
 	}
 
-static const struct rtd119x_pin_func_desc rtd1295_disp_pin_functions[] = {
+static const struct rtd_pin_func_desc rtd1295_disp_pin_functions[] = {
 	RTD1295_FUNC(gpio),
 	RTD1295_FUNC(ai),
 	RTD1295_FUNC(ao),
@@ -1323,7 +1323,7 @@ static const struct rtd119x_pin_func_desc rtd1295_disp_pin_functions[] = {
 
 #undef RTD1295_FUNC
 
-static const struct rtd119x_pin_desc rtd1295_disp_muxes[] = {
+static const struct rtd_pin_desc rtd1295_disp_muxes[] = {
 	RTK_PIN_MUX(spdif, 0x08, GENMASK(1, 0),
 		RTK_PIN_FUNC(0x0 << 0, "gpio"),
 		RTK_PIN_FUNC(0x1 << 0, "spdif_out")),
@@ -1360,7 +1360,7 @@ static const struct rtd119x_pin_desc rtd1295_disp_muxes[] = {
 		RTK_PIN_FUNC(0x2 << 18, "ai")),
 };
 
-static const struct rtd119x_pin_config_desc rtd1295_disp_configs[] = {
+static const struct rtd_pin_config_desc rtd1295_disp_configs[] = {
 	RTK_PIN_CONFIG(spdif, 0x0, 0, 1, 0, 2, 3, PADDRI_2_4),
 	RTK_PIN_CONFIG(dmic_clk, 0x0, 4, 1, 0, 2, 3, PADDRI_2_4),
 	RTK_PIN_CONFIG(dmic_data, 0x0, 8, 1, 0, 2, 3, PADDRI_2_4),
@@ -1374,7 +1374,7 @@ static const struct rtd119x_pin_config_desc rtd1295_disp_configs[] = {
 };
 
 
-static const struct rtd119x_pinctrl_desc rtd1295_disp_pinctrl_desc = {
+static const struct rtd_pinctrl_desc rtd1295_disp_pinctrl_desc = {
 	.pins = rtd1295_disp_pins,
 	.num_pins = ARRAY_SIZE(rtd1295_disp_pins),
 	.groups = rtd1295_disp_pin_groups,
@@ -1513,7 +1513,7 @@ static const unsigned int rtd1295_prob_3_pins[] = { RTD1295_PROB_3 };
 static const unsigned int rtd1295_sdio_loc_pins[] = { RTD1295_SDIO_LOC };
 
 
-static const struct rtd119x_pin_group_desc rtd1295_cr_pin_groups[] = {
+static const struct rtd_pin_group_desc rtd1295_cr_pin_groups[] = {
 	RTD1295_GROUP(nf_cle),
 	RTD1295_GROUP(nf_ale),
 	RTD1295_GROUP(nf_rd_n),
@@ -1616,7 +1616,7 @@ static const char * const rtd1295_cr_sdio_1_groups[] = {
 		.num_groups = ARRAY_SIZE(rtd1295_cr_ ## _name ## _groups), \
 	}
 
-static const struct rtd119x_pin_func_desc rtd1295_cr_pin_functions[] = {
+static const struct rtd_pin_func_desc rtd1295_cr_pin_functions[] = {
 	RTD1295_FUNC(gpio),
 	RTD1295_FUNC(avcpu_ej),
 	RTD1295_FUNC(emmc),
@@ -1633,7 +1633,7 @@ static const struct rtd119x_pin_func_desc rtd1295_cr_pin_functions[] = {
 
 #undef RTD1295_FUNC
 
-static const struct rtd119x_pin_desc rtd1295_cr_muxes[] = {
+static const struct rtd_pin_desc rtd1295_cr_muxes[] = {
 	RTK_PIN_MUX(nf_dqs, 0x00, GENMASK(1, 0),
 		RTK_PIN_FUNC(0x0 << 0, "gpio"),
 		RTK_PIN_FUNC(0x1 << 0, "nand")),
@@ -1785,7 +1785,7 @@ static const struct rtd119x_pin_desc rtd1295_cr_muxes[] = {
 		RTK_PIN_FUNC(0x1 << 12, "pll_test")),
 };
 
-static const struct rtd119x_pin_config_desc rtd1295_cr_configs[] = {
+static const struct rtd_pin_config_desc rtd1295_cr_configs[] = {
 	RTK_PIN_CONFIG(nf_dqs, 0x8, 0, 1, 0, 2, 3, PCONF_UNSUPP),
 	RTK_PIN_CONFIG(nf_ale, 0x8, 4, 1, 0, 2, 3, PCONF_UNSUPP),
 	RTK_PIN_CONFIG(nf_ce_n_0, 0x8, 8, 1, 0, 2, 3, PCONF_UNSUPP),
@@ -1825,7 +1825,7 @@ static const struct rtd119x_pin_config_desc rtd1295_cr_configs[] = {
 	RTK_PIN_CONFIG(prob_3, 0x18, 24, 1, 0, 2, 3, PADDRI_4_8),
 };
 
-static const struct rtd119x_pin_sconfig_desc rtd1295_cr_sconfigs[] = {
+static const struct rtd_pin_sconfig_desc rtd1295_cr_sconfigs[] = {
 	RTK_PIN_SCONFIG(nf_ce_n_1, 0x20, 0, 4, 4, 4),
 	RTK_PIN_SCONFIG(nf_ce_n_0, 0x20, 8, 4, 12, 4),
 	RTK_PIN_SCONFIG(nf_rdy, 0x20, 16, 4, 20, 4),
@@ -1859,7 +1859,7 @@ static const struct rtd119x_pin_sconfig_desc rtd1295_cr_sconfigs[] = {
 
 
 
-static const struct rtd119x_pinctrl_desc rtd1295_cr_pinctrl_desc = {
+static const struct rtd_pinctrl_desc rtd1295_cr_pinctrl_desc = {
 	.pins = rtd1295_cr_pins,
 	.num_pins = ARRAY_SIZE(rtd1295_cr_pins),
 	.groups = rtd1295_cr_pin_groups,
