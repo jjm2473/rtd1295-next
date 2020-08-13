@@ -36,12 +36,57 @@ struct rtd119x_pin_mux_desc {
 	u32 mux_value;
 };
 
+struct rtd119x_pin_sconfig_desc {
+	const char *name;
+	unsigned int reg_offset;
+	unsigned int ndrive_offset;
+	unsigned int ndrive_maskbits;
+	unsigned int pdrive_offset;
+	unsigned int pdrive_maskbits;
+};
+
+struct rtd119x_pin_config_desc {
+	const char *name;
+	unsigned int reg_offset;
+	unsigned int base_bit;
+	unsigned int pud_en_offset;
+	unsigned int pud_sel_offset;
+	unsigned int curr_offset;
+	unsigned int smt_offset;
+	unsigned int curr_type;
+};
+
 struct rtd119x_pin_desc {
 	const char *name;
 	unsigned int mux_offset;
 	u32 mux_mask;
 	const struct rtd119x_pin_mux_desc *functions;
 };
+
+#define RTK_PIN_SCONFIG(_name, _reg_off, _n_offset, _n_mask, _p_offset, _p_mask) \
+		{ \
+			.name = # _name, \
+			.reg_offset = _reg_off, \
+			.ndrive_offset = _n_offset, \
+			.ndrive_maskbits = _n_mask, \
+			.pdrive_offset = _p_offset, \
+			.pdrive_maskbits = _p_mask, \
+		}
+
+
+#define RTK_PIN_CONFIG(_name, _reg_off, _base_bit, _pud_en_off, \
+		_pud_sel_off, _curr_off, _smt_off, _curr_type) \
+	{ \
+		.name = # _name, \
+		.reg_offset = _reg_off, \
+		.base_bit = _base_bit, \
+		.pud_en_offset = _pud_en_off, \
+		.pud_sel_offset = _pud_sel_off, \
+		.curr_offset = _curr_off, \
+		.smt_offset = _smt_off, \
+		.curr_type = _curr_type, \
+	}
+
 
 #define RTK_PIN_MUX(_name, _mux_off, _mux_mask, ...) \
 	{ \
@@ -68,7 +113,16 @@ struct rtd119x_pinctrl_desc {
 	unsigned int num_functions;
 	const struct rtd119x_pin_desc *muxes;
 	unsigned int num_muxes;
+	const struct rtd119x_pin_config_desc *configs;
+	unsigned int num_configs;
+	const struct rtd119x_pin_sconfig_desc *sconfigs;
+	unsigned int num_sconfigs;
 };
+
+#define PCONF_UNSUPP 0xffffffff
+#define PADDRI_4_8 1
+#define PADDRI_2_4 0
+
 
 #include "pinctrl-rtd1195.h"
 #include "pinctrl-rtd1295.h"
@@ -78,6 +132,15 @@ struct rtd119x_pinctrl {
 	void __iomem *base;
 	struct pinctrl_desc desc;
 	const struct rtd119x_pinctrl_desc *info;
+};
+
+/* custom pinconf parameters */
+#define RTK_P_DRIVE	(PIN_CONFIG_END + 1)
+#define RTK_N_DRIVE	(PIN_CONFIG_END + 2)
+
+static const struct pinconf_generic_params rtd119x_custom_bindings[] = {
+	{"rtk,pdrive",  RTK_P_DRIVE,	0},
+	{"rtk,ndrive",	RTK_N_DRIVE,	0},
 };
 
 static int rtd119x_pinctrl_get_groups_count(struct pinctrl_dev *pcdev)
@@ -165,6 +228,32 @@ static const struct rtd119x_pin_desc *rtd119x_pinctrl_find_mux(struct rtd119x_pi
 	return NULL;
 }
 
+static const struct rtd119x_pin_config_desc *rtd119x_pinctrl_find_config(struct rtd119x_pinctrl *data, const char *name)
+{
+	int i;
+
+	for (i = 0; i < data->info->num_configs; i++) {
+		if (strcmp(data->info->configs[i].name, name) == 0)
+			return &data->info->configs[i];
+	}
+
+	return NULL;
+}
+
+static const struct rtd119x_pin_sconfig_desc *rtd119x_pinctrl_find_sconfig(struct rtd119x_pinctrl *data, const char *name)
+{
+	int i;
+
+	for (i = 0; i < data->info->num_configs; i++) {
+		if (strcmp(data->info->sconfigs[i].name, name) == 0)
+			return &data->info->sconfigs[i];
+	}
+
+	return NULL;
+}
+
+
+
 static int rtd119x_pinctrl_set_one_mux(struct pinctrl_dev *pcdev,
 	unsigned int pin, const char *func_name)
 {
@@ -247,10 +336,123 @@ static const struct pinmux_ops rtd119x_pinmux_ops = {
 	.gpio_request_enable = rtd119x_pinctrl_gpio_request_enable,
 };
 
+
+static int rtd119x_pconf_parse_conf(struct rtd119x_pinctrl *data,
+	const char *pin_name, enum pin_config_param param,
+	enum pin_config_param arg)
+{
+	u8 set_val = 0;
+	u16 strength;
+	u32 val, mask;
+	int pulsel_off, pulen_off, smt_off, curr_off;
+	const struct rtd119x_pin_config_desc *config_desc;
+	const struct rtd119x_pin_sconfig_desc *sconfig_desc;
+
+	config_desc = rtd119x_pinctrl_find_config(data, pin_name);
+	if (!config_desc)
+		return -ENOTSUPP;
+
+	smt_off = config_desc->base_bit + config_desc->smt_offset;
+	curr_off = config_desc->base_bit + config_desc->curr_offset;
+	pulsel_off = config_desc->base_bit + config_desc->pud_sel_offset;
+	pulen_off = config_desc->base_bit + config_desc->pud_en_offset;
+
+	switch ((u32)param) {
+	case PIN_CONFIG_INPUT_SCHMITT:
+	case PIN_CONFIG_INPUT_SCHMITT_ENABLE:
+		set_val = arg;
+		val = readl(data->base + config_desc->reg_offset);
+		if (set_val)
+			val |= BIT(smt_off);
+		else
+			val &= ~BIT(smt_off);
+		writel(val, data->base + config_desc->reg_offset);
+		break;
+	case PIN_CONFIG_DRIVE_PUSH_PULL:
+		val = readl(data->base + config_desc->reg_offset);
+		if (set_val)
+			val |= BIT(pulen_off);
+		else
+			val &= ~BIT(pulen_off);
+		writel(val, data->base + config_desc->reg_offset);
+		break;
+	case PIN_CONFIG_BIAS_DISABLE:
+		val = readl(data->base + config_desc->reg_offset);
+		val &= ~BIT(pulen_off);
+		writel(val, data->base + config_desc->reg_offset);
+		break;
+	case PIN_CONFIG_BIAS_PULL_UP:
+		val = readl(data->base + config_desc->reg_offset);
+		val |= BIT(pulen_off) | BIT(pulsel_off);
+		writel(val, data->base + config_desc->reg_offset);
+		break;
+	case PIN_CONFIG_BIAS_PULL_DOWN:
+		val = readl(data->base + config_desc->reg_offset);
+		val |= BIT(pulen_off);
+		val &= ~BIT(pulsel_off);
+		writel(val, data->base + config_desc->reg_offset);
+		break;
+	case PIN_CONFIG_DRIVE_STRENGTH:
+		strength = arg;
+		val = readl(data->base + config_desc->reg_offset);
+		switch (config_desc->curr_type) {
+		case PADDRI_4_8:
+			if (strength == 4)
+				val &= ~BIT(curr_off);
+			else if (strength == 8)
+				val |= BIT(curr_off);
+			else
+				return -EINVAL;
+			break;
+		case PADDRI_2_4:
+			if (strength == 2)
+				val &= ~BIT(curr_off);
+			else if (strength == 4)
+				val |= BIT(curr_off);
+			else
+				return -EINVAL;
+			break;
+		case PCONF_UNSUPP:
+			pr_err("[%s] not support drive strength\n", config_desc->name);
+			return -ENOTSUPP;
+			break;
+		default:
+			return -EINVAL;
+		}
+		writel(val, data->base + config_desc->reg_offset);
+		break;
+	case RTK_P_DRIVE:
+		sconfig_desc = rtd119x_pinctrl_find_sconfig(data, pin_name);
+		if (!sconfig_desc)
+			return -ENOTSUPP;
+		set_val = arg;
+		val = readl(data->base + sconfig_desc->reg_offset);
+		mask = GENMASK(sconfig_desc->pdrive_offset +
+				sconfig_desc->pdrive_maskbits - 1, sconfig_desc->pdrive_offset);
+		val = (val & ~mask) | (set_val << sconfig_desc->pdrive_offset);
+		writel(val, data->base + sconfig_desc->reg_offset);
+		break;
+	case RTK_N_DRIVE:
+		sconfig_desc = rtd119x_pinctrl_find_sconfig(data, pin_name);
+		if (!sconfig_desc)
+			return -ENOTSUPP;
+		set_val = arg;
+		val = readl(data->base + sconfig_desc->reg_offset);
+		mask = GENMASK(sconfig_desc->ndrive_offset +
+				sconfig_desc->ndrive_maskbits - 1, sconfig_desc->ndrive_offset);
+		val = (val & ~mask) | (set_val << sconfig_desc->ndrive_offset);
+		writel(val, data->base + sconfig_desc->reg_offset);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 static int rtd119x_pin_config_get(struct pinctrl_dev *pcdev, unsigned pinnr,
 		unsigned long *config)
 {
-	//struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 	unsigned int param = pinconf_to_config_param(*config);
 	unsigned int arg = 0;
 
@@ -266,15 +468,62 @@ static int rtd119x_pin_config_get(struct pinctrl_dev *pcdev, unsigned pinnr,
 static int rtd119x_pin_config_set(struct pinctrl_dev *pcdev, unsigned pinnr,
 		unsigned long *configs, unsigned num_configs)
 {
-	//struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
+	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
+	const struct pinctrl_pin_desc *pin_desc;
+	const char *pin_name;
+	int i;
+	int ret = 0;
+
+	pin_desc = rtd119x_pinctrl_get_pin_by_number(data, pinnr);
+	if (!pin_desc)
+		return -ENOTSUPP;
+
+	pin_name = pin_desc->name;
+
+	for (i = 0; i < num_configs; i++) {
+		ret = rtd119x_pconf_parse_conf(data, pin_name,
+			pinconf_to_config_param(configs[i]),
+			pinconf_to_config_argument(configs[i]));
+		if (ret < 0)
+			return ret;
+	}
 
 	return 0;
 }
+
+
+static int rtd119x_pin_config_group_set(struct pinctrl_dev *pcdev, unsigned group,
+				unsigned long *configs, unsigned num_configs)
+{
+	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
+	const unsigned int *pins;
+	unsigned int num_pins;
+	const char *group_name;
+	int i, ret;
+
+		group_name = data->info->groups[group].name;
+
+	ret = rtd119x_pinctrl_get_group_pins(pcdev, group, &pins, &num_pins);
+	if (ret) {
+		dev_err(pcdev->dev, "Getting pins for group %s failed\n", group_name);
+		return ret;
+	}
+
+	for (i = 0; i < num_pins; i++) {
+		ret = rtd119x_pin_config_set(pcdev, pins[i], configs, num_configs);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+ }
+
 
 static const struct pinconf_ops rtd119x_pinconf_ops = {
 	.is_generic = true,
 	.pin_config_get = rtd119x_pin_config_get,
 	.pin_config_set = rtd119x_pin_config_set,
+	.pin_config_group_set = rtd119x_pin_config_group_set,
 };
 
 static void rtd119x_pinctrl_selftest(struct rtd119x_pinctrl *data)
@@ -356,8 +605,8 @@ static int rtd119x_pinctrl_probe(struct platform_device *pdev)
 	data->desc.pctlops = &rtd119x_pinctrl_ops;
 	data->desc.pmxops = &rtd119x_pinmux_ops;
 	data->desc.confops = &rtd119x_pinconf_ops;
-	data->desc.custom_params = NULL;
-	data->desc.num_custom_params = 0;
+	data->desc.custom_params = rtd119x_custom_bindings;
+	data->desc.num_custom_params = ARRAY_SIZE(rtd119x_custom_bindings);
 	data->desc.owner = THIS_MODULE;
 
 	data->pcdev = pinctrl_register(&data->desc, &pdev->dev, data);
