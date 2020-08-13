@@ -390,7 +390,7 @@
 	};
 
 	sdio_pins: sdio-pins {
-		function = "sdio";
+		function = "sdio_0";
 		groups = "sdio_cmd", "sdio_clk", "sdio_data_0", "sdio_data_1", "sdio_data_2", "sdio_data_3";
 	};
 };
