@@ -1,3 +1,11 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause */
+
+/*
+ * Realtek RTD1195 pin controller driver
+ *
+ * Copyright (c) 2019 Realtek Semiconductor Corp.
+ */
+
 #ifndef PINCTRL_RTD1195_H
 #define PINCTRL_RTD1195_H
 
@@ -76,15 +84,20 @@ static const unsigned int rtd1195_ur1_cts_n_pins[] = { RTD1195_ISO_UR1_CTS_N };
 static const unsigned int rtd1195_ur1_rts_n_pins[] = { RTD1195_ISO_UR1_RTS_N };
 static const unsigned int rtd1195_i2c_scl_0_pins[] = { RTD1195_ISO_I2C_SCL_0 };
 static const unsigned int rtd1195_i2c_sda_0_pins[] = { RTD1195_ISO_I2C_SDA_0 };
-static const unsigned int rtd1195_etn_led_link_pins[] = { RTD1195_ISO_ETN_LED_LINK };
-static const unsigned int rtd1195_etn_led_rxtx_pins[] = { RTD1195_ISO_ETN_LED_RXTX };
+static const unsigned int rtd1195_etn_led_link_pins[] = {
+				RTD1195_ISO_ETN_LED_LINK };
+static const unsigned int rtd1195_etn_led_rxtx_pins[] = {
+				RTD1195_ISO_ETN_LED_RXTX };
 static const unsigned int rtd1195_i2c_scl_6_pins[] = { RTD1195_ISO_I2C_SCL_6 };
 static const unsigned int rtd1195_i2c_sda_6_pins[] = { RTD1195_ISO_I2C_SDA_6 };
 static const unsigned int rtd1195_ai_loc_pins[] = { RTD1195_ISO_AI_LOC };
-static const unsigned int rtd1195_ejtag_avcpu_loc_pins[] = { RTD1195_ISO_EJTAG_AVCPU_LOC };
+static const unsigned int rtd1195_ejtag_avcpu_loc_pins[] = {
+				RTD1195_ISO_EJTAG_AVCPU_LOC };
 static const unsigned int rtd1195_ur1_loc_pins[] = { RTD1195_ISO_UR1_LOC };
-static const unsigned int rtd1195_pwm_01_open_drain_pins[] = { RTD1195_ISO_PWM_01_OPEN_DRAIN };
-static const unsigned int rtd1195_pwm_23_open_drain_pins[] = { RTD1195_ISO_PWM_23_OPEN_DRAIN };
+static const unsigned int rtd1195_pwm_01_open_drain_pins[] = {
+				RTD1195_ISO_PWM_01_OPEN_DRAIN };
+static const unsigned int rtd1195_pwm_23_open_drain_pins[] = {
+				RTD1195_ISO_PWM_23_OPEN_DRAIN };
 
 
 #define RTD1195_GROUP(_name) \
@@ -148,26 +161,46 @@ static const char * const rtd1195_iso_avcpu_ejtag_misc_loc_groups[] = {
 	"ejtag_avcpu_loc"
 };
 
-
-static const char * const rtd1195_iso_etn_led_groups[] = { "etn_led_link", "etn_led_rxtx" };
-static const char * const rtd1195_iso_i2c0_groups[] = { "i2c_scl_0", "i2c_sda_0" };
+static const char * const rtd1195_iso_etn_led_groups[] = {
+	"etn_led_link", "etn_led_rxtx"
+};
+static const char * const rtd1195_iso_i2c0_groups[] = {
+	"i2c_scl_0", "i2c_sda_0"
+};
 static const char * const rtd1195_iso_i2c2_groups[] = { "vfd_d" };
 static const char * const rtd1195_iso_i2c3_groups[] = { "ir_tx" };
-static const char * const rtd1195_iso_i2c6_groups[] = { "i2c_scl_6", "i2c_sda_6" };
+static const char * const rtd1195_iso_i2c6_groups[] = {
+	"i2c_scl_6", "i2c_sda_6"
+};
 static const char * const rtd1195_iso_ir_rx_groups[] = { "ir_rx" };
 static const char * const rtd1195_iso_ir_tx_groups[] = { "ir_tx" };
 static const char * const rtd1195_iso_pwm_groups[] = {
 	"ur0_rx", "ur0_tx", "ur1_rx", "ur1_tx", "etn_led_link", "etn_led_rxtx"
 };
-static const char * const rtd1195_iso_standby_dbg_groups[] = { "ir_rx", "usb0", "usb1" };
+static const char * const rtd1195_iso_standby_dbg_groups[] = {
+	"ir_rx", "usb0", "usb1"
+};
 static const char * const rtd1195_iso_uart0_groups[] = { "ur0_rx", "ur0_tx" };
-static const char * const rtd1195_iso_uart1_groups[] = { "ur1_rx", "ur1_tx", "ur1_cts_n", "ur1_rts_n", "ur1_loc" };
+static const char * const rtd1195_iso_uart1_groups[] = {
+	"ur1_rx", "ur1_tx", "ur1_cts_n", "ur1_rts_n", "ur1_loc"
+};
 static const char * const rtd1195_iso_ur1_misc_groups[] = { "ur1_loc" };
-static const char * const rtd1195_iso_vfd_groups[] = { "vfd_cs_n", "vfd_clk", "vfd_d" };
-static const char * const rtd1195_iso_pwm_01_normal_groups[] = { "pwm_01_open_drain" };
-static const char * const rtd1195_iso_pwm_23_normal_groups[] = { "pwm_23_open_drain" };
-static const char * const rtd1195_iso_pwm_01_open_drain_groups[] = { "pwm_01_open_drain" };
-static const char * const rtd1195_iso_pwm_23_open_drain_groups[] = { "pwm_23_open_drain" };
+static const char * const rtd1195_iso_vfd_groups[] = {
+	"vfd_cs_n", "vfd_clk", "vfd_d"
+};
+static const char * const rtd1195_iso_pwm_01_normal_groups[] = {
+	"pwm_01_open_drain"
+};
+static const char * const rtd1195_iso_pwm_23_normal_groups[] = {
+	"pwm_23_open_drain"
+};
+static const char * const rtd1195_iso_pwm_01_open_drain_groups[] = {
+	"pwm_01_open_drain"
+};
+static const char * const rtd1195_iso_pwm_23_open_drain_groups[] = {
+	"pwm_23_open_drain"
+
+};
 
 
 
@@ -527,12 +560,17 @@ static const unsigned int rtd1195_i2c_scl_1_pins[] = { RTD1195_I2C_SCL_1 };
 static const unsigned int rtd1195_i2c_sda_1_pins[] = { RTD1195_I2C_SDA_1 };
 static const unsigned int rtd1195_i2c_scl_4_pins[] = { RTD1195_I2C_SCL_4 };
 static const unsigned int rtd1195_i2c_sda_4_pins[] = { RTD1195_I2C_SDA_4 };
-static const unsigned int rtd1195_sensor_cko_0_pins[] = { RTD1195_SENSOR_CKO_0 };
-static const unsigned int rtd1195_sensor_cko_1_pins[] = { RTD1195_SENSOR_CKO_1 };
+static const unsigned int rtd1195_sensor_cko_0_pins[] = {
+					RTD1195_SENSOR_CKO_0 };
+static const unsigned int rtd1195_sensor_cko_1_pins[] = {
+					RTD1195_SENSOR_CKO_1 };
 static const unsigned int rtd1195_sensor_rst_pins[] = { RTD1195_SENSOR_RST };
-static const unsigned int rtd1195_sensor_stb_0_pins[] = { RTD1195_SENSOR_STB_0 };
-static const unsigned int rtd1195_sensor_stb_1_pins[] = { RTD1195_SENSOR_STB_1 };
-static const unsigned int rtd1195_ejtag_scpu_loc_pins[] = { RTD1195_EJTAG_SCPU_LOC };
+static const unsigned int rtd1195_sensor_stb_0_pins[] = {
+					RTD1195_SENSOR_STB_0 };
+static const unsigned int rtd1195_sensor_stb_1_pins[] = {
+					RTD1195_SENSOR_STB_1 };
+static const unsigned int rtd1195_ejtag_scpu_loc_pins[] = {
+					RTD1195_EJTAG_SCPU_LOC };
 static const unsigned int rtd1195_hif_loc_pins[] = { RTD1195_HI_LOC };
 static const unsigned int rtd1195_ao_loc_pins[] = { RTD1195_AO_LOC };
 
@@ -617,11 +655,14 @@ static const struct rtd119x_pin_group_desc rtd1195_crt_pin_groups[] = {
 static const char * const rtd1195_crt_gpio_groups[] = {
 	"gpio_0", "gpio_1", "gpio_2", "gpio_3",
 	"gpio_4", "gpio_5", "gpio_6", "gpio_7", "gpio_8",
-	"nf_dd_0", "nf_dd_1", "nf_dd_2", "nf_dd_3", "nf_dd_4", "nf_dd_5", "nf_dd_6", "nf_dd_7",
-	"nf_rdy", "nf_rd_n", "nf_wr_n", "nf_ale", "nf_cle", "nf_ce_n_0", "nf_ce_n_1",
+	"nf_dd_0", "nf_dd_1", "nf_dd_2", "nf_dd_3",
+	"nf_dd_4", "nf_dd_5", "nf_dd_6", "nf_dd_7",
+	"nf_rdy", "nf_rd_n", "nf_wr_n", "nf_ale",
+	"nf_cle", "nf_ce_n_0", "nf_ce_n_1",
 	"mmc_data_0", "mmc_data_1", "mmc_data_2", "mmc_data_3",
 	"mmc_clk", "mmc_cmd", "mmc_wp", "mmc_cd",
-	"sdio_clk", "sdio_data_0", "sdio_data_1", "sdio_data_2", "sdio_data_3", "sdio_cmd",
+	"sdio_clk", "sdio_data_0", "sdio_data_1",
+	"sdio_data_2", "sdio_data_3", "sdio_cmd",
 	"i2c_scl_5", "i2c_sda_5",
 	"tp1_data", "tp1_clk", "tp1_valid", "tp1_sync",
 	"tp0_data", "tp0_clk", "tp0_valid", "tp0_sync",
@@ -649,7 +690,8 @@ static const char * const rtd1195_crt_avcpu_ejtag_misc_groups[] = {
 };
 static const char * const rtd1195_crt_cpu_loop_groups[] = { "usb_id" };
 static const char * const rtd1195_crt_emmc_groups[] = {
-	"nf_dd_0", "nf_dd_1", "nf_dd_2", "nf_dd_3", "nf_dd_4", "nf_dd_5", "nf_dd_6", "nf_dd_7",
+	"nf_dd_0", "nf_dd_1", "nf_dd_2", "nf_dd_3",
+	"nf_dd_4", "nf_dd_5", "nf_dd_6", "nf_dd_7",
 	"nf_rdy", "nf_rd_n", "nf_wr_n", "nf_ale", "nf_cle",
 };
 static const char * const rtd1195_crt_gspi_groups[] = {
@@ -664,30 +706,45 @@ static const char * const rtd1195_crt_hif_misc_groups[] = {
 };
 
 
-static const char * const rtd1195_crt_i2c1_groups[] = { "i2c_scl_1", "i2c_sda_1" };
-static const char * const rtd1195_crt_i2c2_groups[] = { "tp1_sync", "tp1_clk" };
-static const char * const rtd1195_crt_i2c3_groups[] = { "tp1_data", "tp1_valid" };
-static const char * const rtd1195_crt_i2c4_groups[] = { "i2c_scl_4", "i2c_sda_4" };
-static const char * const rtd1195_crt_i2c5_groups[] = { "i2c_scl_5", "i2c_sda_5" };
+static const char * const rtd1195_crt_i2c1_groups[] = {
+	"i2c_scl_1", "i2c_sda_1"
+};
+static const char * const rtd1195_crt_i2c2_groups[] = {
+	"tp1_sync", "tp1_clk"
+};
+static const char * const rtd1195_crt_i2c3_groups[] = {
+	"tp1_data", "tp1_valid" };
+static const char * const rtd1195_crt_i2c4_groups[] = {
+	"i2c_scl_4", "i2c_sda_4"
+};
+static const char * const rtd1195_crt_i2c5_groups[] = {
+	"i2c_scl_5", "i2c_sda_5"
+};
 static const char * const rtd1195_crt_mmc_groups[] = {
 	"mmc_data_0", "mmc_data_1", "mmc_data_2", "mmc_data_3",
 	"mmc_clk", "mmc_cmd", "mmc_wp", "mmc_cd",
 };
 static const char * const rtd1195_crt_nand_groups[] = {
-	"nf_dd_0", "nf_dd_1", "nf_dd_2", "nf_dd_3", "nf_dd_4", "nf_dd_5", "nf_dd_6", "nf_dd_7",
-	"nf_rdy", "nf_rd_n", "nf_wr_n", "nf_ale", "nf_cle", "nf_ce_n_0", "nf_ce_n_1",
+	"nf_dd_0", "nf_dd_1", "nf_dd_2", "nf_dd_3",
+	"nf_dd_4", "nf_dd_5", "nf_dd_6", "nf_dd_7",
+	"nf_rdy", "nf_rd_n", "nf_wr_n", "nf_ale",
+	"nf_cle", "nf_ce_n_0", "nf_ce_n_1",
 };
 static const char * const rtd1195_crt_scpu_ejtag_gpio_groups[] = {
 	"gpio_4", "gpio_5", "gpio_6", "gpio_7", "gpio_8", "ejtag_scpu_loc"
 };
 static const char * const rtd1195_crt_scpu_ejtag_cr_groups[] = {
-	"mmc_data_0", "mmc_data_3", "mmc_clk", "mmc_cmd", "mmc_wp", "ejtag_scpu_loc"
+	"mmc_data_0", "mmc_data_3", "mmc_clk",
+	"mmc_cmd", "mmc_wp", "ejtag_scpu_loc"
 };
 
 static const char * const rtd1195_crt_sdio_groups[] = {
-	"sdio_clk", "sdio_data_0", "sdio_data_1", "sdio_data_2", "sdio_data_3", "sdio_cmd",
+	"sdio_clk", "sdio_data_0", "sdio_data_1",
+	"sdio_data_2", "sdio_data_3", "sdio_cmd",
 };
-static const char * const rtd1195_crt_sensor_groups[] = { "sensor_cko_0", "sensor_cko_1" };
+static const char * const rtd1195_crt_sensor_groups[] = {
+	"sensor_cko_0", "sensor_cko_1"
+};
 static const char * const rtd1195_crt_spdif_groups[] = { "spdif" };
 static const char * const rtd1195_crt_tp0_groups[] = {
 	"tp0_data", "tp0_clk", "tp0_valid", "tp0_sync",
@@ -695,7 +752,9 @@ static const char * const rtd1195_crt_tp0_groups[] = {
 static const char * const rtd1195_crt_tp1_groups[] = {
 	"tp1_data", "tp1_clk", "tp1_valid", "tp1_sync",
 };
-static const char * const rtd1195_crt_uart1_groups[] = { "gpio_0", "gpio_1", "gpio_2", "gpio_3" };
+static const char * const rtd1195_crt_uart1_groups[] = {
+	"gpio_0", "gpio_1", "gpio_2", "gpio_3"
+};
 static const char * const rtd1195_crt_usb_groups[] = { "sensor_cko_1" };
 
 #define RTD1195_FUNC(_name) \

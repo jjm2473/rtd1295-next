@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+
 /*
- * Copyright (c) 2017 Andreas Färber
+ * Realtek DHC pin controller driver
  *
- * SPDX-License-Identifier: GPL-2.0+
+ * Copyright (c) 2019 Realtek Semiconductor Corp.
  */
+
 
 #include <linux/bitops.h>
 #include <linux/io.h>
@@ -151,7 +154,7 @@ static int rtd119x_pinctrl_get_groups_count(struct pinctrl_dev *pcdev)
 }
 
 static const char *rtd119x_pinctrl_get_group_name(struct pinctrl_dev *pcdev,
-		unsigned selector)
+		unsigned int selector)
 {
 	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 
@@ -159,7 +162,8 @@ static const char *rtd119x_pinctrl_get_group_name(struct pinctrl_dev *pcdev,
 }
 
 static int rtd119x_pinctrl_get_group_pins(struct pinctrl_dev *pcdev,
-		unsigned selector, const unsigned **pins, unsigned *num_pins)
+		unsigned int selector, const unsigned int **pins,
+		unsigned int *num_pins)
 {
 	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 
@@ -185,7 +189,7 @@ static int rtd119x_pinctrl_get_functions_count(struct pinctrl_dev *pcdev)
 }
 
 static const char *rtd119x_pinctrl_get_function_name(struct pinctrl_dev *pcdev,
-		unsigned selector)
+		unsigned int selector)
 {
 	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 
@@ -193,8 +197,8 @@ static const char *rtd119x_pinctrl_get_function_name(struct pinctrl_dev *pcdev,
 }
 
 static int rtd119x_pinctrl_get_function_groups(struct pinctrl_dev *pcdev,
-		unsigned selector, const char * const **groups,
-		unsigned * const num_groups)
+		unsigned int selector, const char * const **groups,
+		unsigned int * const num_groups)
 {
 	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 
@@ -204,7 +208,8 @@ static int rtd119x_pinctrl_get_function_groups(struct pinctrl_dev *pcdev,
 	return 0;
 }
 
-static const struct pinctrl_pin_desc *rtd119x_pinctrl_get_pin_by_number(struct rtd119x_pinctrl *data, int number)
+static const struct pinctrl_pin_desc *rtd119x_pinctrl_get_pin_by_number(
+		struct rtd119x_pinctrl *data, int number)
 {
 	int i;
 
@@ -216,7 +221,8 @@ static const struct pinctrl_pin_desc *rtd119x_pinctrl_get_pin_by_number(struct r
 	return NULL;
 }
 
-static const struct rtd119x_pin_desc *rtd119x_pinctrl_find_mux(struct rtd119x_pinctrl *data, const char *name)
+static const struct rtd119x_pin_desc *rtd119x_pinctrl_find_mux(
+		struct rtd119x_pinctrl *data, const char *name)
 {
 	int i;
 
@@ -228,7 +234,8 @@ static const struct rtd119x_pin_desc *rtd119x_pinctrl_find_mux(struct rtd119x_pi
 	return NULL;
 }
 
-static const struct rtd119x_pin_config_desc *rtd119x_pinctrl_find_config(struct rtd119x_pinctrl *data, const char *name)
+static const struct rtd119x_pin_config_desc *rtd119x_pinctrl_find_config(
+		struct rtd119x_pinctrl *data, const char *name)
 {
 	int i;
 
@@ -275,7 +282,8 @@ static int rtd119x_pinctrl_set_one_mux(struct pinctrl_dev *pcdev,
 		return -ENOTSUPP;
 
 	if (!mux->functions) {
-		dev_err(pcdev->dev, "No functions available for pin %s\n", pin_name);
+		dev_err(pcdev->dev,
+			"No functions available for pin %s\n", pin_name);
 		return -ENOTSUPP;
 	}
 
@@ -290,12 +298,13 @@ static int rtd119x_pinctrl_set_one_mux(struct pinctrl_dev *pcdev,
 		return 0;
 	}
 
-	dev_err(pcdev->dev, "No function %s available for pin %s\n", func_name, pin_name);
+	dev_err(pcdev->dev, "No function %s available for pin %s\n",
+			func_name, pin_name);
 	return -EINVAL;
 }
 
 static int rtd119x_pinctrl_set_mux(struct pinctrl_dev *pcdev,
-		unsigned function, unsigned group)
+		unsigned int function, unsigned int group)
 {
 	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 	const unsigned int *pins;
@@ -309,7 +318,8 @@ static int rtd119x_pinctrl_set_mux(struct pinctrl_dev *pcdev,
 
 	ret = rtd119x_pinctrl_get_group_pins(pcdev, group, &pins, &num_pins);
 	if (ret) {
-		dev_err(pcdev->dev, "Getting pins for group %s failed\n", group_name);
+		dev_err(pcdev->dev, "Getting pins for group %s failed\n",
+			group_name);
 		return ret;
 	}
 
@@ -323,7 +333,7 @@ static int rtd119x_pinctrl_set_mux(struct pinctrl_dev *pcdev,
 }
 
 static int rtd119x_pinctrl_gpio_request_enable(struct pinctrl_dev *pcdev,
-	struct pinctrl_gpio_range *range, unsigned offset)
+	struct pinctrl_gpio_range *range, unsigned int offset)
 {
 	return rtd119x_pinctrl_set_one_mux(pcdev, offset, "gpio");
 }
@@ -413,9 +423,9 @@ static int rtd119x_pconf_parse_conf(struct rtd119x_pinctrl *data,
 				return -EINVAL;
 			break;
 		case PCONF_UNSUPP:
-			pr_err("[%s] not support drive strength\n", config_desc->name);
+			dev_err(data->pcdev->dev, "[%s] not support drive strength\n",
+				config_desc->name);
 			return -ENOTSUPP;
-			break;
 		default:
 			return -EINVAL;
 		}
@@ -450,7 +460,7 @@ static int rtd119x_pconf_parse_conf(struct rtd119x_pinctrl *data,
 	return 0;
 }
 
-static int rtd119x_pin_config_get(struct pinctrl_dev *pcdev, unsigned pinnr,
+static int rtd119x_pin_config_get(struct pinctrl_dev *pcdev, unsigned int pinnr,
 		unsigned long *config)
 {
 	unsigned int param = pinconf_to_config_param(*config);
@@ -465,8 +475,8 @@ static int rtd119x_pin_config_get(struct pinctrl_dev *pcdev, unsigned pinnr,
 	return 0;
 }
 
-static int rtd119x_pin_config_set(struct pinctrl_dev *pcdev, unsigned pinnr,
-		unsigned long *configs, unsigned num_configs)
+static int rtd119x_pin_config_set(struct pinctrl_dev *pcdev, unsigned int pinnr,
+		unsigned long *configs, unsigned int num_configs)
 {
 	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 	const struct pinctrl_pin_desc *pin_desc;
@@ -492,8 +502,8 @@ static int rtd119x_pin_config_set(struct pinctrl_dev *pcdev, unsigned pinnr,
 }
 
 
-static int rtd119x_pin_config_group_set(struct pinctrl_dev *pcdev, unsigned group,
-				unsigned long *configs, unsigned num_configs)
+static int rtd119x_pin_config_group_set(struct pinctrl_dev *pcdev,
+					unsigned int group, unsigned long *configs, unsigned int num_configs)
 {
 	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 	const unsigned int *pins;
@@ -516,7 +526,7 @@ static int rtd119x_pin_config_group_set(struct pinctrl_dev *pcdev, unsigned grou
 	}
 
 	return 0;
- }
+}
 
 
 static const struct pinconf_ops rtd119x_pinconf_ops = {
@@ -529,55 +539,66 @@ static const struct pinconf_ops rtd119x_pinconf_ops = {
 static void rtd119x_pinctrl_selftest(struct rtd119x_pinctrl *data)
 {
 	int i, j, k;
+	const struct rtd119x_pinctrl_desc *info = data->info;
 
-	for (i = 0; i < data->info->num_muxes; i++) {
+	for (i = 0; i < info->num_muxes; i++) {
 		/* Check for pin */
-		for (j = 0; j < data->info->num_pins; j++) {
-			if (strcmp(data->info->pins[j].name, data->info->muxes[i].name) == 0)
+		for (j = 0; j < info->num_pins; j++) {
+			if (strcmp(info->pins[j].name,
+				info->muxes[i].name) == 0)
 				break;
 		}
-		if (j == data->info->num_pins)
+		if (j == info->num_pins)
 			dev_warn(data->pcdev->dev, "Mux %s lacking matching pin\n",
-				 data->info->muxes[i].name);
+				info->muxes[i].name);
 
 		/* Check for group */
-		for (j = 0; j < data->info->num_groups; j++) {
-			if (strcmp(data->info->groups[j].name, data->info->muxes[i].name) == 0)
+		for (j = 0; j < info->num_groups; j++) {
+			if (strcmp(info->groups[j].name,
+				info->muxes[i].name) == 0)
 				break;
 		}
-		if (j == data->info->num_groups)
+		if (j == info->num_groups)
 			dev_warn(data->pcdev->dev, "Mux %s lacking matching group\n",
-				 data->info->muxes[i].name);
+				 info->muxes[i].name);
 
-		for (j = 0; data->info->muxes[i].functions[j].name; j++) {
+		for (j = 0; info->muxes[i].functions[j].name; j++) {
 			/* Check for function */
-			for (k = 0; k < data->info->num_functions; k++) {
-				if (strcmp(data->info->functions[k].name,
-					data->info->muxes[i].functions[j].name) == 0)
+			for (k = 0; k < info->num_functions; k++) {
+				if (strcmp(info->functions[k].name,
+					info->muxes[i].functions[j].name) == 0)
 					break;
 			}
-			if (k == data->info->num_functions)
+			if (k == info->num_functions)
 				dev_warn(data->pcdev->dev, "Mux %s lacking function %s\n",
-					 data->info->muxes[i].name,
-					 data->info->muxes[i].functions[j].name);
+					 info->muxes[i].name,
+					 info->muxes[i].functions[j].name);
 
-			/* Check for duplicate mux value - assumption: ascending order */
-			if (j > 0 && data->info->muxes[i].functions[j].mux_value
-				< data->info->muxes[i].functions[j - 1].mux_value)
+			/* Check for duplicate mux value
+			 *- assumption: ascending order
+			 */
+			if (j > 0 && info->muxes[i].functions[j].mux_value
+				< info->muxes[i].functions[j - 1].mux_value)
 				dev_warn(data->pcdev->dev, "Mux %s function %s has unexpected value\n",
-					 data->info->muxes[i].name,
-					 data->info->muxes[i].functions[j].name);
+					 info->muxes[i].name,
+					 info->muxes[i].functions[j].name);
 		}
 	}
 }
 
 static const struct of_device_id rtd119x_pinctrl_dt_ids[] = {
-	 { .compatible = "realtek,rtd1195-iso-pinctrl", .data = &rtd1195_iso_pinctrl_desc },
-	 { .compatible = "realtek,rtd1195-crt-pinctrl", .data = &rtd1195_crt_pinctrl_desc },
-	 { .compatible = "realtek,rtd1295-iso-pinctrl", .data = &rtd1295_iso_pinctrl_desc },
-	 { .compatible = "realtek,rtd1295-sb2-pinctrl", .data = &rtd1295_sb2_pinctrl_desc },
-	 { .compatible = "realtek,rtd1295-disp-pinctrl", .data = &rtd1295_disp_pinctrl_desc },
-	 { .compatible = "realtek,rtd1295-cr-pinctrl", .data = &rtd1295_cr_pinctrl_desc },
+	 { .compatible = "realtek,rtd1195-iso-pinctrl",
+		.data = &rtd1195_iso_pinctrl_desc },
+	 { .compatible = "realtek,rtd1195-crt-pinctrl",
+		.data = &rtd1195_crt_pinctrl_desc },
+	 { .compatible = "realtek,rtd1295-iso-pinctrl",
+		.data = &rtd1295_iso_pinctrl_desc },
+	 { .compatible = "realtek,rtd1295-sb2-pinctrl",
+		.data = &rtd1295_sb2_pinctrl_desc },
+	 { .compatible = "realtek,rtd1295-disp-pinctrl",
+		.data = &rtd1295_disp_pinctrl_desc },
+	 { .compatible = "realtek,rtd1295-cr-pinctrl",
+		.data = &rtd1295_cr_pinctrl_desc },
 	 { }
 };
 
@@ -630,3 +651,5 @@ static struct platform_driver rtd119x_pinctrl_driver = {
 	},
 };
 builtin_platform_driver(rtd119x_pinctrl_driver);
+MODULE_DESCRIPTION("rtk pinctrl driver");
+MODULE_LICENSE("GPL");
