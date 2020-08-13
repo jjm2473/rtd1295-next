@@ -304,7 +304,7 @@ static void rtd119x_pinctrl_selftest(struct rtd119x_pinctrl *data)
 			/* Check for function */
 			for (k = 0; k < data->info->num_functions; k++) {
 				if (strcmp(data->info->functions[k].name,
-				           data->info->muxes[i].functions[j].name) == 0)
+					data->info->muxes[i].functions[j].name) == 0)
 					break;
 			}
 			if (k == data->info->num_functions)
@@ -314,7 +314,7 @@ static void rtd119x_pinctrl_selftest(struct rtd119x_pinctrl *data)
 
 			/* Check for duplicate mux value - assumption: ascending order */
 			if (j > 0 && data->info->muxes[i].functions[j].mux_value
-			          <= data->info->muxes[i].functions[j - 1].mux_value)
+				< data->info->muxes[i].functions[j - 1].mux_value)
 				dev_warn(data->pcdev->dev, "Mux %s function %s has unexpected value\n",
 					 data->info->muxes[i].name,
 					 data->info->muxes[i].functions[j].name);
