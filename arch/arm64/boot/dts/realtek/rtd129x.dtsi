@@ -50,6 +50,23 @@
 		clock-output-names = "osc27M";
 	};
 
+	gpio-regulator {
+		compatible = "regulator-gpio";
+		regulator-type = "voltage";
+		regulator-name = "gpio-regulator";
+		regulator-min-microvolt = < 850000>;
+		regulator-max-microvolt = <1050000>;
+		regulator-boot-on;
+		regulator-always-on;
+		gpios = <&iso_gpio 16 GPIO_ACTIVE_HIGH>,
+			<&iso_gpio 17 GPIO_ACTIVE_HIGH>;
+		gpios-states = <0>, <1>;
+		enable-active-high;
+		states = < 850000 0>,
+			 < 950000 2>,
+			 <1050000 3>;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <1>;
