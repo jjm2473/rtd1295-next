@@ -78,6 +78,16 @@
 #include "rtd129x-g2227.dtsi"
 };
 
+/* M.2 key E slot (CON3) */
+&pcie1 {
+	status = "okay";
+};
+
+/* M.2 key E slot (CON2) */
+&pcie2 {
+	status = "okay";
+};
+
 &sata {
 	status = "okay";
 };
