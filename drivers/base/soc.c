@@ -269,3 +269,21 @@ const struct soc_device_attribute *soc_device_match(
 	return NULL;
 }
 EXPORT_SYMBOL_GPL(soc_device_match);
+
+const struct soc_device_attribute *soc_device_match_safe(
+	const struct soc_device_attribute *matches)
+{
+	struct device *dev;
+
+	if (!matches)
+		return ERR_PTR(-EINVAL);
+
+	dev = bus_find_next_device(&soc_bus_type, NULL);
+	if (!dev)
+		return ERR_PTR(-ENODEV);
+
+	put_device(dev);
+
+	return soc_device_match(matches);
+}
+EXPORT_SYMBOL_GPL(soc_device_match_safe);

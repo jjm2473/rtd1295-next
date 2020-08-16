@@ -40,8 +40,12 @@ struct device *soc_device_to_device(struct soc_device *soc);
 #ifdef CONFIG_SOC_BUS
 const struct soc_device_attribute *soc_device_match(
 	const struct soc_device_attribute *matches);
+const struct soc_device_attribute *soc_device_match_safe(
+	const struct soc_device_attribute *matches);
 #else
 static inline const struct soc_device_attribute *soc_device_match(
+	const struct soc_device_attribute *matches) { return NULL; }
+static inline const struct soc_device_attribute *soc_device_match_safe(
 	const struct soc_device_attribute *matches) { return NULL; }
 #endif
 
