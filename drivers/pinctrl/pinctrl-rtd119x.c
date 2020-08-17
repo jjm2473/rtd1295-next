@@ -266,87 +266,7 @@ static int rtd119x_pin_config_get(struct pinctrl_dev *pcdev, unsigned pinnr,
 static int rtd119x_pin_config_set(struct pinctrl_dev *pcdev, unsigned pinnr,
 		unsigned long *configs, unsigned num_configs)
 {
-	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
-	unsigned int i, param, arg, val, n;
-
-	for (i = 0; i < num_configs; i++) {
-		param = pinconf_to_config_param(configs[i]);
-		arg = pinconf_to_config_argument(configs[i]);
-
-		if (data->info == &rtd1295_cr_pinctrl_desc) {
-			if (pinnr >= RTD1295_MMC_CMD && pinnr <= RTD1295_MMC_DATA_3) {
-				n = pinnr - RTD1295_MMC_CMD;
-				val = readl_relaxed(data->base + 0x10);
-				switch (param) {
-				case PIN_CONFIG_INPUT_SCHMITT_ENABLE:
-					if (arg)
-						val |= BIT(n * 4 + 3);
-					else
-						val &= ~BIT(n * 4 + 3);
-					break;
-				case PIN_CONFIG_BIAS_DISABLE:
-					if (arg)
-						val &= ~BIT(n * 4 + 1);
-					else
-						val |= BIT(n * 4 + 1);
-					break;
-				case PIN_CONFIG_BIAS_PULL_UP:
-					if (arg)
-						val |= BIT(n * 4) | BIT(n * 4 + 1);
-					else
-						val &= ~(BIT(n * 4) | BIT(n * 4 + 1));
-					break;
-				case PIN_CONFIG_BIAS_PULL_DOWN:
-					if (arg) {
-						val &= ~BIT(n * 4);
-						val |= BIT(n * 4 + 1);
-					} else {
-						val |= BIT(n * 4);
-						val &= ~BIT(n * 4 + 1);
-					}
-					break;
-				case PIN_CONFIG_DRIVE_STRENGTH:
-					if (pinnr == RTD1295_MMC_CD || pinnr == RTD1295_MMC_WP) {
-						if (arg == 8)
-							val |= BIT(n * 4 + 2);
-						else if (arg == 4)
-							val &= ~BIT(n * 4 + 2);
-					}
-					break;
-				default:
-					dev_dbg(pcdev->dev, "%u Other (%u) = %u\n", pinnr, param, arg);
-					continue;
-				}
-				writel_relaxed(val, data->base + 0x10);
-			}
-		}
-	}
-
-	return 0;
-}
-
-static int rtd119x_pin_config_group_set(struct pinctrl_dev *pcdev, unsigned group,
-		unsigned long *configs, unsigned num_configs)
-{
-	struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
-	const unsigned int *pins;
-	unsigned int num_pins;
-	const char *group_name;
-	int i, ret;
-
-	group_name = data->info->groups[group].name;
-
-	ret = rtd119x_pinctrl_get_group_pins(pcdev, group, &pins, &num_pins);
-	if (ret) {
-		dev_err(pcdev->dev, "Getting pins for group %s failed\n", group_name);
-		return ret;
-	}
-
-	for (i = 0; i < num_pins; i++) {
-		ret = rtd119x_pin_config_set(pcdev, pins[i], configs, num_configs);
-		if (ret)
-			return ret;
-	}
+	//struct rtd119x_pinctrl *data = pinctrl_dev_get_drvdata(pcdev);
 
 	return 0;
 }
@@ -355,7 +275,6 @@ static const struct pinconf_ops rtd119x_pinconf_ops = {
 	.is_generic = true,
 	.pin_config_get = rtd119x_pin_config_get,
 	.pin_config_set = rtd119x_pin_config_set,
-	.pin_config_group_set = rtd119x_pin_config_group_set,
 };
 
 static void rtd119x_pinctrl_selftest(struct rtd119x_pinctrl *data)
@@ -448,11 +367,6 @@ static int rtd119x_pinctrl_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, data);
 
 	rtd119x_pinctrl_selftest(data);
-
-	if (match->data == &rtd1295_cr_pinctrl_desc) {
-		writel(0x00003333, data->base + 0x34);
-		writel(0x33333333, data->base + 0x38);
-	}
 
 	dev_info(&pdev->dev, "probed\n");
 
