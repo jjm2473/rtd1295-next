@@ -106,7 +106,7 @@ static int rtd1295_ahci_mdio_phy_write(void __iomem *base,
 		FIELD_PREP(MDIO_CTR_PHY_ADDR_MASK, addr) |
 		FIELD_PREP(MDIO_CTR_PHY_REG_ADDR_MASK, reg) |
 		MDIO_CTR_MDIO_RDWR_WRITE;
-	pr_info("%s: 0x%08x\n", __func__, val);
+	//pr_info("%s: 0x%08x\n", __func__, val);
 	writel_relaxed(val, base + REG_MDIO_CTR);
 
 	return 0;
