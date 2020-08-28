@@ -146,6 +146,10 @@
 	};
 };
 
+&pcie2 {
+	max-link-speed = <1>;
+};
+
 &sata {
 	status = "okay";
 };
