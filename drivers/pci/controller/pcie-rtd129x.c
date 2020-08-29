@@ -451,7 +451,7 @@ static int rtd129x_pcie_init(struct rtd129x_pcie_priv *data)
 	if (ret) {
 		dev_err(&data->pdev->dev, "link down (0x%08x)\n", val);
 		ret = -ENODEV;
-		goto err_disable_clk;
+		//goto err_disable_clk;
 	}
 
 	/* Make sure DBI is working */
@@ -487,7 +487,7 @@ static int rtd129x_pcie_init(struct rtd129x_pcie_priv *data)
 
 	return 0;
 
-err_disable_clk:
+//err_disable_clk:
 	clk_disable_unprepare(data->clk);
 	return ret;
 }
