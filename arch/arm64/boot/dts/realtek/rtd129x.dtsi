@@ -176,6 +176,13 @@
 					      "pcie_phy",
 					      "pcie_phy_mdio";
 				reset-gpios = <&misc_gpio 18 GPIO_ACTIVE_LOW>;
+				interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 7>;
+				interrupt-map = <0 0 0 1 &pcie1_intc 0>,
+						<0 0 0 2 &pcie1_intc 1>,
+						<0 0 0 3 &pcie1_intc 2>,
+						<0 0 0 4 &pcie1_intc 3>;
 				bus-range = <0x00 0xff>;
 				num-lanes = <1>;
 				max-link-speed = <1>;
@@ -184,6 +191,11 @@
 				#size-cells = <2>;
 				ranges = <0x02000000 0x00000000 0xc0000000  0xc0000000  0x00000000 0x01000000>,
 					 <0x01000000 0x00000000 0x00030000  0x10030000  0x00000000 0x00010000>;
+
+				pcie1_intc: interrupt-controller {
+					interrupt-controller;
+					#interrupt-cells = <1>;
+				};
 			};
 		};
 
