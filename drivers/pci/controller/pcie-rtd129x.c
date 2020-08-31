@@ -13,8 +13,11 @@
 #include <linux/bitfield.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
+#include <linux/irqchip/chained_irq.h>
+#include <linux/irqdomain.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
+#include <linux/of_irq.h>
 #include <linux/of_pci.h>
 #include <linux/of_platform.h>
 #include <linux/pci.h>
@@ -26,6 +29,8 @@
 #include "../pci.h"
 
 #define REG_SYS_CTR	0xc00
+#define REG_GNR_INT	0xc08
+#define REG_PCIE_INT	0xc0c
 #define REG_INDIR_CTR	0xc14
 #define REG_DIR_CTR	0xc18
 #define REG_MDIO_CTR	0xc1c
@@ -52,6 +57,8 @@
 #define SYS_CTR_MM_IO_TYPE_IO		FIELD_PREP(SYS_CTR_MM_IO_TYPE, 0)
 #define SYS_CTR_MM_IO_TYPE_MM		FIELD_PREP(SYS_CTR_MM_IO_TYPE, 1)
 #define SYS_CTR_TRAN_EN		BIT(20)
+
+#define GNR_INT_PCIE_LEGACY_INT	BIT(11)
 
 #define INDIR_CTR_REQ_INFO_FMT		GENMASK(1, 0)
 #define INDIR_CTR_REQ_INFO_TYPE	GENMASK(6, 2)
@@ -137,8 +144,52 @@ struct rtd129x_pcie_priv {
 	struct reset_control *pcie_phy_reset;
 	struct reset_control *pcie_phy_mdio_reset;
 	struct gpio_desc *reset_gpiod;
+	struct irq_domain *intx_irq_domain;
+	int irq;
 	int gen;
 	u32 quirks;
+};
+
+static void rtd129x_pcie_irq_handle(struct irq_desc *desc)
+{
+	struct rtd129x_pcie_priv *data = irq_desc_get_handler_data(desc);
+	struct irq_chip *chip = irq_desc_get_chip(desc);
+	u32 gnr_int, pcie_int;
+	int i;
+
+	chained_irq_enter(chip, desc);
+
+	gnr_int = readl_relaxed(data->ctrl_base + REG_GNR_INT);
+
+	if (gnr_int & GNR_INT_PCIE_LEGACY_INT) {
+		pcie_int = readl_relaxed(data->ctrl_base + REG_PCIE_INT);
+		while (pcie_int) {
+			i = __ffs(pcie_int);
+			pcie_int &= ~BIT(i);
+
+			generic_handle_irq(irq_find_mapping(data->intx_irq_domain, i));
+		}
+	}
+
+	chained_irq_exit(chip, desc);
+}
+
+static int rtd129x_pcie_intx_map(struct irq_domain *domain, unsigned int irq,
+	irq_hw_number_t hwirq)
+{
+	struct rtd129x_pcie_priv *data = domain->host_data;
+
+	dev_info(&data->pdev->dev, "%s irq %u hwirq %lu\n", __func__, irq, hwirq);
+
+	irq_set_chip_and_handler(irq, &dummy_irq_chip, handle_simple_irq);
+	irq_set_handler_data(irq, data);
+
+	return 0;
+}
+
+static const struct irq_domain_ops rtd129x_pcie_intx_domain_ops = {
+	.xlate	= irq_domain_xlate_onecell,
+	.map	= rtd129x_pcie_intx_map,
 };
 
 static void rtd129x_pcie_phy_reset(struct rtd129x_pcie_priv *s)
@@ -298,6 +349,25 @@ static struct pci_ops rtd129x_pcie_ops = {
 	.read	= rtd129x_pcie_read_conf,
 	.write	= rtd129x_pcie_write_conf,
 };
+
+static int rtd129x_pcie_init_irq(struct rtd129x_pcie_priv *data)
+{
+	struct device_node *node;
+
+	node = of_get_child_by_name(data->pdev->dev.of_node, "interrupt-controller");
+	if (node) {
+		data->intx_irq_domain = irq_domain_add_linear(node, 4,
+							      &rtd129x_pcie_intx_domain_ops, data);
+		of_node_put(node);
+		if (!data->intx_irq_domain)
+			return -ENOMEM;
+	} else
+		dev_dbg(&data->pdev->dev, "no interrupt-controller child node\n");
+
+	irq_set_chained_handler_and_data(data->irq, rtd129x_pcie_irq_handle, data);
+
+	return 0;
+}
 
 static int rtd129x_pcie_init(struct rtd129x_pcie_priv *data)
 {
@@ -617,6 +687,10 @@ static int rtd129x_pcie_probe(struct platform_device *pdev)
 	if (IS_ERR(data->reset_gpiod))
 		return PTR_ERR(data->reset_gpiod);
 
+	data->irq = platform_get_irq(pdev, 0);
+	if (data->irq < 0)
+		return data->irq;
+
 	reset_control_assert(data->pcie_stitch_reset);
 	reset_control_assert(data->pcie_reset);
 	reset_control_assert(data->pcie_core_reset);
@@ -628,6 +702,12 @@ static int rtd129x_pcie_probe(struct platform_device *pdev)
 	ret = rtd129x_pcie_init(data);
 	if (ret) {
 		dev_err(&pdev->dev, "init failed (%d)\n", ret);
+		return ret;
+	}
+
+	ret = rtd129x_pcie_init_irq(data);
+	if (ret) {
+		dev_err(&pdev->dev, "irq init failed (%d)\n", ret);
 		return ret;
 	}
 
