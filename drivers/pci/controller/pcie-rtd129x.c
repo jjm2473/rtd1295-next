@@ -21,6 +21,7 @@
 #include <linux/of_pci.h>
 #include <linux/of_platform.h>
 #include <linux/pci.h>
+#include <linux/pci_hotplug.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
@@ -29,6 +30,7 @@
 #include "../pci.h"
 
 #define REG_SYS_CTR	0xc00
+#define REG_INT_CTR	0xc04
 #define REG_GNR_INT	0xc08
 #define REG_PCIE_INT	0xc0c
 #define REG_INDIR_CTR	0xc14
@@ -44,6 +46,7 @@
 #define REG_DIR_EN	0xc78
 #define REG_RCPL_ST	0xc7c
 #define REG_MAC_ST	0xcb4
+#define REG_LINK_ST	0xce8
 #define REG_PCI_BASE	0xcfc
 #define REG_PCI_MASK	0xd00
 #define REG_PCI_TRANS	0xd04
@@ -58,7 +61,10 @@
 #define SYS_CTR_MM_IO_TYPE_MM		FIELD_PREP(SYS_CTR_MM_IO_TYPE, 1)
 #define SYS_CTR_TRAN_EN		BIT(20)
 
+#define INT_CTR_LINK_UP_INTP_EN	BIT(13)
+
 #define GNR_INT_PCIE_LEGACY_INT	BIT(11)
+#define GNR_INT_LINK_UP_INT		BIT(15)
 
 #define INDIR_CTR_REQ_INFO_FMT		GENMASK(1, 0)
 #define INDIR_CTR_REQ_INFO_TYPE	GENMASK(6, 2)
@@ -114,6 +120,8 @@
 #define MAC_ST_RDLH_LINK_UP		BIT(15)
 #define MAC_ST_CLK_RDY			BIT(16)
 
+#define LINK_ST_LINK_UP_ST		BIT(0)
+
 #define RTD129X_PCIE_QUIRK_SB4		BIT(0)
 #define RTD129X_PCIE_QUIRK_PHY_A	BIT(1)
 
@@ -145,16 +153,111 @@ struct rtd129x_pcie_priv {
 	struct reset_control *pcie_phy_mdio_reset;
 	struct gpio_desc *reset_gpiod;
 	struct irq_domain *intx_irq_domain;
+	struct hotplug_slot hotplug_slot;
+	struct workqueue_struct *wq;
+	struct work_struct link_work;
 	int irq;
 	int gen;
 	u32 quirks;
 };
 
+#ifdef CONFIG_HOTPLUG_PCI
+static int rtd129x_pcie_get_adapter_status(struct hotplug_slot *slot, u8 *value)
+{
+	struct rtd129x_pcie_priv *data = container_of(slot, struct rtd129x_pcie_priv, hotplug_slot);
+	u32 val;
+
+	val = readl_relaxed(data->ctrl_base + REG_MAC_ST);
+	*value = (val & MAC_ST_XMLH_LINK_UP) ? 1 : 0;
+
+	return 0;
+}
+
+static const struct hotplug_slot_ops rtd129x_pcie_hotplug_slot_ops = {
+	.get_adapter_status	= rtd129x_pcie_get_adapter_status,
+};
+
+static int rtd129x_pcie_init_hotplug(struct rtd129x_pcie_priv *data)
+{
+	struct pci_host_bridge *bridge = pci_host_bridge_from_priv(data);
+	int ret;
+
+	data->hotplug_slot.ops = &rtd129x_pcie_hotplug_slot_ops;
+
+	ret = pci_hp_initialize(&data->hotplug_slot, bridge->bus, 0, "rtd129x");
+	if (ret) {
+		dev_err(&data->pdev->dev, "hotplug init failed (%d)\n", ret);
+		return ret;
+	}
+
+	ret = pci_hp_add(&data->hotplug_slot);
+	if (ret) {
+		dev_err(&data->pdev->dev, "hotplug add failed (%d)\n", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif
+
+static void rtd129x_pcie_link_init(struct rtd129x_pcie_priv *data)
+{
+	u32 val;
+
+	/* Make sure DBI is working */
+	writel(0x7, data->ctrl_base + 0x004);
+
+	/* Set limit and base registers */
+	val = 0xfff0;
+	writel_relaxed(val, data->ctrl_base + 0x020);
+	writel_relaxed(val, data->ctrl_base + 0x024);
+}
+
+static void rtd129x_pcie_link_changed(struct work_struct *ws)
+{
+	struct rtd129x_pcie_priv *data = container_of(ws, struct rtd129x_pcie_priv, link_work);
+	struct pci_host_bridge *bridge = pci_host_bridge_from_priv(data);
+	struct pci_dev *dev, *temp;
+	u32 val;
+	int ret;
+
+	val = readl_relaxed(data->ctrl_base + REG_MAC_ST);
+	if (val & MAC_ST_XMLH_LINK_UP) {
+		rtd129x_pcie_link_init(data);
+
+		pci_lock_rescan_remove();
+
+		ret = pci_scan_slot(bridge->bus, PCI_DEVFN(0, 0));
+		dev_info(&data->pdev->dev, "scan slot (%d)\n", ret);
+
+		for_each_pci_bridge(dev, bridge->bus)
+			pci_hp_add_bridge(dev);
+
+		pci_assign_unassigned_bus_resources(bridge->bus);
+		pcie_bus_configure_settings(bridge->bus);
+		pci_bus_add_devices(bridge->bus);
+
+		pci_unlock_rescan_remove();
+	} else {
+		pci_walk_bus(bridge->bus, pci_dev_set_disconnected, NULL);
+
+		pci_lock_rescan_remove();
+
+		list_for_each_entry_safe_reverse(dev, temp, &bridge->bus->devices, bus_list) {
+			pci_dev_get(dev);
+			pci_stop_and_remove_bus_device(dev);
+			pci_dev_put(dev);
+		}
+
+		pci_unlock_rescan_remove();
+	}
+}
+
 static void rtd129x_pcie_irq_handle(struct irq_desc *desc)
 {
 	struct rtd129x_pcie_priv *data = irq_desc_get_handler_data(desc);
 	struct irq_chip *chip = irq_desc_get_chip(desc);
-	u32 gnr_int, pcie_int;
+	u32 gnr_int, pcie_int, link_st;
 	int i;
 
 	chained_irq_enter(chip, desc);
@@ -168,6 +271,15 @@ static void rtd129x_pcie_irq_handle(struct irq_desc *desc)
 			pcie_int &= ~BIT(i);
 
 			generic_handle_irq(irq_find_mapping(data->intx_irq_domain, i));
+		}
+	}
+
+	if (gnr_int & GNR_INT_LINK_UP_INT) {
+		link_st = readl_relaxed(data->ctrl_base + REG_LINK_ST);
+		if (link_st & LINK_ST_LINK_UP_ST) {
+			queue_work(data->wq, &data->link_work);
+			link_st = LINK_ST_LINK_UP_ST;
+			writel_relaxed(link_st, data->ctrl_base + REG_LINK_ST);
 		}
 	}
 
@@ -353,6 +465,7 @@ static struct pci_ops rtd129x_pcie_ops = {
 static int rtd129x_pcie_init_irq(struct rtd129x_pcie_priv *data)
 {
 	struct device_node *node;
+	u32 val;
 
 	node = of_get_child_by_name(data->pdev->dev.of_node, "interrupt-controller");
 	if (node) {
@@ -364,7 +477,16 @@ static int rtd129x_pcie_init_irq(struct rtd129x_pcie_priv *data)
 	} else
 		dev_dbg(&data->pdev->dev, "no interrupt-controller child node\n");
 
+	data->wq = alloc_workqueue("rtd129x_pcie_wq", WQ_FREEZABLE | WQ_MEM_RECLAIM, 0);
+	INIT_WORK(&data->link_work, rtd129x_pcie_link_changed);
+
+	writel_relaxed(0, data->ctrl_base + REG_INT_CTR);
+
 	irq_set_chained_handler_and_data(data->irq, rtd129x_pcie_irq_handle, data);
+
+	writel_relaxed(~0, data->ctrl_base + REG_LINK_ST);
+	val = INT_CTR_LINK_UP_INTP_EN;
+	writel_relaxed(val, data->ctrl_base + REG_INT_CTR);
 
 	return 0;
 }
@@ -524,9 +646,6 @@ static int rtd129x_pcie_init(struct rtd129x_pcie_priv *data)
 		//goto err_disable_clk;
 	}
 
-	/* Make sure DBI is working */
-	writel(0x7, data->ctrl_base + 0x004);
-
 	writel_relaxed(data->cfg_res->start, data->ctrl_base + REG_PCI_BASE);
 	writel(~(resource_size(data->cfg_res) - 1), data->ctrl_base + REG_PCI_MASK);
 
@@ -544,16 +663,13 @@ static int rtd129x_pcie_init(struct rtd129x_pcie_priv *data)
 	      DIR_EN_TIMEOUT_EN;
 	writel_relaxed(val, data->ctrl_base + REG_DIR_EN);
 
-	/* Set limit and base registers */
-	val = 0xfff0;
-	writel_relaxed(val, data->ctrl_base + 0x020);
-	writel_relaxed(val, data->ctrl_base + 0x024);
-
 	val = readl_relaxed(data->ctrl_base + REG_PHY_CTR);
 	dev_info(&data->pdev->dev, "PHY_CTR 0x%08x\n", val);
 	val &= ~PHY_CTR_REG_PLLDVR;
 	val |= PHY_CTR_RX50_LINK | PHY_CTR_POW_PCIEX | PHY_CTR_REG_PLLDVR_ON_HOST;
 	writel_relaxed(val, data->ctrl_base + REG_PHY_CTR);
+
+	rtd129x_pcie_link_init(data);
 
 	return 0;
 
@@ -714,7 +830,21 @@ static int rtd129x_pcie_probe(struct platform_device *pdev)
 	bridge->sysdata = data;
 	bridge->ops = &rtd129x_pcie_ops;
 
-	return pci_host_probe(bridge);
+	ret = pci_host_probe(bridge);
+	if (ret) {
+		dev_err(&pdev->dev, "host probe failed (%d)\n", ret);
+		return ret;
+	}
+
+#ifdef CONFIG_HOTPLUG_PCI
+	ret = rtd129x_pcie_init_hotplug(data);
+	if (ret) {
+		dev_err(&pdev->dev, "hotplug init failed (%d)\n", ret);
+		return ret;
+	}
+#endif
+
+	return 0;
 }
 
 static struct platform_driver rtd129x_pcie_platform_driver = {
