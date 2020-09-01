@@ -35,6 +35,7 @@
 #define REG_CFG_ADDR	0xc44	/* PCI CFG format, spec: 3.2.2.3.2 */
 #define REG_CFG_WDATA	0xc48
 #define REG_CFG_RDATA	0xc4c
+#define REG_PHY_CTR	0xc68
 #define REG_DIR_EN	0xc78
 #define REG_RCPL_ST	0xc7c
 #define REG_MAC_ST	0xcb4
@@ -84,6 +85,13 @@
 
 #define CFG_ST_DONE_ST			BIT(0)
 #define CFG_ST_ERROR_ST		BIT(1)
+
+#define PHY_CTR_REG_PLLDVR		GENMASK(2, 0)
+#define PHY_CTR_REG_PLLDVR_OFF_DEVICE	FIELD_PREP(PHY_CTR_REG_PLLDVR, 0x0)
+#define PHY_CTR_REG_PLLDVR_ON_HOST	FIELD_PREP(PHY_CTR_REG_PLLDVR, 0x1)
+#define PHY_CTR_POW_PCIEX		BIT(3)
+#define PHY_CTR_RX50_LINK		BIT(4)
+#define PCIE2_PHY_CTR_ISOLATE		BIT(5)
 
 #define DIR_EN_TIMEOUT_EN		BIT(0)
 #define DIR_EN_TIMEOUT_CNT_VALUE	GENMASK(31, 8)
@@ -470,6 +478,12 @@ static int rtd129x_pcie_init(struct rtd129x_pcie_priv *data)
 	val = 0xfff0;
 	writel_relaxed(val, data->ctrl_base + 0x020);
 	writel_relaxed(val, data->ctrl_base + 0x024);
+
+	val = readl_relaxed(data->ctrl_base + REG_PHY_CTR);
+	dev_info(&data->pdev->dev, "PHY_CTR 0x%08x\n", val);
+	val &= ~PHY_CTR_REG_PLLDVR;
+	val |= PHY_CTR_RX50_LINK | PHY_CTR_POW_PCIEX | PHY_CTR_REG_PLLDVR_ON_HOST;
+	writel_relaxed(val, data->ctrl_base + REG_PHY_CTR);
 
 	return 0;
 
