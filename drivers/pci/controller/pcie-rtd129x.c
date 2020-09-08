@@ -181,7 +181,7 @@ static int rtd129x_pcie_intx_map(struct irq_domain *domain, unsigned int irq,
 
 	dev_info(&data->pdev->dev, "%s irq %u hwirq %lu\n", __func__, irq, hwirq);
 
-	irq_set_chip_and_handler(irq, &dummy_irq_chip, handle_simple_irq);
+	irq_set_chip_and_handler(irq, &dummy_irq_chip, handle_level_irq);
 	irq_set_handler_data(irq, data);
 
 	return 0;
