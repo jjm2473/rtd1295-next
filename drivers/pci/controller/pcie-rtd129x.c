@@ -17,6 +17,7 @@
 #include <linux/irqdomain.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
+#include <linux/msi.h>
 #include <linux/of_irq.h>
 #include <linux/of_pci.h>
 #include <linux/of_platform.h>
@@ -46,6 +47,8 @@
 #define REG_DIR_EN	0xc78
 #define REG_RCPL_ST	0xc7c
 #define REG_MAC_ST	0xcb4
+#define REG_MSI_TRAN	0xcd0
+#define REG_MSI_DATA	0xcd4
 #define REG_LINK_ST	0xce8
 #define REG_PCI_BASE	0xcfc
 #define REG_PCI_MASK	0xd00
@@ -61,9 +64,11 @@
 #define SYS_CTR_MM_IO_TYPE_MM		FIELD_PREP(SYS_CTR_MM_IO_TYPE, 1)
 #define SYS_CTR_TRAN_EN		BIT(20)
 
+#define INT_CTR_PCIE_LEGACY_MSI_EN	BIT(12)
 #define INT_CTR_LINK_UP_INTP_EN	BIT(13)
 
 #define GNR_INT_PCIE_LEGACY_INT	BIT(11)
+#define GNR_INT_PCIE_LEGACY_MSI_INT	BIT(14)
 #define GNR_INT_LINK_UP_INT		BIT(15)
 
 #define INDIR_CTR_REQ_INFO_FMT		GENMASK(1, 0)
@@ -120,6 +125,9 @@
 #define MAC_ST_RDLH_LINK_UP		BIT(15)
 #define MAC_ST_CLK_RDY			BIT(16)
 
+#define MSI_DATA_MSI_DATA		GENMASK(15, 0)
+#define MSI_DATA_MSI_DATA_ST		BIT(16)
+
 #define LINK_ST_LINK_UP_ST		BIT(0)
 
 #define RTD129X_PCIE_QUIRK_SB4		BIT(0)
@@ -153,6 +161,10 @@ struct rtd129x_pcie_priv {
 	struct reset_control *pcie_phy_mdio_reset;
 	struct gpio_desc *reset_gpiod;
 	struct irq_domain *intx_irq_domain;
+	struct irq_domain *msi_irq_domain;
+	struct irq_domain *msi_domain;
+	bool msi_allocated;
+	void *msi_data;
 	struct hotplug_slot hotplug_slot;
 	struct workqueue_struct *wq;
 	struct work_struct link_work;
@@ -264,6 +276,10 @@ static void rtd129x_pcie_irq_handle(struct irq_desc *desc)
 
 	gnr_int = readl_relaxed(data->ctrl_base + REG_GNR_INT);
 
+	if (IS_ENABLED(CONFIG_PCI_MSI) && (gnr_int & GNR_INT_PCIE_LEGACY_MSI_INT)) {
+		generic_handle_irq(irq_find_mapping(data->msi_irq_domain, 0));
+	}
+
 	if (gnr_int & GNR_INT_PCIE_LEGACY_INT) {
 		pcie_int = readl_relaxed(data->ctrl_base + REG_PCIE_INT);
 		while (pcie_int) {
@@ -285,6 +301,81 @@ static void rtd129x_pcie_irq_handle(struct irq_desc *desc)
 
 	chained_irq_exit(chip, desc);
 }
+
+static void rtd129x_pcie_msi_compose_msg(struct irq_data *d, struct msi_msg *msg)
+{
+	struct rtd129x_pcie_priv *data = irq_data_get_irq_chip_data(d);
+	u32 val;
+	phys_addr_t addr;
+
+	addr = virt_to_phys(data->msi_data);
+	msg->address_hi = upper_32_bits(addr);
+	msg->address_lo = lower_32_bits(addr);
+	val = readl_relaxed(data->ctrl_base + REG_MSI_DATA);
+	msg->data = FIELD_GET(MSI_DATA_MSI_DATA, val);
+
+	dev_dbg(&data->pdev->dev, "msi#%d address_hi %#x address_lo %#x data %04x\n",
+		(int)d->hwirq, msg->address_hi, msg->address_lo, msg->data);
+}
+
+static void rtd129x_pcie_msi_ack(struct irq_data *d)
+{
+	struct rtd129x_pcie_priv *data = irq_data_get_irq_chip_data(d);
+
+	writel_relaxed(MSI_DATA_MSI_DATA_ST, data->ctrl_base + REG_MSI_DATA);
+}
+
+static struct irq_chip rtd129x_pcie_msi_bottom_irq_chip = {
+	.name			= "RTD129x MSI",
+	.irq_compose_msi_msg	= rtd129x_pcie_msi_compose_msg,
+	.irq_ack		= rtd129x_pcie_msi_ack,
+};
+
+static struct irq_chip rtd129x_pcie_msi_irq_chip = {
+	.name		= "RTD129x PCIe MSI",
+	.irq_ack	= irq_chip_ack_parent,
+	.irq_mask	= pci_msi_mask_irq,
+	.irq_unmask	= pci_msi_unmask_irq,
+};
+
+static struct msi_domain_info rtd129x_pcie_msi_domain_info = {
+	.flags	= MSI_FLAG_USE_DEF_DOM_OPS | MSI_FLAG_USE_DEF_CHIP_OPS | MSI_FLAG_PCI_MSIX,
+	.chip	= &rtd129x_pcie_msi_irq_chip,
+};
+
+static int rtd129x_pcie_msi_domain_alloc(struct irq_domain *domain, unsigned int virq,
+					 unsigned int nr_irqs, void *args)
+{
+	struct rtd129x_pcie_priv *data = domain->host_data;
+
+	WARN_ON(nr_irqs != 1);
+
+	if (data->msi_allocated)
+		return -ENOSPC;
+
+	data->msi_allocated = true;
+	irq_domain_set_info(domain, virq, 0, &rtd129x_pcie_msi_bottom_irq_chip,
+			    domain->host_data, handle_edge_irq,
+			    NULL, NULL);
+
+	return 0;
+}
+
+static void rtd129x_pcie_msi_domain_free(struct irq_domain *domain, unsigned int virq,
+					 unsigned int nr_irqs)
+{
+	struct rtd129x_pcie_priv *data = domain->host_data;
+
+	WARN_ON(nr_irqs != 1);
+
+	data->msi_allocated = false;
+	irq_domain_free_irqs_parent(domain, virq, nr_irqs);
+}
+
+static const struct irq_domain_ops rtd129x_pcie_msi_domain_ops = {
+	.alloc	= rtd129x_pcie_msi_domain_alloc,
+	.free	= rtd129x_pcie_msi_domain_free,
+};
 
 static int rtd129x_pcie_intx_map(struct irq_domain *domain, unsigned int irq,
 	irq_hw_number_t hwirq)
@@ -462,10 +553,42 @@ static struct pci_ops rtd129x_pcie_ops = {
 	.write	= rtd129x_pcie_write_conf,
 };
 
+static int rtd129x_pcie_init_msi(struct rtd129x_pcie_priv *data)
+{
+	struct page *page;
+	phys_addr_t addr;
+
+	data->msi_irq_domain = irq_domain_add_linear(NULL, 1,
+						     &rtd129x_pcie_msi_domain_ops, data);
+	if (!data->msi_irq_domain)
+		return -ENOMEM;
+
+	data->msi_domain = pci_msi_create_irq_domain(data->pdev->dev.fwnode,
+						     &rtd129x_pcie_msi_domain_info,
+						     data->msi_irq_domain);
+	if (!data->msi_domain) {
+		irq_domain_remove(data->msi_irq_domain);
+		return -ENOMEM;
+	}
+
+	page = alloc_pages(GFP_KERNEL, 0);
+	if (!page) {
+		irq_domain_remove(data->msi_domain);
+		irq_domain_remove(data->msi_irq_domain);
+		return -ENOMEM;
+	}
+	data->msi_data = page_address(page);
+	addr = virt_to_phys(data->msi_data);
+	writel_relaxed(lower_32_bits(addr) & ~0x3, data->ctrl_base + REG_MSI_TRAN);
+
+	return 0;
+}
+
 static int rtd129x_pcie_init_irq(struct rtd129x_pcie_priv *data)
 {
 	struct device_node *node;
 	u32 val;
+	int ret;
 
 	node = of_get_child_by_name(data->pdev->dev.of_node, "interrupt-controller");
 	if (node) {
@@ -477,6 +600,12 @@ static int rtd129x_pcie_init_irq(struct rtd129x_pcie_priv *data)
 	} else
 		dev_dbg(&data->pdev->dev, "no interrupt-controller child node\n");
 
+	if (IS_ENABLED(CONFIG_PCI_MSI)) {
+		ret = rtd129x_pcie_init_msi(data);
+		if (ret)
+			return ret;
+	}
+
 	data->wq = alloc_workqueue("rtd129x_pcie_wq", WQ_FREEZABLE | WQ_MEM_RECLAIM, 0);
 	INIT_WORK(&data->link_work, rtd129x_pcie_link_changed);
 
@@ -486,6 +615,8 @@ static int rtd129x_pcie_init_irq(struct rtd129x_pcie_priv *data)
 
 	writel_relaxed(~0, data->ctrl_base + REG_LINK_ST);
 	val = INT_CTR_LINK_UP_INTP_EN;
+	if (IS_ENABLED(CONFIG_PCI_MSI))
+		val |= INT_CTR_PCIE_LEGACY_MSI_EN;
 	writel_relaxed(val, data->ctrl_base + REG_INT_CTR);
 
 	return 0;
