@@ -329,22 +329,29 @@ int rtw_mac_power_on(struct rtw_dev *rtwdev)
 	int ret = 0;
 
 	ret = rtw_mac_pre_system_cfg(rtwdev);
-	if (ret)
+	if (ret) {
+		rtw_err(rtwdev, "AF: rtw_mac_pre_system_cfg failed");
 		goto err;
+	}
 
 	ret = rtw_mac_power_switch(rtwdev, true);
 	if (ret == -EALREADY) {
 		rtw_mac_power_switch(rtwdev, false);
 		ret = rtw_mac_power_switch(rtwdev, true);
-		if (ret)
+		if (ret) {
+			rtw_err(rtwdev, "AF: rtw_mac_power_switch failed (already)");
 			goto err;
+		}
 	} else if (ret) {
+		rtw_err(rtwdev, "AF: rtw_mac_power_switch failed (non-already)");
 		goto err;
 	}
 
 	ret = rtw_mac_init_system_cfg(rtwdev);
-	if (ret)
+	if (ret) {
+		rtw_err(rtwdev, "AF: rtw_mac_init_system_cfg failed (non-already)");
 		goto err;
+	}
 
 	return 0;
 

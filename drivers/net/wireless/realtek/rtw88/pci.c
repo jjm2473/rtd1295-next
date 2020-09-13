@@ -63,8 +63,12 @@ static u16 rtw_pci_read16(struct rtw_dev *rtwdev, u32 addr)
 static u32 rtw_pci_read32(struct rtw_dev *rtwdev, u32 addr)
 {
 	struct rtw_pci *rtwpci = (struct rtw_pci *)rtwdev->priv;
+	u32 val;
 
-	return readl(rtwpci->mmap + addr);
+	val = readl(rtwpci->mmap + addr);
+	rtw_err(rtwdev, "AF %s %px + 0x%x = 0x%08x", __func__, rtwpci->mmap, addr, val);
+	return val;
+	//return readl(rtwpci->mmap + addr);
 }
 
 static void rtw_pci_write8(struct rtw_dev *rtwdev, u32 addr, u8 val)
