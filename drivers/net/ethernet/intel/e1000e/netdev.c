@@ -7445,6 +7445,7 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	/* setup adapter struct */
 	err = e1000_sw_init(adapter);
+	pci_info(pdev, "%s: e1000_sw_init = %d\n", __func__, err);
 	if (err)
 		goto err_sw_init;
 
@@ -7453,6 +7454,7 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	memcpy(&hw->phy.ops, ei->phy_ops, sizeof(hw->phy.ops));
 
 	err = ei->get_variants(adapter);
+	pci_info(pdev, "%s: get_variants = %d\n", __func__, err);
 	if (err)
 		goto err_hw_init;
 
@@ -7631,6 +7633,7 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	strlcpy(netdev->name, "eth%d", sizeof(netdev->name));
 	err = register_netdev(netdev);
+	pci_info(pdev, "%s: register_netdev = %d\n", __func__, err);
 	if (err)
 		goto err_register;
 

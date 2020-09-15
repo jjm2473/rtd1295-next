@@ -47,6 +47,8 @@ static s32 e1000_init_phy_params_82571(struct e1000_hw *hw)
 	struct e1000_phy_info *phy = &hw->phy;
 	s32 ret_val;
 
+	pr_info("%s\n", __func__);
+
 	if (hw->phy.media_type != e1000_media_type_copper) {
 		phy->type = e1000_phy_none;
 		return 0;
@@ -76,13 +78,14 @@ static s32 e1000_init_phy_params_82571(struct e1000_hw *hw)
 		phy->ops.set_d3_lplu_state = e1000_set_d3_lplu_state_82574;
 		break;
 	default:
+		pr_info("Unexpected MAC type 0x%x\n", hw->mac.type);
 		return -E1000_ERR_PHY;
 	}
 
 	/* This can only be done after all function pointers are setup. */
 	ret_val = e1000_get_phy_id_82571(hw);
 	if (ret_val) {
-		e_dbg("Error getting PHY ID\n");
+		pr_info("Error getting PHY ID\n");
 		return ret_val;
 	}
 
@@ -108,7 +111,7 @@ static s32 e1000_init_phy_params_82571(struct e1000_hw *hw)
 	}
 
 	if (ret_val)
-		e_dbg("PHY ID unknown: type = 0x%08x\n", phy->id);
+		pr_info("PHY ID unknown: type = 0x%08x\n", phy->id);
 
 	return ret_val;
 }
@@ -317,6 +320,8 @@ static s32 e1000_get_variants_82571(struct e1000_adapter *adapter)
 	struct pci_dev *pdev = adapter->pdev;
 	int is_port_b = er32(STATUS) & E1000_STATUS_FUNC_1;
 	s32 rc;
+
+	pci_info(pdev, "%s\n", __func__);
 
 	rc = e1000_init_mac_params_82571(hw);
 	if (rc)

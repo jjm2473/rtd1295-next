@@ -120,8 +120,10 @@ s32 e1000e_read_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 *data)
 	struct e1000_phy_info *phy = &hw->phy;
 	u32 i, mdic = 0;
 
+	pr_info("%s\n", __func__);
+
 	if (offset > MAX_PHY_REG_ADDRESS) {
-		e_dbg("PHY Address %d is out of range\n", offset);
+		pr_err("PHY Address %d is out of range\n", offset);
 		return -E1000_ERR_PARAM;
 	}
 
@@ -145,16 +147,17 @@ s32 e1000e_read_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 *data)
 		if (mdic & E1000_MDIC_READY)
 			break;
 	}
+	pr_info("%s mdic = 0x%08x\n", __func__, mdic);
 	if (!(mdic & E1000_MDIC_READY)) {
-		e_dbg("MDI Read did not complete\n");
+		pr_info("MDI Read did not complete\n");
 		return -E1000_ERR_PHY;
 	}
 	if (mdic & E1000_MDIC_ERROR) {
-		e_dbg("MDI Error\n");
+		pr_info("MDI Error\n");
 		return -E1000_ERR_PHY;
 	}
 	if (((mdic & E1000_MDIC_REG_MASK) >> E1000_MDIC_REG_SHIFT) != offset) {
-		e_dbg("MDI Read offset error - requested %d, returned %d\n",
+		pr_info("MDI Read offset error - requested %d, returned %d\n",
 		      offset,
 		      (mdic & E1000_MDIC_REG_MASK) >> E1000_MDIC_REG_SHIFT);
 		return -E1000_ERR_PHY;
