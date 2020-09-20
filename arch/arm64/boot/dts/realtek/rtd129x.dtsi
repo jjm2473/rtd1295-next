@@ -311,7 +311,7 @@
 				linux,pci-domain = <0>;
 				#address-cells = <3>;
 				#size-cells = <2>;
-				ranges = <0x02000000 0x00000000 0xc0000000  0xc0000000  0x00000000 0x01000000>,
+				ranges = <0x02000000 0x00000000 0xc0000000  0xc0000000  0x00000000 0x00001000>,
 					 <0x01000000 0x00000000 0x00030000  0x10030000  0x00000000 0x00010000>;
 
 				pcie1_intc: interrupt-controller {
