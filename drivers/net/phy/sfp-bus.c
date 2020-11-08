@@ -63,6 +63,12 @@ static const struct sfp_quirk sfp_quirks[] = {
 		.vendor = "HUAWEI",
 		.part = "MA5671A",
 		.modes = sfp_quirk_2500basex,
+	}, {
+		// XYT Sharetop SFP-2.5G31-LD20 can operate at 2500base-X, but
+		// report 2500MBd NRZ in their EEPROM
+		.vendor = "XYT",
+		.part = "SFP-2.5G31-LD20",
+		.modes = sfp_quirk_2500basex,
 	},
 };
 
