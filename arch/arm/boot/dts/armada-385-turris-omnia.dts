@@ -98,7 +98,7 @@
 		 * a SFP module is present. Read more in the comment in the
 		 * eth2 node below.
 		 */
-		status = "disabled";
+		status = "okay";
 	};
 };
 
@@ -155,7 +155,8 @@
 	 */
 	status = "okay";
 	phy-mode = "sgmii";
-	phy-handle = <&phy1>;
+	/*phy-handle = <&phy1>;*/
+	managed = "in-band-status";
 	phys = <&comphy5 2>;
 	sfp = <&sfp>;
 	buffer-manager = <&bm>;
