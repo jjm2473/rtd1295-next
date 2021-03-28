@@ -63,6 +63,7 @@
 #define REG_PA_CONFIG_OUTPUT_POWER_MASK		GENMASK(3, 0)
 
 #define LORA_REG_IRQ_FLAGS_TX_DONE		BIT(3)
+#define LORA_REG_IRQ_FLAGS_RX_DONE		BIT(6)
 
 #define LORA_REG_MODEM_CONFIG1_BW_MASK		GENMASK(7, 4)
 #define LORA_REG_MODEM_CONFIG1_BW_SHIFT		4
@@ -181,6 +182,84 @@ static netdev_tx_t sx127x_loradev_start_xmit(struct sk_buff *skb, struct net_dev
 	queue_work(priv->wq, &priv->tx_work);
 
 	return NETDEV_TX_OK;
+}
+
+static int sx127x_start_rx(struct spi_device *spi)
+{
+	struct net_device *netdev = spi_get_drvdata(spi);
+	struct sx127x_priv *priv = netdev_priv(netdev);
+	unsigned int val;
+	int ret;
+
+	ret = regmap_read(priv->regmap, REG_OPMODE, &val);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to read RegOpMode (%d)\n", ret);
+		return ret;
+	}
+	dev_dbg(&spi->dev, "RegOpMode = 0x%02x\n", val);
+	if (!(val & REG_OPMODE_LONG_RANGE_MODE))
+		dev_err(&spi->dev, "LongRange Mode not active!\n");
+	if ((val & REG_OPMODE_MODE_MASK) == REG_OPMODE_MODE_SLEEP)
+		dev_err(&spi->dev, "Cannot access FIFO in Sleep Mode!\n");
+
+	ret = regmap_read(priv->regmap, LORA_REG_IRQ_FLAGS, &val);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to read RegIrqFlags (%d)\n", ret);
+		return ret;
+	}
+	dev_dbg(&spi->dev, "RegIrqFlags = 0x%02x\n", val);
+
+	ret = regmap_write(priv->regmap, LORA_REG_IRQ_FLAGS, LORA_REG_IRQ_FLAGS_RX_DONE);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to write RegIrqFlags (%d)\n", ret);
+		return ret;
+	}
+
+	ret = regmap_read(priv->regmap, LORA_REG_IRQ_FLAGS_MASK, &val);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to read RegIrqFlagsMask (%d)\n", ret);
+		return ret;
+	}
+	dev_dbg(&spi->dev, "RegIrqFlagsMask = 0x%02x\n", val);
+
+	val &= ~LORA_REG_IRQ_FLAGS_RX_DONE;
+	ret = regmap_write(priv->regmap, LORA_REG_IRQ_FLAGS_MASK, val);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to write RegIrqFlagsMask (%d)\n", ret);
+		return ret;
+	}
+
+	ret = regmap_read(priv->regmap, REG_DIO_MAPPING1, &val);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to read RegDioMapping1 (%d)\n", ret);
+		return ret;
+	}
+
+	val &= ~REG_DIO_MAPPING1_DIO0_MASK;
+	val |= 0x1 << 6;
+	ret = regmap_write(priv->regmap, REG_DIO_MAPPING1, val);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to write RegDioMapping1 (%d)\n", ret);
+		return ret;
+	}
+
+	ret = regmap_read(priv->regmap, REG_OPMODE, &val);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to read RegOpMode (%d)\n", ret);
+		return ret;
+	}
+
+	val &= ~REG_OPMODE_MODE_MASK;
+	val |= REG_OPMODE_MODE_RXSINGLE;
+	ret = regmap_write(priv->regmap, REG_OPMODE, val);
+	if (ret) {
+		dev_err(&spi->dev, "Failed to write RegOpMode (%d)\n", ret);
+		return ret;
+	}
+
+	dev_dbg(&spi->dev, "%s: done\n", __func__);
+
+	return 0;
 }
 
 static int sx127x_tx(struct spi_device *spi, void *data, int data_len)
@@ -328,6 +407,14 @@ static irqreturn_t sx127x_dio_interrupt(int irq, void *dev_id)
 		val = 0;
 	}
 
+	if (val & LORA_REG_IRQ_FLAGS_RX_DONE) {
+		netdev_info(netdev, "RX done.\n");
+		netdev->stats.rx_packets++;
+
+		ret = regmap_write(priv->regmap, LORA_REG_IRQ_FLAGS, LORA_REG_IRQ_FLAGS_RX_DONE);
+		if (ret)
+			netdev_warn(netdev, "Failed to write RegIrqFlags (%d)\n", ret);
+	}
 	if (val & LORA_REG_IRQ_FLAGS_TX_DONE) {
 		netdev_info(netdev, "TX done.\n");
 		netdev->stats.tx_packets++;
@@ -338,6 +425,12 @@ static irqreturn_t sx127x_dio_interrupt(int irq, void *dev_id)
 		ret = regmap_write(priv->regmap, LORA_REG_IRQ_FLAGS, LORA_REG_IRQ_FLAGS_TX_DONE);
 		if (ret)
 			netdev_warn(netdev, "Failed to write RegIrqFlags (%d)\n", ret);
+	}
+	if ((val & LORA_REG_IRQ_FLAGS_RX_DONE) ||
+	    (val & LORA_REG_IRQ_FLAGS_TX_DONE)) {
+		ret = sx127x_start_rx(priv->spi);
+		if (ret)
+			netdev_warn(netdev, "Failed to re-start RX (%d)\n", ret);
 	}
 
 	mutex_unlock(&priv->spi_lock);
@@ -390,6 +483,11 @@ static int sx127x_loradev_open(struct net_device *netdev)
 				netdev_err(netdev, "Failed to request interrupt for DIO0 (%d)\n", ret);
 				goto err_irq;
 			}
+			ret = sx127x_start_rx(priv->spi);
+			if (ret) {
+				netdev_err(netdev, "Failed to start RX (%d)\n", ret);
+				goto err_rx;
+			}
 		}
 	}
 
@@ -399,6 +497,7 @@ static int sx127x_loradev_open(struct net_device *netdev)
 
 	return 0;
 
+err_rx:
 err_irq:
 	destroy_workqueue(priv->wq);
 	priv->wq = NULL;
