@@ -115,6 +115,10 @@
 	bus-width = <4>;
 };
 
+&emmc {
+	status = "okay";
+};
+
 /* serial console (J1) */
 &uart0 {
 	status = "okay";

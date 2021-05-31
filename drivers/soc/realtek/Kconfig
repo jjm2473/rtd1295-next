@@ -34,4 +34,10 @@ config REALTEK_PM_DOMAINS
 	  Say 'y' here to enable support for powerctrl on Realtek RTD1295 SoC.
 	  If unsure, say 'n'.
 
+config REALTEK_MCP
+	bool "Realtek MCP driver"
+	default n
+	help
+	  Realtek MCP driver
+
 endif

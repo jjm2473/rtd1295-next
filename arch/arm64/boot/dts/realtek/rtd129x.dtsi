@@ -163,8 +163,24 @@
 
 			emmc: mmc@12000 {
 				compatible = "realtek,rtd1295-emmc";
-				reg = <0x12000 0xa00>;
+				reg = <0x12000 0xa00>, /*EMMC*/
+					<0x00000 0x600>, /*CRT */
+					<0x1A000 0x80>, /*SB2*/
+					<0x1B000 0x150>; /*MISC*/
 				interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+				speed-step = <2>; /* 0: sdr50, 1: ddr50, 2: hs200, 3: hs400 */
+				clocks = <&clkc RTD1295_CLK_EN_EMMC>,
+					<&clkc RTD1295_CLK_EN_EMMC_IP>,
+					<&clkc RTD1295_CLK_EN_CR>;
+				clock-names = "emmc",
+					"emmc_ip",
+					"cr";
+				resets = <&reset2 RTD1295_RSTN_EMMC>;
+				reset-names = "emmc";
+				status = "disabled";
+				pddrive_nf_s0 = <1 0x77 0x77 0x77 0x33>; /* pddrive_nf0, pddrive_nf1, pddrive_nf2, pddrive_nf3, pddrive_nf4 ; for sdr50 */
+				pddrive_nf_s2 = <1 0xbb 0xbb 0xbb 0x33>; /* pddrive_nf0, pddrive_nf1, pddrive_nf2, pddrive_nf3, pddrive_nf4 ; for hs200 */
+				phase_tuning = <0 0>; /* arg0: tx tuning switch, arg1: rx tuning switch*/
 			};
 
 			cr_pinctrl: pinctrl@12600 {

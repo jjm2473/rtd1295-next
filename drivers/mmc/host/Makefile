@@ -3,6 +3,8 @@
 # Makefile for MMC/SD host controller drivers
 #
 
+obj-$(CONFIG_MMC_RTK_EMMC)              += rtkemmc.o
+
 obj-$(CONFIG_MMC_ARMMMCI) += armmmci.o
 armmmci-y := mmci.o
 armmmci-$(CONFIG_MMC_QCOM_DML) += mmci_qcom_dml.o

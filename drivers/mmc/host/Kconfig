@@ -5,6 +5,19 @@
 
 comment "MMC/SD/SDIO Host Controller Drivers"
 
+menuconfig MMC_RTK_EMMC
+	tristate "Realtek EMMC host driver"
+	select REALTEK_MCP if !ARCH_RTD16xx
+	help
+	  Support RealTek EMMC for Kylin.
+
+config MMC_RTK_EMMC_HW_SEMAPHORE
+	bool  "Enable Realtek EMMC host driver hardware semaphore."
+	depends on MMC_RTK_EMMC
+	default n
+	help
+	  Enable Realtek EMMC host driver hardware semaphore.
+
 config MMC_DEBUG
 	bool "MMC host drivers debugging"
 	depends on MMC != n

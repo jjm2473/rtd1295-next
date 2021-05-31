@@ -292,6 +292,9 @@ struct mmc_host {
 	u32			max_current_330;
 	u32			max_current_300;
 	u32			max_current_180;
+#ifdef CONFIG_ARCH_REALTEK
+	u32			mode; //for rtkemmc_execute_tuning usage
+#endif /* CONFIG_ARCH_REALTEK */
 
 #define MMC_VDD_165_195		0x00000080	/* VDD voltage 1.65 - 1.95 */
 #define MMC_VDD_20_21		0x00000100	/* VDD voltage 2.0 ~ 2.1 */
